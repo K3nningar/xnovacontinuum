@@ -14,14 +14,14 @@ const navigation = computed(() => [
     { route: 'galaxy.index', component: 'Galaxy/Index', label: 'galaxy.title', icon: 'bi-stars' },
     { route: 'buildings.index', component: 'Buildings/Index', label: 'nav.buildings', icon: 'bi-buildings' },
     { route: 'research.index', component: 'Research/Index', label: 'nav.research', icon: 'bi-lightbulb' },
-    { route: 'research.tree', component: 'Research/TechnologyGraph', label: 'nav.technologyTree', icon: 'bi-diagram-3' },
-    { route: 'fleet.index', component: 'Fleet/Index', label: 'nav.fleet', icon: 'bi-send' },
-    { route: 'combat-simulator.index', component: 'Combat/Index', label: 'nav.combatSimulator', icon: 'bi-crosshair' },
     { route: 'shipyard.index', component: 'Shipyard/Index', label: 'nav.shipyard', icon: 'bi-tools' },
     { route: 'defences.index', component: 'Defences/Index', label: 'nav.defences', icon: 'bi-shield-check' },
     { route: 'officers.index', component: 'Officers/Index', label: 'nav.officers', icon: 'bi-people' },
+    { route: 'research.tree', component: 'Research/TechnologyGraph', label: 'nav.technologyTree', icon: 'bi-diagram-3' },
+    { route: 'fleet.index', component: 'Fleet/Index', label: 'nav.fleet', icon: 'bi-send' },
+    { route: 'combat-simulator.index', component: 'Combat/Index', label: 'nav.combatSimulator', icon: 'bi-crosshair' },
     { route: 'announcements.index', component: 'Announcements/Index', label: 'announcements.title', icon: 'bi-megaphone' },
-    { route: 'multi-accounts.index', component: 'MultiAccounts/Index', label: 'multiAccounts.title', icon: 'bi-person-lines-fill' },
+    { route: 'multi-accounts.index', component: 'MultiAccounts/Index', label: 'nav.multiAccounts', icon: 'bi-person-lines-fill' },
     ...(Number(page.props.auth?.user?.admin_level ?? 0) >= 1
         ? [{ route: 'admin.index', component: 'Admin/Index', label: 'admin.title', icon: 'bi-shield-lock' }]
         : []),

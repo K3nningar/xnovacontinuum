@@ -100,6 +100,8 @@ npm run dev
 
 Open the address reported by `artisan serve` (by default `http://localhost:8000`), create an account, and join the universe.
 
+Game URLs use English paths, such as `/commandcenter`. Previous French URLs are not redirected; update any bookmarks.
+
 The Laravel scheduler also processes fleet missions when they are due. In development, run it in a third terminal:
 
 ```bash

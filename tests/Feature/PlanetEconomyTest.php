@@ -72,7 +72,7 @@ class PlanetEconomyTest extends TestCase
             'resources_updated_at' => now()->subHour(),
         ]);
 
-        $this->actingAs($planet->user)->get('/commandement')->assertInertia(fn (Assert $page) => $page
+        $this->actingAs($planet->user)->get('/commandcenter')->assertInertia(fn (Assert $page) => $page
             ->component('Dashboard')
             ->where('selectedPlanetId', null)
             ->where('planets.0.metal', 120)
@@ -128,7 +128,7 @@ class PlanetEconomyTest extends TestCase
         $otherPlanet->save();
 
         $this->actingAs($planet->user)
-            ->from('/commandement')
+            ->from('/commandcenter')
             ->post(route('planet.buildings.upgrade', $planet), ['building' => 'crystal'])
             ->assertSessionHasErrors('resources');
 
@@ -142,7 +142,7 @@ class PlanetEconomyTest extends TestCase
         $planet = $this->createPlanet(['metal' => 59, 'crystal' => 500]);
 
         $this->actingAs($planet->user)
-            ->from('/commandement')
+            ->from('/commandcenter')
             ->post(route('planet.buildings.upgrade', $planet), ['building' => 'metal'])
             ->assertSessionHasErrors('resources');
 
@@ -413,7 +413,7 @@ class PlanetEconomyTest extends TestCase
         $planet = $this->createPlanet(['metal' => 100000, 'crystal' => 100000]);
 
         $this->actingAs($planet->user)
-            ->from('/commandement')
+            ->from('/commandcenter')
             ->post(route('planet.buildings.upgrade', $planet), ['building' => 'missiles'])
             ->assertSessionHasErrors('building');
 
@@ -421,7 +421,7 @@ class PlanetEconomyTest extends TestCase
         $planet->save();
 
         $this->actingAs($planet->user)
-            ->from('/commandement')
+            ->from('/commandcenter')
             ->post(route('planet.buildings.upgrade', $planet), ['building' => 'metal'])
             ->assertSessionHasErrors('building');
     }

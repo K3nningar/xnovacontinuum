@@ -24,6 +24,34 @@ class ExampleTest extends TestCase
             );
     }
 
+    public function test_game_navigation_routes_generate_english_urls(): void
+    {
+        $paths = [
+            'login' => '/login',
+            'register' => '/register',
+            'dashboard' => '/commandcenter',
+            'galaxy.index' => '/galaxy',
+            'buildings.index' => '/buildings',
+            'research.index' => '/research',
+            'research.tree' => '/research/tree',
+            'shipyard.index' => '/shipyard',
+            'defences.index' => '/defences',
+            'officers.index' => '/officers',
+            'fleet.index' => '/fleet',
+            'combat-simulator.index' => '/combat-simulator',
+            'announcements.index' => '/announcements',
+            'multi-accounts.index' => '/multi-account-declarations',
+            'admin.index' => '/admin',
+        ];
+
+        foreach ($paths as $name => $path) {
+            $this->assertSame($path, route($name, [], false));
+        }
+
+        $this->assertSame('/planets/42/moons/3/transfer', route('moon.transfer', ['planet' => 42, 'orbit' => 3], false));
+        $this->assertSame('/planets/42/shipyard/ships', route('planet.ships.store', ['planet' => 42], false));
+    }
+
     public function test_the_landing_page_defaults_to_english_even_for_a_french_browser(): void
     {
         config(['app.locale' => 'en']);
@@ -59,29 +87,29 @@ class ExampleTest extends TestCase
 
     public function test_guests_are_redirected_to_login_from_the_command_center(): void
     {
-        $this->get('/commandement')->assertRedirect('/connexion');
+        $this->get('/commandcenter')->assertRedirect('/login');
     }
 
     public function test_guests_can_open_login_and_registration_pages(): void
     {
-        $this->get('/connexion')->assertInertia(fn (Assert $page) => $page->component('Auth/Login'));
-        $this->get('/inscription')->assertInertia(fn (Assert $page) => $page->component('Auth/Register'));
+        $this->get('/login')->assertInertia(fn (Assert $page) => $page->component('Auth/Login'));
+        $this->get('/register')->assertInertia(fn (Assert $page) => $page->component('Auth/Register'));
     }
 
     public function test_a_user_can_register_and_reaches_the_command_center(): void
     {
         $universe = Universe::create(['name' => 'Andromède', 'slug' => 'andromeda']);
 
-        $this->post('/inscription', [
+        $this->post('/register', [
             'name' => 'Nova Pilot',
             'email' => 'nova@example.test',
             'password' => 'secure-password-123',
             'password_confirmation' => 'secure-password-123',
-        ])->assertRedirect('/commandement');
+        ])->assertRedirect('/commandcenter');
 
         $this->assertAuthenticated();
         $this->assertDatabaseHas('users', ['email' => 'nova@example.test']);
-        $this->get('/commandement')->assertInertia(fn (Assert $page) => $page
+        $this->get('/commandcenter')->assertInertia(fn (Assert $page) => $page
             ->component('Dashboard')
             ->where('user.name', 'Nova Pilot')
             ->where('hasUniverse', false)
@@ -90,8 +118,8 @@ class ExampleTest extends TestCase
         );
 
         $this->actingAs($this->app['auth']->user())
-            ->post('/univers/rejoindre', ['universe_id' => $universe->id, 'name' => 'Nova Prime'])
-            ->assertRedirect('/commandement');
+            ->post('/universe/join', ['universe_id' => $universe->id, 'name' => 'Nova Prime'])
+            ->assertRedirect('/commandcenter');
 
         $this->assertDatabaseHas('planets', [
             'name' => 'Nova Prime',
@@ -104,12 +132,12 @@ class ExampleTest extends TestCase
     {
         Universe::create(['name' => 'Andromède', 'slug' => 'andromeda']);
 
-        $this->from('/inscription')->post('/inscription', [
+        $this->from('/register')->post('/register', [
             'name' => 'Nova Pilot',
             'email' => 'nova@example.test',
             'password' => 'short',
             'password_confirmation' => 'short',
-        ])->assertRedirect('/inscription')->assertSessionHasErrors('password');
+        ])->assertRedirect('/register')->assertSessionHasErrors('password');
 
         $this->assertDatabaseMissing('users', ['email' => 'nova@example.test']);
     }
@@ -120,8 +148,8 @@ class ExampleTest extends TestCase
         $user = User::factory()->create();
 
         $this->actingAs($user)
-            ->post('/univers/rejoindre', ['universe_id' => $universe->id, 'name' => 'Nova Prime'])
-            ->assertRedirect('/commandement');
+            ->post('/universe/join', ['universe_id' => $universe->id, 'name' => 'Nova Prime'])
+            ->assertRedirect('/commandcenter');
 
         $this->assertDatabaseHas('users', [
             'id' => $user->id,
@@ -139,7 +167,7 @@ class ExampleTest extends TestCase
 
         $user->refresh();
 
-        $this->actingAs($user)->get('/commandement')->assertInertia(fn (Assert $page) => $page
+        $this->actingAs($user)->get('/commandcenter')->assertInertia(fn (Assert $page) => $page
             ->component('Dashboard')
             ->where('universe.name', 'Andromède')
             ->has('planets', 1)
@@ -160,8 +188,8 @@ class ExampleTest extends TestCase
 
         $newCommander = User::factory()->create();
         $this->actingAs($newCommander)
-            ->post('/univers/rejoindre', ['universe_id' => $universe->id, 'name' => 'New Prime'])
-            ->assertRedirect('/commandement');
+            ->post('/universe/join', ['universe_id' => $universe->id, 'name' => 'New Prime'])
+            ->assertRedirect('/commandcenter');
 
         $this->assertDatabaseHas('planets', [
             'user_id' => $newCommander->id,
@@ -188,9 +216,9 @@ class ExampleTest extends TestCase
         $planet->save();
 
         $this->actingAs($user)
-            ->from('/commandement')
-            ->post('/univers/rejoindre', ['universe_id' => $universe->id, 'name' => 'Nova II'])
-            ->assertRedirect('/commandement')
+            ->from('/commandcenter')
+            ->post('/universe/join', ['universe_id' => $universe->id, 'name' => 'Nova II'])
+            ->assertRedirect('/commandcenter')
             ->assertSessionHasErrors('universe');
 
         $this->assertDatabaseCount('planets', 1);
@@ -203,20 +231,20 @@ class ExampleTest extends TestCase
         $closedUniverse = Universe::create(['name' => 'Pégase', 'slug' => 'pegase', 'status' => 'closed']);
 
         $this->actingAs($user)
-            ->from('/commandement')
-            ->post('/univers/rejoindre', ['universe_id' => $activeUniverse->id, 'name' => '<script>alert(1)</script>'])
+            ->from('/commandcenter')
+            ->post('/universe/join', ['universe_id' => $activeUniverse->id, 'name' => '<script>alert(1)</script>'])
             ->assertSessionHasErrors('name');
         $this->assertDatabaseCount('planets', 0);
 
         $this->actingAs($user)
-            ->from('/commandement')
-            ->post('/univers/rejoindre', ['universe_id' => $closedUniverse->id, 'name' => 'Nova Prime'])
+            ->from('/commandcenter')
+            ->post('/universe/join', ['universe_id' => $closedUniverse->id, 'name' => 'Nova Prime'])
             ->assertSessionHasErrors('universe_id');
 
         $this->actingAs($user)
-            ->from('/commandement')
-            ->post('/univers/rejoindre', ['universe_id' => $activeUniverse->id, 'name' => 'Nova Prime'])
-            ->assertRedirect('/commandement');
+            ->from('/commandcenter')
+            ->post('/universe/join', ['universe_id' => $activeUniverse->id, 'name' => 'Nova Prime'])
+            ->assertRedirect('/commandcenter');
 
         $this->assertSame($activeUniverse->id, $user->fresh()->universe_id);
         $this->assertDatabaseCount('planets', 1);
@@ -246,14 +274,14 @@ class ExampleTest extends TestCase
             'password' => 'secure-password-123',
         ]);
 
-        $this->post('/connexion', [
+        $this->post('/login', [
             'email' => 'nova@example.test',
             'password' => 'secure-password-123',
-        ])->assertRedirect('/commandement');
+        ])->assertRedirect('/commandcenter');
 
         $this->assertAuthenticatedAs($user);
 
-        $this->post('/deconnexion')->assertRedirect('/');
+        $this->post('/logout')->assertRedirect('/');
         $this->assertGuest();
     }
 }
