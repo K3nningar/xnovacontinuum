@@ -17,7 +17,7 @@ And be a bit different than OGame on some aspects (Officers now has real names a
 Some "on demand" modules will be added later :
 
 - Factions ("global" alliances and diplomacy !)
-- Alignments (choice-based scenarios <strong>-DESIGN IN PROGRESS-</strong>
+- Alignments (choice-based gameplay scenarios <strong>-DESIGN IN PROGRESS-</strong>)
 - Reworked "noob" protection system
 - New galaxy view
 - QoL improvments like filters and searching
