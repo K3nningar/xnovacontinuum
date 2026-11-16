@@ -5,24 +5,23 @@ import de from './locales/de.js';
 import es from './locales/es.js';
 import it from './locales/it.js';
 
-export const supportedLocales = ['fr', 'en', 'de', 'es', 'it'];
-export const localeOptions = supportedLocales.map((code) => ({ code, name: fr.common.languageNames[code] }));
+export const supportedLocales = ['en', 'fr', 'de', 'es', 'it'];
+export const localeOptions = supportedLocales.map((code) => ({ code, name: en.common.languageNames[code] }));
 
 function initialLocale() {
-    if (typeof window === 'undefined') return 'fr';
+    if (typeof window === 'undefined') return 'en';
 
     const storedLocale = window.localStorage.getItem('xnova.locale');
     if (supportedLocales.includes(storedLocale)) return storedLocale;
 
-    const browserLocale = window.navigator.language?.slice(0, 2).toLowerCase();
-    return supportedLocales.includes(browserLocale) ? browserLocale : 'fr';
+    return 'en';
 }
 
 export const i18n = createI18n({
     legacy: false,
     globalInjection: true,
     locale: initialLocale(),
-    fallbackLocale: 'fr',
+    fallbackLocale: 'en',
     messages: { fr, en, de, es, it },
     numberFormats: {
         fr: { game: { style: 'decimal', useGrouping: true, maximumFractionDigits: 0 } },

@@ -2,8 +2,10 @@
 
 namespace App\Http\Middleware;
 
+use Closure;
 use Illuminate\Http\Request;
 use Inertia\Middleware;
+use Symfony\Component\HttpFoundation\Response;
 use Tighten\Ziggy\Ziggy;
 
 class HandleInertiaRequests extends Middleware
@@ -16,6 +18,15 @@ class HandleInertiaRequests extends Middleware
      * @var string
      */
     protected $rootView = 'app';
+
+    public function handle(Request $request, Closure $next): Response
+    {
+        $locale = $request->cookie('xnova.locale');
+
+        app()->setLocale(in_array($locale, ['fr', 'en', 'de', 'es', 'it'], true) ? $locale : config('app.locale'));
+
+        return parent::handle($request, $next);
+    }
 
     /**
      * Determines the current asset version.

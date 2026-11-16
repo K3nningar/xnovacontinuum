@@ -1,11 +1,3 @@
-<?php
-    $locale = request()->cookie('xnova.locale');
-    if (! in_array($locale, ['fr', 'en', 'de', 'es', 'it'], true)) {
-        $locale = substr(strtolower((string) request()->getPreferredLanguage(['fr', 'en', 'de', 'es', 'it'])), 0, 2);
-    }
-    app()->setLocale(in_array($locale, ['fr', 'en', 'de', 'es', 'it'], true) ? $locale : 'fr');
-?>
-
 <!DOCTYPE html>
 <html lang="{{ str_replace('_', '-', app()->getLocale()) }}" data-bs-theme="dark">
 <head>

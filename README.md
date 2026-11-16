@@ -2,31 +2,31 @@
 
 # XNova Continuum
 
-XNova Continuum est un jeu de stratégie spatiale par navigateur, qui réinterprète XNova avec Laravel et Vue. Les joueurs rejoignent un univers, développent leur planète et explorent la galaxie. Le projet est en cours de développement : toutes les fonctionnalités du jeu historique ne sont pas encore disponibles.
+XNova Continuum is a browser-based space strategy game that reimagines XNova with Laravel and Vue. Players join a universe, develop their planet, and explore the galaxy. The project is under development: not all features of the original game are available yet.
 
-## Fonctionnalités
+## Features
 
-- Inscription, connexion et choix d'un univers.
-- Gestion des ressources, des bâtiments et des recherches, avec arbre technologique.
-- Construction de vaisseaux et de défenses, recrutement d'officiers.
-- Carte de la galaxie, missions d'expédition et de recyclage, lunes et transferts orbitaux.
-- Simulateur de combat, annonces et déclaration volontaire de multicomptes.
-- Panneau d'administration avec rôles et journal des actions sensibles.
+- Registration, login, and universe selection.
+- Management of resources, buildings, and research, with a technology tree.
+- Construction of ships and defenses, and recruitment of officers.
+- Galaxy map, expedition and recycling missions, moons, and orbital transfers.
+- Combat simulator, announcements, and voluntary multi-account declarations.
+- Administration panel with roles and an audit log for sensitive actions.
 
-L'application utilise Laravel 13, Inertia 3, Vue 3 et Vite.
+The application uses Laravel 13, Inertia 3, Vue 3, and Vite.
 
-## Installation locale
+## Local installation
 
-### Prérequis
+### Requirements
 
-- PHP 8.3 ou une version 8 ultérieure, avec les extensions requises par Composer et le pilote PDO de la base utilisée (`pdo_sqlite` pour SQLite).
+- PHP 8.3 or a later PHP 8 release, with the extensions required by Composer and the PDO driver for the chosen database (`pdo_sqlite` for SQLite).
 - Composer.
-- Node.js `^20.19.0` ou `>=22.12.0` et npm.
-- SQLite, ou une autre base de données configurée dans `.env`.
+- Node.js `^20.19.0` or `>=22.12.0` and npm.
+- SQLite, or another database configured in `.env`.
 
-### Mise en place
+### Setup
 
-Depuis la racine du dépôt :
+From the repository root:
 
 ```bash
 composer install
@@ -34,13 +34,13 @@ php -r "file_exists('.env') || copy('.env.example', '.env');"
 php artisan key:generate
 ```
 
-Par défaut, `.env.example` utilise SQLite. Créez le fichier de base s'il n'existe pas, sans écraser une base existante :
+By default, `.env.example` uses SQLite. Create the database file if it does not exist, without overwriting an existing database:
 
 ```bash
 php -r "file_exists('database/database.sqlite') || touch('database/database.sqlite');"
 ```
 
-Pour une autre base, configurez les variables `DB_*` dans `.env` et créez la base avant de continuer. Puis initialisez les tables et l'univers Andromède, et installez les dépendances JavaScript :
+For another database, configure the `DB_*` variables in `.env` and create the database before continuing. Then initialize the tables and the Andromeda universe, and install the JavaScript dependencies:
 
 ```bash
 php artisan migrate
@@ -49,11 +49,13 @@ npm ci --ignore-scripts
 npm run build
 ```
 
-Le seeder crée l'univers Andromède s'il n'existe pas. Pour une base existante, effectuez une sauvegarde avant d'appliquer les migrations. Ne régénérez pas la clé d'application d'une installation existante : cela peut rendre ses données chiffrées illisibles.
+The seeder creates the Andromeda universe if it does not already exist. Back up an existing database before applying migrations. Do not regenerate the application key on an existing installation: doing so can make encrypted data unreadable.
 
-### Lancement
+English is the default language. Existing installations can update `APP_LOCALE`, `APP_FALLBACK_LOCALE`, and `APP_FAKER_LOCALE` in `.env` to `en`, `en`, and `en_US` respectively. If configuration is cached, run `php artisan config:clear` after updating `.env`. Players can still select another language; their saved choice takes precedence.
 
-Lancez l'application et le serveur Vite dans deux terminaux :
+### Running the application
+
+Start the application and the Vite server in two terminals:
 
 ```bash
 php artisan serve
@@ -63,45 +65,46 @@ php artisan serve
 npm run dev
 ```
 
-Ouvrez l'adresse indiquée par `artisan serve` (par défaut `http://localhost:8000`), créez un compte et rejoignez l'univers.
+Open the address reported by `artisan serve` (by default `http://localhost:8000`), create an account, and join the universe.
 
-Les missions de flotte arrivées à échéance sont également traitées par le planificateur Laravel. En développement, lancez-le dans un troisième terminal :
+The Laravel scheduler also processes fleet missions when they are due. In development, run it in a third terminal:
 
 ```bash
 php artisan schedule:work
 ```
 
-En production, configurez l'exécution de `php artisan schedule:run` chaque minute, depuis la racine du projet. Les missions sont aussi traitées lors des requêtes des joueurs connectés.
+In production, configure `php artisan schedule:run` to run every minute from the project root. Missions are also processed during requests from logged-in players.
 
-## Administration du jeu
+## Game administration
 
-Après création d'un compte joueur et sauvegarde de la base, attribuez le premier compte fondateur, une seule fois depuis une console de confiance :
+After creating a player account and backing up the database, assign the first founder account once from a trusted console:
 
 ```bash
-php artisan admin:founder <id-du-joueur>
+php artisan admin:founder <player-id>
 ```
 
-Le fondateur peut attribuer les niveaux 0 à 3 depuis le panneau ; le niveau 4 ne peut pas être attribué ni retiré depuis le site.
+The founder can assign levels 0 through 3 from the panel; level 4 cannot be assigned or removed from the website.
 
-- **0 Joueur** : aucun accès au panneau.
-- **1 Opérateur** : vue générale, recherche de joueurs, suspensions temporaires, annonces générales et consultation des déclarations de multicomptes.
-- **2 Modérateur** : mêmes accès, levée des suspensions et ajouts de ressources.
-- **3 Administrateur** : mêmes accès, ajout d'éléments et retrait d'annonces.
-- **4 Fondateur** : mêmes accès, attribution des niveaux et consultation du journal.
+- **0 Player**: no access to the panel.
+- **1 Operator**: overview, player search, temporary suspensions, general announcements, and access to multi-account declarations.
+- **2 Moderator**: the same access, plus lifting suspensions and adding resources.
+- **3 Administrator**: the same access, plus adding items and removing announcements.
+- **4 Founder**: the same access, plus assigning levels and viewing the audit log.
 
-Les ajouts sont réservés aux comptes de niveau inférieur et ne peuvent pas viser son propre compte. Les ressources respectent les capacités de stockage ; les dons d'éléments vérifient les files et les limites applicables. L'exécution de SQL arbitraire, la suppression de comptes et la remise à zéro de l'univers ne sont pas proposées.
+Additions are limited to lower-level accounts and cannot target the operator's own account. Resources respect storage capacities; item grants check applicable queues and limits. Arbitrary SQL execution, account deletion, and universe resets are not provided.
 
-Les annonces générales sont limitées à cinq par heure et par opérateur. Les joueurs d'un même univers peuvent déclarer jusqu'à trois autres comptes en fournissant leurs identifiants ; chaque joueur concerné doit faire sa propre déclaration. Ces déclarations volontaires ne constituent pas une confirmation des autres comptes. Leur dépôt est limité à cinq par heure et par joueur.
+General announcements are limited to five per hour per operator. Players in the same universe can declare up to three other accounts using their identifiers; each affected player must make their own declaration. These voluntary declarations do not constitute confirmation by the other accounts. Submissions are limited to five per hour per player.
 
 ## Tests
 
 ```bash
 composer test
 npm run test:technology-tree
+node --test resources/js/i18n/index.test.js
 ```
 
-Les tests PHP utilisent une base SQLite en mémoire.
+PHP tests use an in-memory SQLite database.
 
-## Licence
+## License
 
-Licence MIT, toute liberté de republier, modifier ou forker le code pour sa propre utilisation.
+MIT license: you are free to republish, modify, or fork the code for your own use.

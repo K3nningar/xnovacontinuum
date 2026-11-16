@@ -24,6 +24,39 @@ class ExampleTest extends TestCase
             );
     }
 
+    public function test_the_landing_page_defaults_to_english_even_for_a_french_browser(): void
+    {
+        config(['app.locale' => 'en']);
+
+        $this->withHeader('Accept-Language', 'fr-FR,fr;q=0.9')
+            ->get('/')
+            ->assertOk()
+            ->assertSee('<html lang="en"', false)
+            ->assertInertia(fn (Assert $page) => $page->where('locale', 'en'));
+    }
+
+    public function test_a_selected_language_is_used_for_html_and_inertia_responses(): void
+    {
+        config(['app.locale' => 'en']);
+
+        $this->withUnencryptedCookie('xnova.locale', 'fr')
+            ->get('/')
+            ->assertOk()
+            ->assertSee('<html lang="fr"', false)
+            ->assertInertia(fn (Assert $page) => $page->where('locale', 'fr'));
+    }
+
+    public function test_an_invalid_language_cookie_uses_the_configured_default(): void
+    {
+        config(['app.locale' => 'en']);
+
+        $this->withUnencryptedCookie('xnova.locale', 'invalid')
+            ->get('/')
+            ->assertOk()
+            ->assertSee('<html lang="en"', false)
+            ->assertInertia(fn (Assert $page) => $page->where('locale', 'en'));
+    }
+
     public function test_guests_are_redirected_to_login_from_the_command_center(): void
     {
         $this->get('/commandement')->assertRedirect('/connexion');
