@@ -104,4 +104,4 @@ Les tests PHP utilisent une base SQLite en mémoire.
 
 ## Licence
 
-Le manifeste Composer indique une licence MIT pour l'application. Le code historique dans `_BASE` contient son propre fichier [LICENCE](_BASE/LICENCE), reproduisant la GPL version 3 ; vérifiez les conditions applicables avant toute redistribution.
+Licence MIT, toute liberté de republier, modifier ou forker le code pour sa propre utilisation.
