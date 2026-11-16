@@ -5,6 +5,7 @@ use App\Http\Controllers\AnnouncementController;
 use App\Http\Controllers\Auth\AuthenticatedSessionController;
 use App\Http\Controllers\Auth\RegisteredUserController;
 use App\Http\Controllers\BuildingController;
+use App\Http\Controllers\ChangelogController;
 use App\Http\Controllers\CombatSimulatorController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\ExplorationMissionController;
@@ -21,7 +22,8 @@ use App\Http\Middleware\EnsureAccountIsActive;
 use App\Http\Middleware\ProcessExplorationMissions;
 use Illuminate\Support\Facades\Route;
 
-Route::get('/', fn () => inertia('Welcome'))->name('home');
+Route::get('/', [ChangelogController::class, 'welcome'])->name('home');
+Route::get('/changelog', [ChangelogController::class, 'index'])->name('changelog');
 
 Route::middleware('guest')->group(function () {
     Route::get('/login', [AuthenticatedSessionController::class, 'create'])->name('login');
@@ -33,6 +35,8 @@ Route::middleware('guest')->group(function () {
 Route::middleware(['auth', EnsureAccountIsActive::class, ProcessExplorationMissions::class])->group(function () {
     Route::prefix('admin')->name('admin.')->middleware('admin:1')->group(function () {
         Route::get('/', [AdminController::class, 'index'])->name('index');
+        Route::get('/changelog', [ChangelogController::class, 'administration'])->name('changelog');
+        Route::patch('/changelog', [ChangelogController::class, 'update'])->middleware('throttle:game-action')->name('changelog.update');
         Route::get('/elements', [AdminController::class, 'elements'])->middleware('admin:3')->name('elements');
         Route::post('/elements', [AdminController::class, 'storeElement'])->middleware(['admin:3', 'throttle:game-action'])->name('elements.store');
         Route::get('/resources', [AdminController::class, 'resources'])->middleware('admin:2')->name('resources');

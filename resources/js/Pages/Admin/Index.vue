@@ -157,6 +157,7 @@ function categoryLabel(category) {
                     <Link v-for="section in sections" :key="section.mode" class="button button-outline" :class="{ 'button-primary': mode === section.mode }" :href="route(section.route, query)" :aria-current="mode === section.mode ? 'page' : undefined">
                         {{ t(section.mode === 'declarations' ? 'multiAccounts.title' : `admin.${section.mode}`) }}
                     </Link>
+                    <Link class="button button-outline" :href="route('admin.changelog')">{{ t('changelog.title') }}</Link>
                 </nav>
 
                 <section v-if="overview" class="grid gap-3 sm:grid-cols-2 xl:grid-cols-4" :aria-label="t('adminStats.title')">

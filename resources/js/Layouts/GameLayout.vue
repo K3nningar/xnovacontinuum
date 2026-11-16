@@ -84,7 +84,7 @@ function formatResource(value) {
             <div v-if="page.props.flash?.success" class="flash-message" role="status">{{ page.props.flash.success }}</div>
             <div v-if="page.props.flash?.error" class="flash-message error" role="alert">{{ page.props.flash.error }}</div>
             <slot />
-            <footer class="footer"><span>XNova Continuum</span><span>{{ t('nav.footer') }}</span><span>© {{ new Date().getFullYear() }} XNova</span></footer>
+            <footer class="footer"><span>XNova Continuum · v{{ page.props.gameVersion }}</span><span>{{ t('nav.footer') }}</span><span>© {{ new Date().getFullYear() }} XNova</span></footer>
         </div>
     </div>
 

@@ -2,6 +2,7 @@
 
 namespace App\Http\Middleware;
 
+use App\Services\Changelog;
 use Closure;
 use Illuminate\Http\Request;
 use Inertia\Middleware;
@@ -10,6 +11,8 @@ use Tighten\Ziggy\Ziggy;
 
 class HandleInertiaRequests extends Middleware
 {
+    public function __construct(private Changelog $changelog) {}
+
     /**
      * The root template that's loaded on the first page visit.
      *
@@ -53,6 +56,7 @@ class HandleInertiaRequests extends Middleware
                 'user' => $request->user()?->only('id', 'name', 'email', 'universe_id', 'alliance_id', 'admin_level'),
             ],
             'locale' => app()->getLocale(),
+            'gameVersion' => fn () => $request->user() ? $this->changelog->currentVersion() : null,
             'flash' => [
                 'success' => fn () => $request->session()->get('success'),
                 'error' => fn () => $request->session()->get('error'),

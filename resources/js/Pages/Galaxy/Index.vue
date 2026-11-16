@@ -25,6 +25,8 @@ const route = (name, params) => ziggyRoute(name, params, true, page.props.ziggy)
 const targetGalaxy = ref(props.galaxy);
 const targetSystem = ref(props.system);
 const originPlanet = ref(props.selectedPlanetId);
+const selectedPosition = ref(1);
+const dismissedTooltip = ref(null);
 const missionForm = useForm({ mission: '', galaxy: props.galaxy, system: props.system, position: 16, ships: {} });
 const sendingShips = computed(() => props.availableShips.filter((ship) => ship.count > 0 && (missionForm.mission !== 'recycle' || ship.code === 209)));
 const distance = computed(() => {
@@ -49,6 +51,22 @@ function markerStyle(position) {
         left: `${(480 + radius.x * Math.cos(angle)) / 9.6}%`,
         top: `${(320 + radius.y * Math.sin(angle)) / 6.4}%`,
     };
+}
+
+function tooltipPlacement(position) {
+    const radius = orbitRadius(position);
+    const angle = -Math.PI / 2 + (position - 2) * 2.4;
+    return {
+        'tooltip-left': Math.cos(angle) > 0,
+        'tooltip-above': Math.sin(angle) > 0,
+    };
+}
+
+function selectPosition(event, position) {
+    if (window.matchMedia('(min-width: 1200px) and (hover: hover) and (pointer: fine)').matches) {
+        event.preventDefault();
+        selectedPosition.value = position;
+    }
 }
 
 function slotLabel(slot) {
@@ -78,6 +96,7 @@ watch(() => [props.galaxy, props.system, props.selectedPlanetId], ([galaxy, syst
     targetGalaxy.value = galaxy;
     targetSystem.value = system;
     originPlanet.value = planet;
+    selectedPosition.value = 1;
     missionForm.mission = '';
 });
 
@@ -116,6 +135,7 @@ function navigate(galaxy = targetGalaxy.value, system = targetSystem.value) {
                     </div>
                 </form>
 
+                <div class="galaxy-overview">
                 <section class="data-panel system-map-panel mb-4" aria-labelledby="system-map-title">
                     <div class="panel-heading">
                         <div>
@@ -123,20 +143,34 @@ function navigate(galaxy = targetGalaxy.value, system = targetSystem.value) {
                             <h2 id="system-map-title">{{ t('galaxyMap.title') }}</h2>
                         </div>
                     </div>
-                    <p class="px-4 pt-3 text-sm text-slate-400">{{ t('galaxyMap.hint') }}</p>
+                    <p class="galaxy-mobile-hint px-4 pt-3 text-sm text-slate-400">{{ t('galaxyMap.hint') }}</p>
+                    <p class="galaxy-desktop-hint px-4 pt-3 text-sm text-slate-400">{{ t('galaxyMap.desktopHint') }}</p>
                     <div class="system-map-scroll" tabindex="0" role="region" :aria-label="t('galaxyMap.title')">
                         <div class="system-map">
                             <svg class="system-map-orbits" viewBox="0 0 960 640" aria-hidden="true">
                                 <ellipse v-for="slot in slots" :key="slot.position" cx="480" cy="320" :rx="orbitRadius(slot.position).x" :ry="orbitRadius(slot.position).y" />
                             </svg>
-                            <a class="system-map-star" :class="`star-${star}`" href="#galaxy-position-1" :aria-label="`${t('galaxy.position', { position: 1 })} · ${t('galaxy.star')} · ${t(`galaxy.types.${star}`)}`" :title="t(`galaxy.types.${star}`)">
+                            <a class="system-map-star" :class="[`star-${star}`, { 'is-current': selectedPosition === 1 }]" href="#galaxy-position-1" :aria-label="`${t('galaxy.position', { position: 1 })} · ${t('galaxy.star')} · ${t(`galaxy.types.${star}`)}`" aria-describedby="galaxy-tooltip-1" @mouseenter="dismissedTooltip = null" @focus="dismissedTooltip = null" @keydown.esc="dismissedTooltip = 1" @click="selectPosition($event, 1)">
                                 <span class="system-map-star-core"></span><span class="system-map-number">1</span>
+                                <span id="galaxy-tooltip-1" class="system-map-tooltip" :class="{ 'tooltip-dismissed': dismissedTooltip === 1 }" role="tooltip">{{ t('galaxy.star') }} · {{ t(`galaxy.types.${star}`) }}</span>
                             </a>
-                            <a v-for="slot in slots" :key="slot.position" class="system-map-marker" :class="!slot.visible ? 'body-hidden' : slot.kind === 'asteroid' ? `body-asteroid body-${slot.type}` : [`body-planet`, `body-${slot.type}`, { 'body-owned': slot.planet?.owned }]" :style="markerStyle(slot.position)" :href="`#galaxy-position-${slot.position}`" :aria-label="slotLabel(slot)" :title="slotLabel(slot)">
+                            <a v-for="slot in slots" :key="slot.position" class="system-map-marker" :class="[!slot.visible ? 'body-hidden' : slot.kind === 'asteroid' ? `body-asteroid body-${slot.type}` : [`body-planet`, `body-${slot.type}`, { 'body-owned': slot.planet?.owned }], { 'is-current': selectedPosition === slot.position }]" :style="markerStyle(slot.position)" :href="`#galaxy-position-${slot.position}`" :aria-label="slotLabel(slot)" :aria-describedby="`galaxy-tooltip-${slot.position}`" @mouseenter="dismissedTooltip = null" @focus="dismissedTooltip = null" @keydown.esc="dismissedTooltip = slot.position" @click="selectPosition($event, slot.position)">
                                 <span class="system-map-body" aria-hidden="true"></span>
                                 <span class="system-map-number">{{ slot.position }}</span>
+                                <span :id="`galaxy-tooltip-${slot.position}`" class="system-map-tooltip" :class="[tooltipPlacement(slot.position), { 'tooltip-dismissed': dismissedTooltip === slot.position }]" role="tooltip">
+                                    <strong>{{ slotLabel(slot) }}</strong>
+                                    <template v-if="slot.visible && slot.kind === 'planet'">
+                                        <span>{{ slot.planet ? (slot.planet.owned ? t('galaxy.own') : t('galaxy.owner', { name: slot.planet.owner })) : t('galaxy.unoccupied') }}<template v-if="slot.planet"> · {{ slot.planet.name }}</template></span>
+                                        <span>{{ t('galaxy.moons', { count: slot.moons }) }}</span>
+                                        <span>{{ t('galaxy.potential') }} : ▰ {{ slot.resources.metal }}% · ◇ {{ slot.resources.crystal }}% · ⬡ {{ slot.resources.deuterium }}%</span>
+                                    </template>
+                                    <template v-else-if="slot.visible">
+                                        <span>{{ t('galaxy.concentration', { value: slot.concentration }) }}</span>
+                                        <span>{{ t('common.metal') }} {{ n(slot.remaining.metal, 'game') }} · {{ t('common.crystal') }} {{ n(slot.remaining.crystal, 'game') }} · {{ t('common.deuterium') }} {{ n(slot.remaining.deuterium, 'game') }}</span>
+                                    </template>
+                                </span>
                             </a>
-                            <a class="system-map-expedition" href="#galaxy-position-16" :aria-label="`${t('galaxy.position', { position: 16 })} · ${t('galaxy.expedition')}`">
+                            <a class="system-map-expedition" href="#galaxy-position-16" :aria-label="`${t('galaxy.position', { position: 16 })} · ${t('galaxy.expedition')}`" @click="selectPosition($event, 16)">
                                 <span aria-hidden="true">✧</span> 16 · {{ t('galaxy.expedition') }}
                             </a>
                         </div>
@@ -149,10 +183,10 @@ function navigate(galaxy = targetGalaxy.value, system = targetSystem.value) {
                     </div>
                 </section>
 
-                <section id="galaxy-position-1" class="data-panel">
-                    <div class="panel-heading"><div><span class="panel-kicker">{{ t('galaxy.galaxy') }} {{ galaxy }} · {{ t('galaxy.system') }} {{ system }} · {{ t('galaxy.position', { position: 1 }) }}</span><h2>{{ t('galaxy.star') }} · {{ t(`galaxy.types.${star}`) }}</h2></div><span class="text-xl text-amber-300" aria-hidden="true">✦</span></div>
-                    <div class="grid grid-cols-1 gap-3 p-4 md:grid-cols-2 xl:grid-cols-3">
-                        <article v-for="slot in slots" :id="`galaxy-position-${slot.position}`" :key="slot.position" class="border border-slate-700 bg-slate-950/40 p-4" :class="{ 'opacity-60': !slot.visible }">
+                <section id="galaxy-position-1" class="data-panel galaxy-details">
+                    <div class="panel-heading"><div><span class="panel-kicker">{{ t('galaxy.galaxy') }} {{ galaxy }} · {{ t('galaxy.system') }} {{ system }} · <span class="galaxy-mobile-hint">{{ t('galaxy.position', { position: 1 }) }}</span><span class="galaxy-desktop-hint" aria-live="polite">{{ t('galaxy.position', { position: selectedPosition }) }}</span></span><h2><span class="galaxy-mobile-hint">{{ t('galaxy.star') }} · {{ t(`galaxy.types.${star}`) }}</span><span class="galaxy-desktop-hint">{{ selectedPosition === 1 ? `${t('galaxy.star')} · ${t(`galaxy.types.${star}`)}` : t('galaxyMap.title') }}</span></h2></div><span class="text-xl text-amber-300" aria-hidden="true">✦</span></div>
+                    <div class="galaxy-details-grid grid grid-cols-1 gap-3 p-4 md:grid-cols-2 xl:grid-cols-3">
+                        <article v-for="slot in slots" :id="`galaxy-position-${slot.position}`" :key="slot.position" class="galaxy-position-card border border-slate-700 bg-slate-950/40 p-4" :class="{ 'opacity-60': !slot.visible, 'is-selected': selectedPosition === slot.position }">
                             <p class="text-sm text-slate-400">{{ t('galaxy.position', { position: slot.position }) }}</p>
                             <template v-if="!slot.visible">
                                 <h3 class="mt-2 font-semibold text-slate-400">{{ t('galaxy.hidden') }}</h3>
@@ -173,7 +207,7 @@ function navigate(galaxy = targetGalaxy.value, system = targetSystem.value) {
                                 <button class="button button-outline mt-3" type="button" @click="prepareMission('recycle', slot.position)">{{ t('galaxyMissions.recycle') }}</button>
                             </template>
                         </article>
-                        <article id="galaxy-position-16" class="border border-slate-700 bg-slate-950/40 p-4">
+                        <article id="galaxy-position-16" class="galaxy-position-card border border-slate-700 bg-slate-950/40 p-4" :class="{ 'is-selected': selectedPosition === 16 }">
                             <p class="text-sm text-slate-400">{{ t('galaxy.position', { position: 16 }) }}</p>
                             <h3 class="mt-2 font-semibold text-purple-300">{{ t('galaxy.expedition') }}</h3>
                             <p class="mt-2 text-sm">{{ t('galaxy.expeditionDesc') }}</p>
@@ -197,6 +231,7 @@ function navigate(galaxy = targetGalaxy.value, system = targetSystem.value) {
                     <p v-for="(error, key) in missionForm.errors" :key="key" role="alert" class="mt-2 text-sm text-red-300">{{ error }}</p>
                     <div class="mt-3 flex gap-3"><button class="button button-primary" type="submit" :disabled="missionForm.processing || !sendingShips.length">{{ missionForm.processing ? t('galaxyMissions.sending') : t('galaxyMissions.send') }}</button><button class="button button-outline" type="button" @click="missionForm.mission = ''">{{ t('common.cancel') }}</button></div>
                 </form>
+                </div>
             </section>
         </main>
     </GameLayout>
@@ -204,6 +239,7 @@ function navigate(galaxy = targetGalaxy.value, system = targetSystem.value) {
 
 <style scoped>
 .galaxy-search, .system-map-panel { min-height: 0; }
+.galaxy-desktop-hint, .system-map-tooltip { display: none; }
 .system-map-scroll { overflow-x: auto; padding: 0 1rem; }
 .system-map {
     position: relative;
@@ -254,4 +290,42 @@ function navigate(galaxy = targetGalaxy.value, system = targetSystem.value) {
 .legend-asteroid { background: #b69a7c; border-radius: 35%; }
 .legend-owned { background: #65a8c5; outline: 2px solid #67e8f9; outline-offset: 2px; }
 .legend-hidden { background: #606b79; }
+
+@media (min-width: 1200px) and (hover: hover) and (pointer: fine) {
+    .galaxy-overview { display: grid; grid-template-columns: minmax(0, 830px) minmax(280px, 320px); gap: 1rem; align-items: start; }
+    .system-map-panel { grid-column: 1; grid-row: 1 / span 2; margin-bottom: 0; }
+    .galaxy-details { grid-column: 2; grid-row: 1; min-height: 0; }
+    .galaxy-overview > form { grid-column: 2; grid-row: 2; margin-top: 0; }
+    .system-map { max-width: 760px; min-width: 0; margin-inline: auto; }
+    .galaxy-mobile-hint { display: none; }
+    .galaxy-desktop-hint { display: inline; }
+    p.galaxy-desktop-hint { display: block; }
+    .galaxy-details-grid { display: block; }
+    .galaxy-position-card:not(.is-selected) { display: none; }
+    .system-map-marker.is-current, .system-map-star.is-current { outline: 1px solid #67e8f9; }
+    .system-map-marker:hover, .system-map-marker:focus-visible, .system-map-star:hover, .system-map-star:focus-visible { z-index: 2; }
+    .system-map-marker:hover .system-map-tooltip, .system-map-marker:focus-visible .system-map-tooltip,
+    .system-map-star:hover .system-map-tooltip, .system-map-star:focus-visible .system-map-tooltip {
+        position: absolute;
+        top: 100%;
+        left: 50%;
+        display: grid;
+        width: 220px;
+        max-height: 7rem;
+        gap: .3rem;
+        overflow-y: auto;
+        overflow-wrap: anywhere;
+        padding: .65rem;
+        border: 1px solid #527187;
+        background: #0c1929;
+        color: #e2e8f0;
+        font-size: .75rem;
+        line-height: 1.4;
+        text-align: left;
+        box-shadow: 0 8px 20px #0009;
+    }
+    .system-map-marker .system-map-tooltip.tooltip-left { right: 50%; left: auto; }
+    .system-map-marker .system-map-tooltip.tooltip-above { top: auto; bottom: 100%; }
+    .system-map-marker .system-map-tooltip.tooltip-dismissed, .system-map-star .system-map-tooltip.tooltip-dismissed { display: none; }
+}
 </style>

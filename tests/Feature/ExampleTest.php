@@ -24,6 +24,13 @@ class ExampleTest extends TestCase
             );
     }
 
+    public function test_guests_can_open_the_changelog(): void
+    {
+        $this->get(route('changelog'))
+            ->assertOk()
+            ->assertInertia(fn (Assert $page) => $page->component('Changelog'));
+    }
+
     public function test_game_navigation_routes_generate_english_urls(): void
     {
         $paths = [

@@ -1,0 +1,16 @@
+[
+    {
+        "version": "0.1.0-alpha.1",
+        "baseline": true,
+        "entries": [
+            { "date": "2026-11-16", "type": "NEW", "key": "changelogPage" },
+            { "date": "2026-11-16", "type": "CHANGE", "key": "galaxy" },
+            { "date": "2026-11-16", "type": "CHANGE", "key": "navigation" },
+            { "date": "2026-11-16", "type": "CHANGE", "key": "language" },
+            { "date": "2026-11-16", "type": "CHANGE", "key": "name" },
+            { "date": "2026-11-16", "type": "CHANGE", "key": "readme" },
+            { "date": "2026-11-16", "type": "HOTFIX", "key": "readmeImage" },
+            { "date": "2026-11-16", "type": "KNOWN ISSUE", "key": "serverMessages" }
+        ]
+    }
+]

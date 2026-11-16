@@ -3,6 +3,11 @@ import { Head, Link, usePage } from '@inertiajs/vue3';
 import { route as ziggyRoute } from 'ziggy-js';
 import { useI18n } from 'vue-i18n';
 import LocaleSwitcher from '../Components/LocaleSwitcher.vue';
+import ChangelogEntries from '../Components/ChangelogEntries.vue';
+
+defineProps({
+    releases: { type: Array, required: true },
+});
 
 const page = usePage();
 const route = (name, params) => ziggyRoute(name, params, true, page.props.ziggy);
@@ -25,6 +30,20 @@ const { t } = useI18n();
             </section>
             <section class="intel-bar" :aria-label="t('welcome.universeFeatures')"><div><span class="intel-icon">⌁</span><span><small>{{ t('welcome.universeLink') }}</small><strong>{{ t('welcome.persistent') }}</strong></span></div><div><span class="intel-icon">◈</span><span><small>{{ t('welcome.yourStrategy') }}</small><strong>{{ t('welcome.economyScienceFleet') }}</strong></span></div><div><span class="intel-icon">⌖</span><span><small>{{ t('welcome.yourGalaxy') }}</small><strong>{{ t('welcome.exploreTogether') }}</strong></span></div><a href="#decouvrir" class="intel-discover">{{ t('welcome.exploreSystems') }} <span aria-hidden="true">→</span></a></section>
             <section class="discover-section" id="decouvrir"><div class="section-heading"><p class="eyebrow"><span class="eyebrow-line"></span> {{ t('welcome.yourRules') }}</p><h2>{{ t('welcome.shape') }} <span>{{ t('welcome.shapeAccent') }}</span></h2></div><div class="feature-grid"><article class="feature-card"><span class="feature-number">{{ t('welcome.economy') }}</span><div class="feature-symbol">▧</div><h3>{{ t('welcome.buildPower') }}</h3><p>{{ t('welcome.economyText') }}</p><span class="feature-mark">↗</span></article><article class="feature-card"><span class="feature-number">{{ t('welcome.research') }}</span><div class="feature-symbol">⌬</div><h3>{{ t('welcome.pushLimits') }}</h3><p>{{ t('welcome.researchText') }}</p><span class="feature-mark">↗</span></article><article class="feature-card"><span class="feature-number">{{ t('welcome.exploration') }}</span><div class="feature-symbol">⦿</div><h3>{{ t('welcome.exploreUnknown') }}</h3><p>{{ t('welcome.explorationText') }}</p><span class="feature-mark">↗</span></article></div></section>
+            <section class="discover-section" aria-labelledby="latest-changes">
+                <div class="section-heading">
+                    <p class="eyebrow"><span class="eyebrow-line"></span> {{ t('changelog.eyebrow') }}</p>
+                    <h2 id="latest-changes">{{ t('changelog.latest') }}</h2>
+                </div>
+                <div class="rounded border border-slate-700 bg-slate-900/70 p-4 sm:p-6">
+                    <template v-if="releases.length">
+                        <p class="mb-4 text-slate-400">{{ releases[0].version }}</p>
+                        <ChangelogEntries :entries="releases[0].entries.slice(0, 3)" />
+                    </template>
+                    <p v-else class="text-slate-400">{{ t('changelogPublication.empty') }}</p>
+                    <Link class="button button-outline mt-5" :href="route('changelog')">{{ t('changelog.viewAll') }} <span aria-hidden="true">→</span></Link>
+                </div>
+            </section>
             <section class="join-panel" id="inscription"><div><p class="eyebrow"><span class="eyebrow-line"></span> {{ t('welcome.firstStep') }}</p><h2>{{ t('welcome.ready') }}<br><span>{{ t('welcome.legend') }}</span></h2></div><div class="join-action"><p>{{ t('welcome.starsAligned') }}</p><Link class="button button-primary button-large" :href="route('register')">{{ t('welcome.enter') }} <span aria-hidden="true">→</span></Link><Link class="subtle-link" :href="route('login')">{{ t('welcome.alreadyExplorer') }} {{ t('welcome.signIn') }}</Link></div><div class="join-orbit" aria-hidden="true"></div></section>
         </main>
         <footer class="footer"><Link class="brand footer-brand" :href="route('home')"><span class="brand-mark" aria-hidden="true">X</span><span class="brand-copy"><strong>XNova</strong><small>Continuum</small></span></Link><span>{{ t('nav.footer') }}</span><span>© {{ new Date().getFullYear() }} XNova</span></footer>
