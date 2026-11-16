@@ -52,7 +52,7 @@ The application uses Laravel 13, Inertia 3, Vue 3, and Vite.
 
 ### Requirements
 
-- PHP 8.3 or a later PHP 8 release, with the extensions required by Composer and the PDO driver for the chosen database (`pdo_sqlite` for SQLite).
+- PHP 8.5 or a later PHP 8 release, with the extensions required by Composer and the PDO driver for the chosen database (`pdo_sqlite` for SQLite). Use the latest PHP security patch release.
 - Composer.
 - Node.js `^20.19.0` or `>=22.12.0` and npm.
 - SQLite, or another database configured in `.env`.
@@ -122,13 +122,13 @@ The founder can assign levels 0 through 3 from the panel; level 4 cannot be assi
 
 - **0 Player**: no access to the panel.
 - **1 Operator**: overview, player search, temporary suspensions, general announcements, changelog visibility, and access to multi-account declarations.
-- **2 Moderator**: the same access, plus lifting suspensions and adding resources.
+- **2 Moderator**: the same access, plus lifting suspensions, adding resources, and adding manual changelog entries.
 - **3 Administrator**: the same access, plus adding items and removing announcements.
 - **4 Founder**: the same access, plus assigning levels and viewing the audit log.
 
 Additions are limited to lower-level accounts and cannot target the operator's own account. Resources respect storage capacities; item grants check applicable queues and limits. Arbitrary SQL execution, account deletion, and universe resets are not provided.
 
-Changelog versions and entries are defined in `resources/js/changelog.json`, with their text in the locale files. Keep the current game version first: it is displayed in the game footer regardless of changelog visibility. New versions are hidden by default. An operator can make each version public or hide it again from the administration's changelog page; publication changes are recorded in the audit log. Run the database migrations when upgrading to enable this feature.
+Changelog versions and built-in entries are defined in `resources/js/changelog.json`, with their text in the locale files. Keep the current game version first: it is displayed in the game footer regardless of changelog visibility. New versions are hidden by default. An operator can make each version public or hide it again from the administration's changelog page. Moderators and higher levels can add dated entries to an existing version from that page; the text is displayed as entered in every language and is immediately public if the version is public. Publication changes and manual additions are recorded in the audit log. Run the database migrations when upgrading to enable this feature.
 
 General announcements are limited to five per hour per operator. Players in the same universe can declare up to three other accounts using their identifiers; each affected player must make their own declaration. These voluntary declarations do not constitute confirmation by the other accounts. Submissions are limited to five per hour per player.
 

@@ -6,8 +6,8 @@ import { i18n, setLocale, supportedLocales } from './i18n';
 createInertiaApp({
     title: (title) => title ? `${title} · XNova` : 'XNova',
     resolve: (name) => {
-        const pages = import.meta.glob('./Pages/**/*.vue', { eager: true });
-        return pages[`./Pages/${name}.vue`];
+        const pages = import.meta.glob('./Pages/**/*.vue');
+        return pages[`./Pages/${name}.vue`]();
     },
     setup({ el, App, props, plugin }) {
         const savedLocale = window.localStorage.getItem('xnova.locale');

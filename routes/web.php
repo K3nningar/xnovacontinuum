@@ -37,6 +37,7 @@ Route::middleware(['auth', EnsureAccountIsActive::class, ProcessExplorationMissi
         Route::get('/', [AdminController::class, 'index'])->name('index');
         Route::get('/changelog', [ChangelogController::class, 'administration'])->name('changelog');
         Route::patch('/changelog', [ChangelogController::class, 'update'])->middleware('throttle:game-action')->name('changelog.update');
+        Route::post('/changelog/entries', [ChangelogController::class, 'storeEntry'])->middleware(['admin:2', 'throttle:game-action'])->name('changelog.entries.store');
         Route::get('/elements', [AdminController::class, 'elements'])->middleware('admin:3')->name('elements');
         Route::post('/elements', [AdminController::class, 'storeElement'])->middleware(['admin:3', 'throttle:game-action'])->name('elements.store');
         Route::get('/resources', [AdminController::class, 'resources'])->middleware('admin:2')->name('resources');

@@ -19,7 +19,7 @@ const typeClasses = {
         <li v-for="entry in entries" :key="entry.key" class="flex flex-wrap items-baseline gap-x-3 gap-y-1">
             <time class="text-sm text-slate-400" :datetime="entry.date">{{ entry.date }}</time>
             <span class="rounded border px-2 py-0.5 text-xs font-bold" :class="typeClasses[entry.type]">{{ entry.type }}</span>
-            <span class="text-slate-200">{{ t(`changelog.entries.${entry.key}`) }}</span>
+            <span class="whitespace-pre-wrap text-slate-200">{{ entry.text ?? t(`changelog.entries.${entry.key}`) }}</span>
         </li>
     </ol>
 </template>

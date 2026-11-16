@@ -1,6 +1,11 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
+import { createSSRApp } from 'vue';
+import { renderToString } from 'vue/server-renderer';
+import { createI18n } from 'vue-i18n';
+import { createServer } from 'vite';
+import vue from '@vitejs/plugin-vue';
 import en from './i18n/locales/en.js';
 import fr from './i18n/locales/fr.js';
 import de from './i18n/locales/de.js';
@@ -25,5 +30,29 @@ test('changelog entries have valid dates, categories and translations', () => {
                 assert.ok(messages.changelog.entries[entry.key], `Missing ${locale} translation for ${entry.key}`);
             }
         }
+    }
+});
+
+test('manual entry text is rendered as text rather than HTML', async () => {
+    const server = await createServer({
+        configFile: false,
+        plugins: [vue()],
+        server: { middlewareMode: true },
+        appType: 'custom',
+    });
+
+    try {
+        const { default: ChangelogEntries } = await server.ssrLoadModule('/resources/js/Components/ChangelogEntries.vue');
+        const app = createSSRApp(ChangelogEntries, {
+            entries: [{ key: 'manual-1', date: '2026-11-16', type: 'NEW', text: '<script>alert("xss")</script>' }],
+        });
+        app.use(createI18n({ legacy: false, locale: 'en', messages: { en } }));
+
+        const html = await renderToString(app);
+
+        assert.ok(html.includes('&lt;script&gt;'));
+        assert.ok(!html.includes('<script>'));
+    } finally {
+        await server.close();
     }
 });

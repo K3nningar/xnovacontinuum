@@ -1,5 +1,15 @@
 [
     {
+        "version": "0.1.0-alpha.2",
+        "entries": [
+            { "date": "2026-11-16", "type": "NEW", "key": "manualChangelog" },
+            { "date": "2026-11-16", "type": "HOTFIX", "key": "laravelSecurity" },
+            { "date": "2026-11-16", "type": "CHANGE", "key": "dependencyUpdates" },
+            { "date": "2026-11-16", "type": "CHANGE", "key": "phpCompatibility" },
+            { "date": "2026-11-16", "type": "CHANGE", "key": "pageBundles" }
+        ]
+    },
+    {
         "version": "0.1.0-alpha.1",
         "baseline": true,
         "entries": [
