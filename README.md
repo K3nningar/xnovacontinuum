@@ -1,4 +1,4 @@
-<p align="center"><img src="https://nicolas.boutinaud.ch/public/images/xnovacontinuum.png" width="400" alt="Laravel Logo"></p>
+<p align="center"><img src="[https://nicolas.boutinaud.ch/public/images/xnovacontinuum.png](https://nicolas.boutinaud.ch/images/xnovacontinuum.png)" width="400" alt="Laravel Logo"></p>
 
 <p align="center">
 <a href="https://github.com/laravel/framework/actions"><img src="https://github.com/laravel/framework/workflows/tests/badge.svg" alt="Build Status"></a>
