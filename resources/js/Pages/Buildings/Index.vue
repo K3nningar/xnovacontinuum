@@ -209,15 +209,16 @@ function upgrade(building) {
                             </nav>
                             <div class="pos-content building-catalog">
                                 <div class="building-pos-grid">
-                                    <article v-for="building in visibleBuildings" :key="building.key" class="card building-pos-card">
+                                    <article v-for="building in visibleBuildings" :key="building.key" class="card building-pos-card" :class="`rarity-${building.rarity}`">
                                         <div class="pos-product">
                                             <div class="img building-pos-image" :class="`${building.key}-building-icon`">
                                                 <img :src="`images/buildings/${building.code}.png`" :alt="building.name" loading="lazy" @error="$event.currentTarget.hidden = true">
                                                 <span class="building-image-fallback" aria-hidden="true">{{ building.icon }}</span>
+                                                <RarityBadge class="building-rarity" :rarity="building.rarity" />
                                                 <span class="building-level">{{ t('common.level') }} {{ buildingLevel(building) }}</span>
                                             </div>
                                             <div class="building-pos-body">
-                                                <div class="building-title"><span class="building-code">{{ String(building.code).padStart(2, '0') }}</span><h3>{{ building.name }}</h3><RarityBadge :rarity="building.rarity" /><ElementInfoButton :id="`building_${building.code}`" :name="building.name" :description="infosFr[`building_${building.code}`]?.description" /></div>
+                                                <div class="building-title"><span class="building-code">{{ String(building.code).padStart(2, '0') }}</span><h3>{{ building.name }}</h3><ElementInfoButton :id="`building_${building.code}`" :name="building.name" :description="infosFr[`building_${building.code}`]?.description" /></div>
                                                 <div class="building-main">
                                                     <p>{{ building.description }}</p>
                                                     <p v-if="building.requirement" class="building-requirement">{{ building.requirement }}</p>
@@ -230,7 +231,6 @@ function upgrade(building) {
                                                 </div>
                                             </div>
                                         </div>
-                                        <div class="card-arrow" aria-hidden="true"><div class="card-arrow-top-left"></div><div class="card-arrow-top-right"></div><div class="card-arrow-bottom-left"></div><div class="card-arrow-bottom-right"></div></div>
                                     </article>
                                 </div>
                             </div>
@@ -255,11 +255,12 @@ function upgrade(building) {
 .building-filter:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 .building-pos .pos-content { min-width: 0; height: auto; overflow: visible; border: 0; }
 .building-pos-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 270px), 1fr)); gap: 14px; }
-.building-pos-card { min-width: 0; border: 1px solid rgba(128, 200, 190, .2); background: rgba(5, 20, 24, .65); }
-.building-pos-card .pos-product { height: 100%; }
+.building-pos-card { min-width: 0; border: 1px solid color-mix(in srgb, currentColor 35%, transparent); background: rgba(5, 20, 24, .65); }
+.building-pos-card .pos-product { height: 100%; color: var(--text); }
 .building-pos-card .building-pos-image { position: relative; display: grid; place-items: center; width: 100%; aspect-ratio: 16 / 9; overflow: hidden; color: var(--accent); background: radial-gradient(circle, rgba(86, 214, 194, .18), #071418); font-size: 40px; }
 .building-pos-image img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
 .building-pos-image img:not([hidden]) + .building-image-fallback { display: none; }
+.building-rarity { position: absolute; top: 10px; left: 10px; padding: 4px 8px; border-radius: 2px; background: rgba(4, 12, 16, .9); font-size: 10px; }
 .building-level { position: absolute; top: 10px; right: 10px; padding: 4px 8px; border: 1px solid rgba(232, 190, 104, .6); color: #e8be68; background: rgba(4, 12, 16, .9); font-size: 10px; }
 .building-pos-body { display: flex; flex: 1; flex-direction: column; gap: 10px; padding: 14px; }
 .building-pos-body .building-title { align-items: center; }

@@ -954,21 +954,26 @@ body { background: transparent; }
     box-shadow: none;
 }
 .hud-app .data-panel::after, .hud-app .resource-card::after,
-.hud-app .building-card::after, .hud-app .research-card::after,
+.hud-app .building-card::after, .hud-app .building-pos-card::after, .hud-app .research-card::after,
 .hud-app .unit-card::after, .hud-app .officer-card::after {
     content: '';
     position: absolute;
     inset: -1px;
     pointer-events: none;
     background:
-        linear-gradient(#b8cbd3, #b8cbd3) left top / 8px 1px no-repeat,
-        linear-gradient(#b8cbd3, #b8cbd3) left top / 1px 8px no-repeat,
-        linear-gradient(#b8cbd3, #b8cbd3) right top / 8px 1px no-repeat,
-        linear-gradient(#b8cbd3, #b8cbd3) right top / 1px 8px no-repeat,
-        linear-gradient(#b8cbd3, #b8cbd3) left bottom / 8px 1px no-repeat,
-        linear-gradient(#b8cbd3, #b8cbd3) left bottom / 1px 8px no-repeat,
-        linear-gradient(#b8cbd3, #b8cbd3) right bottom / 8px 1px no-repeat,
-        linear-gradient(#b8cbd3, #b8cbd3) right bottom / 1px 8px no-repeat;
+        linear-gradient(var(--hud-corner-color, #b8cbd3), var(--hud-corner-color, #b8cbd3)) left top / 8px 1px no-repeat,
+        linear-gradient(var(--hud-corner-color, #b8cbd3), var(--hud-corner-color, #b8cbd3)) left top / 1px 8px no-repeat,
+        linear-gradient(var(--hud-corner-color, #b8cbd3), var(--hud-corner-color, #b8cbd3)) right top / 8px 1px no-repeat,
+        linear-gradient(var(--hud-corner-color, #b8cbd3), var(--hud-corner-color, #b8cbd3)) right top / 1px 8px no-repeat,
+        linear-gradient(var(--hud-corner-color, #b8cbd3), var(--hud-corner-color, #b8cbd3)) left bottom / 8px 1px no-repeat,
+        linear-gradient(var(--hud-corner-color, #b8cbd3), var(--hud-corner-color, #b8cbd3)) left bottom / 1px 8px no-repeat,
+        linear-gradient(var(--hud-corner-color, #b8cbd3), var(--hud-corner-color, #b8cbd3)) right bottom / 8px 1px no-repeat,
+        linear-gradient(var(--hud-corner-color, #b8cbd3), var(--hud-corner-color, #b8cbd3)) right bottom / 1px 8px no-repeat;
+}
+.hud-app .building-pos-card::after {
+    --hud-corner-color: currentColor;
+    z-index: 11;
+    background-size: 10px 2px, 2px 10px, 10px 2px, 2px 10px, 10px 2px, 2px 10px, 10px 2px, 2px 10px;
 }
 .hud-app .panel-heading { border-color: rgba(205, 222, 230, .14); }
 .hud-content .header-resources { border-color: rgba(205, 222, 230, .18); background: rgba(20, 33, 46, .74); }
