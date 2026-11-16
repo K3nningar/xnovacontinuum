@@ -1,0 +1,413 @@
+<?php
+
+namespace App\Http\Controllers;
+
+use App\Models\Fleet;
+use App\Models\Planet;
+use App\Models\Universe;
+use App\Models\User;
+use App\Services\PlanetEconomy;
+use App\Services\ResearchService;
+use App\Services\UnitProductionService;
+use Illuminate\Http\RedirectResponse;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\ValidationException;
+use Inertia\Response;
+
+class AdminController extends Controller
+{
+    public function __construct(
+        private PlanetEconomy $economy,
+        private ResearchService $research,
+        private UnitProductionService $production,
+    ) {}
+
+    public function index(Request $request): Response
+    {
+        return $this->page($request, 'overview');
+    }
+
+    public function elements(Request $request): Response
+    {
+        return $this->page($request, 'elements');
+    }
+
+    public function resources(Request $request): Response
+    {
+        return $this->page($request, 'resources');
+    }
+
+    public function roles(Request $request): Response
+    {
+        return $this->page($request, 'roles');
+    }
+
+    public function storeElement(Request $request): RedirectResponse
+    {
+        $data = $request->validate([
+            'player_id' => ['required', 'integer', 'min:1', 'exists:users,id'],
+            'planet_id' => ['required', 'integer', 'min:1'],
+            'category' => ['required', 'string', 'in:buildings,research,ships,defences,officers'],
+            'key' => ['required', 'string', 'max:80'],
+            'amount' => ['required', 'integer', 'between:1,100000'],
+        ]);
+        $definitions = $this->elementDefinitions();
+        $definition = $definitions[$data['category']][$data['key']] ?? null;
+        if ($definition === null) {
+            throw ValidationException::withMessages(['key' => 'Cet élément est inconnu.']);
+        }
+
+        DB::transaction(function () use ($request, $data, $definition): void {
+            $target = User::query()->lockForUpdate()->findOrFail($data['player_id']);
+            $this->ensureEligibleTarget($request, $target);
+            $planet = Planet::query()->whereKey($data['planet_id'])
+                ->where('user_id', $target->id)->lockForUpdate()->firstOrFail();
+            $amount = (int) $data['amount'];
+            $category = $data['category'];
+            $column = $definition['column'];
+            $owner = in_array($category, ['research', 'officers'], true) ? $target : $planet;
+
+            if ($category === 'buildings') {
+                if ($planet->buildingQueue()->exists()) {
+                    throw ValidationException::withMessages(['key' => 'La file de construction doit être vide.']);
+                }
+                $planet = $this->economy->materialize($planet);
+                $owner = $planet;
+                $maximum = $this->economy->maximumBuildingLevel();
+            } elseif ($category === 'research') {
+                if ($target->researchQueues()->exists()) {
+                    throw ValidationException::withMessages(['key' => 'Une recherche est déjà en cours.']);
+                }
+                $maximum = 30;
+            } elseif ($category === 'officers') {
+                if (DB::table('planet_unit_queues')->whereIn('planet_id', $target->planets()->select('id'))
+                    ->where('unit_type', 'officers')->where('unit_code', $definition['code'])->exists()) {
+                    throw ValidationException::withMessages(['key' => 'Cet officier est déjà en cours de recrutement.']);
+                }
+                $maximum = $definition['max'];
+            } else {
+                $queued = DB::table('planet_unit_queues')->where('unit_code', $definition['code'])
+                    ->where('unit_type', $category);
+                if (! empty($definition['uniqueEmpire'])) {
+                    $queued->whereIn('planet_id', $target->planets()->select('id'));
+                    if ($target->planets()->where($column, '>', 0)->exists() || $target->fleets()->exists()) {
+                        throw ValidationException::withMessages(['key' => 'Cette unité unique ne peut pas être ajoutée tant qu’elle existe ou qu’une flotte est présente.']);
+                    }
+                } else {
+                    $queued->where('planet_id', $planet->id);
+                }
+                if ($queued->exists()) {
+                    throw ValidationException::withMessages(['key' => 'Cet élément est déjà dans une file de production.']);
+                }
+                $unitCatalog = $this->production->catalog($planet, $target, $category)['units'];
+                $entry = collect($unitCatalog)->firstWhere('code', $definition['code']);
+                if (! $entry || ! $entry['requirementsMet']) {
+                    throw ValidationException::withMessages(['key' => 'Les prérequis de cette unité ne sont pas remplis.']);
+                }
+                if ($category === 'defences' && in_array($definition['code'], [502, 503], true)) {
+                    $usedCapacity = (int) $planet->unit_502 + 2 * (int) $planet->unit_503;
+                    $pendingMissiles = DB::table('planet_unit_queues')
+                        ->where('planet_id', $planet->id)->where('unit_type', 'defences')
+                        ->whereIn('unit_code', [502, 503])->get(['unit_code', 'quantity', 'quantity_completed']);
+                    foreach ($pendingMissiles as $pending) {
+                        $usedCapacity += ((int) $pending->quantity - (int) $pending->quantity_completed)
+                            * ((int) $pending->unit_code === 503 ? 2 : 1);
+                    }
+                    $requiredCapacity = $amount * ($definition['code'] === 503 ? 2 : 1);
+                    if ($usedCapacity + $requiredCapacity > 10 * (int) $planet->missile_silo_level) {
+                        throw ValidationException::withMessages(['amount' => 'La capacité du silo de missiles serait dépassée.']);
+                    }
+                }
+                $maximum = ! empty($definition['unique']) ? 1 : 1_000_000_000;
+            }
+
+            if ($column === 'unit_212') {
+                $planet = $this->economy->materialize($planet);
+                $owner = $planet;
+            }
+
+            $before = (int) $owner->{$column};
+            if ($amount > $maximum - $before) {
+                throw ValidationException::withMessages(['amount' => 'La limite de cet élément serait dépassée.']);
+            }
+            if ($category === 'buildings') {
+                $newFields = (int) $planet->fields + ($data['key'] === 'terraformer' ? 5 * $amount : 0);
+                $usedFields = collect($this->economy->administrativeBuildings())
+                    ->sum(fn ($building) => (int) $planet->{$building['level']});
+                if ($newFields > 65535 || $usedFields + $amount > $newFields) {
+                    throw ValidationException::withMessages(['amount' => 'La limite de cases de la planète serait dépassée.']);
+                }
+                $planet->fields = $newFields;
+            }
+            $owner->{$column} = $before + $amount;
+            $owner->save();
+            $this->audit($request, 'element_added', $target->id, $planet->id, [
+                'category' => $category, 'key' => $data['key'], 'amount' => $amount,
+                'before' => $before, 'after' => $before + $amount,
+            ]);
+        }, 3);
+
+        return redirect()->route('admin.elements', ['player' => $data['player_id'], 'planet' => $data['planet_id']])
+            ->with('success', 'Élément ajouté.');
+    }
+
+    public function storeResources(Request $request, PlanetEconomy $economy): RedirectResponse
+    {
+        $data = $request->validate([
+            'player_id' => ['required', 'integer', 'min:1', 'exists:users,id'],
+            'planet_id' => ['required', 'integer', 'min:1'],
+            'metal' => ['required', 'integer', 'between:0,1000000000'],
+            'crystal' => ['required', 'integer', 'between:0,1000000000'],
+            'deuterium' => ['required', 'integer', 'between:0,1000000000'],
+        ]);
+        if ((int) $data['metal'] + (int) $data['crystal'] + (int) $data['deuterium'] === 0) {
+            throw ValidationException::withMessages(['metal' => 'Indiquez au moins une ressource à ajouter.']);
+        }
+
+        DB::transaction(function () use ($request, $data, $economy): void {
+            $target = User::query()->lockForUpdate()->findOrFail($data['player_id']);
+            $this->ensureEligibleTarget($request, $target);
+            $planet = Planet::query()->whereKey($data['planet_id'])
+                ->where('user_id', $target->id)->lockForUpdate()->firstOrFail();
+            $planet = $economy->materialize($planet);
+            $before = $planet->only('metal', 'crystal', 'deuterium');
+            $capacities = $economy->storageCapacities($planet);
+            foreach (['metal', 'crystal', 'deuterium'] as $resource) {
+                if ((int) $data[$resource] > 0 && (int) $planet->{$resource} + (int) $data[$resource] > $capacities[$resource]) {
+                    throw ValidationException::withMessages([$resource => 'La capacité de stockage serait dépassée.']);
+                }
+                $planet->{$resource} += (int) $data[$resource];
+            }
+            $planet->save();
+            $this->audit($request, 'resources_added', $target->id, $planet->id, [
+                'before' => $before,
+                'added' => array_map('intval', array_intersect_key($data, array_flip(['metal', 'crystal', 'deuterium']))),
+                'after' => $planet->only('metal', 'crystal', 'deuterium'),
+            ]);
+        }, 3);
+
+        return redirect()->route('admin.resources', ['player' => $data['player_id'], 'planet' => $data['planet_id']])
+            ->with('success', 'Ressources ajoutées.');
+    }
+
+    public function updateRole(Request $request): RedirectResponse
+    {
+        $data = $request->validate([
+            'player_id' => ['required', 'integer', 'min:1', 'exists:users,id'],
+            'admin_level' => ['required', 'integer', 'between:0,3'],
+        ]);
+
+        DB::transaction(function () use ($request, $data): void {
+            $target = User::query()->lockForUpdate()->findOrFail($data['player_id']);
+            if ($target->id === $request->user()->id || $target->admin_level >= 4) {
+                throw ValidationException::withMessages(['player_id' => 'Le compte fondateur ne peut pas être modifié ici.']);
+            }
+
+            $previousLevel = $target->admin_level;
+            $target->admin_level = (int) $data['admin_level'];
+            $target->save();
+            $this->audit($request, 'role_changed', $target->id, null, [
+                'before' => $previousLevel,
+                'after' => $target->admin_level,
+            ]);
+        }, 3);
+
+        return redirect()->route('admin.roles', ['player' => $data['player_id']])
+            ->with('success', 'Niveau administratif mis à jour.');
+    }
+
+    public function suspend(Request $request): RedirectResponse
+    {
+        $data = $request->validate([
+            'player_id' => ['required', 'integer', 'min:1', 'exists:users,id'],
+            'days' => ['required', 'integer', 'between:1,365'],
+            'reason' => ['required', 'string', 'max:255'],
+        ]);
+        DB::transaction(function () use ($request, $data): void {
+            $target = User::query()->lockForUpdate()->findOrFail($data['player_id']);
+            $this->ensureEligibleTarget($request, $target);
+            if ($target->isSuspended()) {
+                throw ValidationException::withMessages(['player_id' => 'Ce compte est déjà suspendu.']);
+            }
+            $target->suspended_until = now()->addDays((int) $data['days']);
+            $target->suspension_reason = $data['reason'];
+            $target->save();
+            $this->audit($request, 'account_suspended', $target->id, null, [
+                'until' => $target->suspended_until->toIso8601String(), 'reason' => $target->suspension_reason,
+            ]);
+        }, 3);
+
+        return redirect()->route('admin.index', ['player' => $data['player_id']])
+            ->with('success', 'Compte suspendu.');
+    }
+
+    public function unsuspend(Request $request): RedirectResponse
+    {
+        $data = $request->validate([
+            'player_id' => ['required', 'integer', 'min:1', 'exists:users,id'],
+        ]);
+        DB::transaction(function () use ($request, $data): void {
+            $target = User::query()->lockForUpdate()->findOrFail($data['player_id']);
+            $this->ensureEligibleTarget($request, $target);
+            if (! $target->suspended_until) {
+                throw ValidationException::withMessages(['player_id' => 'Ce compte n’est pas suspendu.']);
+            }
+            $previous = ['until' => $target->suspended_until->toIso8601String(), 'reason' => $target->suspension_reason];
+            $target->suspended_until = null;
+            $target->suspension_reason = null;
+            $target->save();
+            $this->audit($request, 'account_unsuspended', $target->id, null, $previous);
+        }, 3);
+
+        return redirect()->route('admin.index', ['player' => $data['player_id']])
+            ->with('success', 'Suspension levée.');
+    }
+
+    public function storeAnnouncement(Request $request): RedirectResponse
+    {
+        $data = $request->validate([
+            'body' => ['required', 'string', 'max:2000'],
+        ]);
+        DB::transaction(function () use ($request, $data): void {
+            $id = DB::table('admin_announcements')->insertGetId([
+                'actor_id' => $request->user()->id,
+                'body' => $data['body'],
+                'created_at' => now(),
+                'updated_at' => now(),
+            ]);
+            DB::table('admin_announcement_recipients')->insertUsing(
+                ['announcement_id', 'user_id'],
+                DB::table('users')->selectRaw('? as announcement_id, id', [$id]),
+            );
+            $this->audit($request, 'announcement_created', null, null, [
+                'announcement_id' => $id,
+                'body' => $data['body'],
+            ]);
+        }, 3);
+
+        return redirect()->route('admin.index')->with('success', 'Annonce publiée.');
+    }
+
+    public function revokeAnnouncement(Request $request, int $announcement): RedirectResponse
+    {
+        DB::transaction(function () use ($request, $announcement): void {
+            $message = DB::table('admin_announcements')->where('id', $announcement)->lockForUpdate()->first();
+            abort_if(! $message, 404);
+            if ($message->revoked_at !== null) {
+                throw ValidationException::withMessages(['announcement' => 'Cette annonce a déjà été retirée.']);
+            }
+            DB::table('admin_announcements')->where('id', $announcement)
+                ->update(['revoked_at' => now(), 'updated_at' => now()]);
+            $this->audit($request, 'announcement_revoked', null, null, ['announcement_id' => $announcement]);
+        }, 3);
+
+        return redirect()->route('admin.index')->with('success', 'Annonce retirée.');
+    }
+
+    private function page(Request $request, string $mode): Response
+    {
+        $data = $request->validate([
+            'search' => ['nullable', 'string', 'max:80'],
+            'player' => ['nullable', 'integer', 'min:1'],
+            'planet' => ['nullable', 'integer', 'min:1'],
+        ]);
+
+        $planetColumns = 'planets:id,user_id,name,galaxy,system,position';
+        $players = User::query()
+            ->select(['id', 'name', 'admin_level'])
+            ->with($planetColumns)
+            ->when($data['search'] ?? null, fn ($query, $search) => $query->where('name', 'like', '%'.$search.'%'))
+            ->orderBy('name')->orderBy('id')
+            ->paginate(20)
+            ->withQueryString();
+
+        $selectedPlayer = isset($data['player'])
+            ? User::query()->select(['id', 'name', 'admin_level', 'suspended_until', 'suspension_reason'])->with($planetColumns)->findOrFail($data['player'])
+            : null;
+        $selectedPlanetId = isset($data['planet']) && $selectedPlayer?->planets->contains('id', (int) $data['planet'])
+            ? (int) $data['planet']
+            : null;
+
+        return inertia('Admin/Index', [
+            'mode' => $mode,
+            'players' => $players,
+            'selectedPlayer' => $selectedPlayer,
+            'selectedPlanetId' => $selectedPlanetId,
+            'overview' => $mode === 'overview' ? [
+                'players' => User::query()->count(),
+                'planets' => Planet::query()->count(),
+                'universes' => Universe::query()->count(),
+                'fleets' => Fleet::query()->where('status', 'outbound')->count(),
+            ] : null,
+            'activeFleets' => $mode === 'overview' ? DB::table('fleets')
+                ->join('users', 'users.id', '=', 'fleets.user_id')
+                ->where('fleets.status', 'outbound')
+                ->orderBy('fleets.arrives_at')->orderBy('fleets.id')
+                ->limit(25)->get(['fleets.id', 'fleets.mission', 'fleets.arrives_at', 'users.name as player']) : [],
+            'adminAnnouncements' => $mode === 'overview' ? DB::table('admin_announcements')
+                ->orderByDesc('id')->paginate(10, ['id', 'body', 'created_at', 'revoked_at'], 'announcements_page')
+                ->withQueryString() : null,
+            'auditLogs' => $mode === 'roles' ? DB::table('admin_audit_logs')->orderByDesc('id')->limit(50)
+                ->get(['id', 'actor_id', 'actor_level', 'target_user_id', 'planet_id', 'action', 'details', 'created_at']) : [],
+            'catalog' => $mode === 'elements' ? collect($this->elementDefinitions())
+                ->flatMap(fn ($items, $category) => collect($items)->map(fn ($item, $key) => [
+                    'category' => $category, 'key' => (string) $key, 'label' => $item['label'],
+                ])->values())->values() : [],
+        ]);
+    }
+
+    private function elementDefinitions(): array
+    {
+        $buildings = [];
+        foreach ($this->economy->administrativeBuildings() as $key => $building) {
+            $buildings[$key] = ['column' => $building['level'], 'label' => 'buildingCatalog.'.$key.'.name'];
+        }
+        $research = [];
+        foreach ($this->research->administrativeTechnologies() as $key => $technology) {
+            $research[$key] = ['column' => $technology['column'], 'label' => 'research.'.$key];
+        }
+        $units = [];
+        $columns = $this->production->administrativeUnitColumns();
+        foreach ($this->production->administrativeUnits() as $category => $definitions) {
+            foreach ($definitions as $code => $unit) {
+                $units[$category][(string) $code] = [
+                    ...$unit, 'code' => $code, 'column' => $columns[$code], 'label' => $unit['name'],
+                ];
+            }
+        }
+        $officers = [];
+        $columns = $this->production->administrativeOfficerColumns();
+        foreach ($this->production->administrativeOfficers() as $code => $officer) {
+            $officers[(string) $code] = [
+                ...$officer, 'code' => $code, 'column' => $columns[$code], 'label' => $officer['name'],
+            ];
+        }
+
+        return ['buildings' => $buildings, 'research' => $research, ...$units, 'officers' => $officers];
+    }
+
+    /**
+     * @param  array<string, mixed>  $details
+     */
+    private function audit(Request $request, string $action, ?int $targetUserId, ?int $planetId, array $details): void
+    {
+        DB::table('admin_audit_logs')->insert([
+            'actor_id' => $request->user()->id,
+            'actor_level' => $request->user()->admin_level,
+            'target_user_id' => $targetUserId,
+            'planet_id' => $planetId,
+            'action' => $action,
+            'details' => json_encode($details, JSON_THROW_ON_ERROR),
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
+    }
+
+    private function ensureEligibleTarget(Request $request, User $target): void
+    {
+        if ($target->id === $request->user()->id || $target->admin_level >= $request->user()->admin_level) {
+            throw ValidationException::withMessages(['player_id' => 'Vous ne pouvez pas modifier votre propre compte ou un compte de niveau égal ou supérieur.']);
+        }
+    }
+}

@@ -1,0 +1,87 @@
+<?php
+
+namespace App\Http\Controllers;
+
+use Illuminate\Contracts\Pagination\LengthAwarePaginator;
+use Illuminate\Http\RedirectResponse;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\Rule;
+use Illuminate\Validation\ValidationException;
+use Inertia\Response;
+
+class MultiAccountDeclarationController extends Controller
+{
+    public function index(Request $request): Response
+    {
+        return inertia('MultiAccounts/Index', [
+            'canDeclare' => $request->user()->universe_id !== null,
+            'declarations' => $this->declarations($request->user()->id),
+        ]);
+    }
+
+    public function administration(): Response
+    {
+        return inertia('Admin/Declarations', ['declarations' => $this->declarations()]);
+    }
+
+    public function store(Request $request): RedirectResponse
+    {
+        $user = $request->user();
+        if ($user->universe_id === null) {
+            throw ValidationException::withMessages(['player_ids' => 'Vous devez rejoindre un univers avant de faire une déclaration.']);
+        }
+
+        $data = $request->validate([
+            'player_ids' => ['required', 'array', 'list', 'min:1', 'max:3'],
+            'player_ids.*' => [
+                'required', 'integer', 'min:1', 'distinct',
+                Rule::notIn([$user->id]),
+                Rule::exists('users', 'id')->where('universe_id', $user->universe_id),
+            ],
+            'reason' => ['required', 'string', 'max:500'],
+        ]);
+
+        DB::transaction(function () use ($user, $data): void {
+            $id = DB::table('multi_account_declarations')->insertGetId([
+                'universe_id' => $user->universe_id,
+                'declarant_id' => $user->id,
+                'reason' => $data['reason'],
+                'created_at' => now(),
+                'updated_at' => now(),
+            ]);
+            DB::table('multi_account_declaration_players')->insert(array_map(fn ($playerId) => [
+                'declaration_id' => $id,
+                'player_id' => (int) $playerId,
+                'universe_id' => $user->universe_id,
+            ], $data['player_ids']));
+        }, 3);
+
+        return redirect()->route('multi-accounts.index')->with('success', 'Déclaration enregistrée.');
+    }
+
+    private function declarations(?int $declarantId = null): LengthAwarePaginator
+    {
+        $declarations = DB::table('multi_account_declarations as declarations')
+            ->join('users as declarants', 'declarants.id', '=', 'declarations.declarant_id')
+            ->when($declarantId !== null, fn ($query) => $query->where('declarations.declarant_id', $declarantId))
+            ->orderByDesc('declarations.id')
+            ->paginate(20, ['declarations.id', 'declarations.universe_id', 'declarations.declarant_id',
+                'declarations.reason', 'declarations.created_at', 'declarants.name as declarant_name']);
+
+        $players = DB::table('multi_account_declaration_players as links')
+            ->join('users', 'users.id', '=', 'links.player_id')
+            ->whereIn('links.declaration_id', $declarations->getCollection()->pluck('id'))
+            ->orderBy('users.id')->get(['links.declaration_id', 'users.id', 'users.name'])
+            ->groupBy('declaration_id');
+        $declarations->getCollection()->transform(function ($declaration) use ($players) {
+            $declaration->players = $players->get($declaration->id, collect())->map(
+                fn ($player) => ['id' => $player->id, 'name' => $player->name],
+            )->values();
+
+            return $declaration;
+        });
+
+        return $declarations;
+    }
+}
