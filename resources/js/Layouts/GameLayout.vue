@@ -6,6 +6,7 @@ import LocaleSwitcher from '../Components/LocaleSwitcher.vue';
 import { route as ziggyRoute } from 'ziggy-js';
 
 const page = usePage();
+const props = defineProps({ livePlanets: { type: Array, default: null } });
 const { t, n } = useI18n();
 const route = (name, params) => ziggyRoute(name, params, true, page.props.ziggy);
 const menuOpen = ref(false);
@@ -27,7 +28,7 @@ const navigation = computed(() => [
         : []),
 ]);
 const resources = computed(() => {
-    const planets = page.props.planets ?? [];
+    const planets = props.livePlanets ?? page.props.planets ?? [];
     const selectedPlanetId = page.component === 'Admin/Index' ? null : page.props.selectedPlanetId;
     const selectedPlanet = selectedPlanetId
         ? planets.find((planet) => Number(planet.id) === Number(selectedPlanetId))

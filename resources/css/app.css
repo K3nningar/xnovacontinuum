@@ -25,7 +25,7 @@
 }
 
 * { box-sizing: border-box; }
-html { min-width: 320px; scroll-behavior: smooth; }
+html { scroll-behavior: smooth; }
 body { margin: 0; min-height: 100vh; color: var(--text); background: var(--background); }
 a { color: inherit; text-decoration: none; }
 button, input { font: inherit; }
@@ -288,7 +288,7 @@ h1, h2, h3, p { margin-top: 0; }
 .queue-summary-copy > small { color: #8291a2; font-size: 8px; }
 .queue-toggle { min-height: 34px; gap: 10px; white-space: nowrap; font-size: 9px; }
 .queue-toggle span { color: var(--accent); font-size: 14px; }
-.queue-drawer-backdrop { position: fixed; z-index: 1000; inset: 0; display: flex; justify-content: flex-end; background: rgba(2, 6, 11, .72); backdrop-filter: blur(3px); }
+.queue-drawer-backdrop { position: fixed; z-index: 1100; inset: 0; display: flex; justify-content: flex-end; background: rgba(2, 6, 11, .72); backdrop-filter: blur(3px); }
 .queue-drawer { width: min(520px, 100%); height: 100%; overflow-y: auto; padding: 25px; border-left: 1px solid rgba(86, 214, 194, .24); background: #0b111a; box-shadow: -20px 0 70px rgba(0, 0, 0, .4); animation: queue-drawer-enter .22s ease-out; }
 @keyframes queue-drawer-enter { from { transform: translateX(24px); opacity: .65; } to { transform: translateX(0); opacity: 1; } }
 .queue-drawer-header { display: flex; align-items: flex-start; justify-content: space-between; gap: 15px; padding-bottom: 18px; border-bottom: 1px solid var(--line); }
@@ -870,4 +870,139 @@ body { background: transparent; }
     .overview-page .panel-heading { flex-wrap: wrap; gap: 12px; }
     .overview-page .planet-row { flex-wrap: wrap; }
     .overview-page .planet-links { flex-wrap: wrap; margin-left: 0; }
+}
+
+.hud-app .data-panel, .hud-app .resource-card {
+    border-color: rgba(159, 189, 195, .23);
+    background: linear-gradient(145deg, rgba(20, 33, 38, .97), rgba(11, 22, 27, .97));
+    box-shadow: inset 0 0 18px rgba(68, 217, 173, .025);
+}
+.hud-app .panel-heading { border-color: rgba(159, 189, 195, .15); }
+.hud-sidebar { background: rgba(9, 20, 25, .97); }
+.hud-sidebar .menu-item .menu-link { min-height: 40px; }
+
+.overview-page .overview-commander {
+    min-height: 0;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    padding: 16px 18px;
+    margin-bottom: 12px;
+}
+.overview-commander-identity { display: flex; align-items: center; gap: 14px; min-width: 0; }
+.overview-commander-icon { display: grid; flex: 0 0 46px; height: 46px; place-items: center; border: 1px solid rgba(68, 217, 173, .35); border-radius: 50%; color: var(--accent); font-size: 25px; }
+.overview-commander-identity .eyebrow { margin-bottom: 4px; font-size: 10px; }
+.overview-commander-identity h1 { margin: 0; overflow-wrap: anywhere; font-size: 20px; font-weight: 650; }
+.overview-commander-identity .command-subtitle { margin-top: 3px; font-size: 12px; }
+.overview-commander-status { display: grid; justify-items: end; gap: 7px; }
+.overview-commander-status .online-pill, .overview-page .overview-commander-status .overview-clock { margin: 0; }
+.overview-page .overview-commander-status .overview-clock { font-size: 12px; }
+
+.overview-page .overview-planet-switcher { display: flex; align-items: center; gap: 14px; min-height: 0; padding: 11px 14px; }
+.overview-switcher-title, .overview-resource-heading { flex: 0 0 auto; color: #b6c7c7; font-size: 11px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; }
+.overview-planet-options { display: flex; flex-wrap: wrap; gap: 7px; min-width: 0; max-width: 100%; }
+.overview-planet-option { display: inline-flex; align-items: center; gap: 7px; min-height: 35px; max-width: 100%; padding: 6px 10px; border: 1px solid rgba(159, 189, 195, .26); color: #d3e1df; background: rgba(5, 15, 20, .5); cursor: pointer; font-size: 12px; }
+.overview-planet-option.is-active { border-color: var(--accent); color: #edfff9; background: rgba(68, 217, 173, .12); }
+.overview-planet-option:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.overview-planet-option > span:not(.overview-planet-dot) { min-width: 0; overflow-wrap: anywhere; text-align: left; }
+.overview-planet-option small { color: #aab9bc; font-size: 11px; white-space: nowrap; }
+.overview-planet-dot { width: 8px; height: 8px; flex: 0 0 8px; border-radius: 50%; background: #68c9ce; }
+.overview-resource-heading { margin: 20px 0 9px; }
+.overview-page .resource-grid { gap: 10px; margin-bottom: 12px; }
+.overview-page .resource-card { min-height: 112px; padding: 14px 16px; }
+.overview-page .resource-card strong { margin-top: 14px; }
+.overview-page .resource-card small { margin-top: 5px; }
+.overview-page .overview-defences, .overview-page .overview-colonisation { margin-bottom: 12px; }
+.overview-page .overview-defences article h3 { margin: 0; font-size: 14px; line-height: 1.4; }
+.overview-page .overview-main-panels { grid-template-columns: repeat(3, minmax(0, 1fr)); margin: 0 0 12px; }
+.overview-page .overview-main-panels > .data-panel { min-width: 0; }
+.overview-world-visual { display: flex; flex-direction: column; align-items: center; gap: 5px; padding: 6px 0 18px; text-align: center; }
+.overview-world-visual .planet-orb { width: 92px; height: 92px; margin-bottom: 4px; box-shadow: 0 0 30px rgba(74, 159, 184, .2); }
+.overview-world-visual small { color: #9aadaf; }
+.overview-page .panel-heading > div, .overview-page .planet-details, .overview-page .overview-world-visual { min-width: 0; max-width: 100%; overflow-wrap: anywhere; }
+.overview-page .planet-details strong, .overview-page .panel-heading h2, .overview-page .panel-kicker, .overview-page .overview-world-visual strong { min-width: 0; overflow-wrap: anywhere; }
+
+@media (max-width: 1100px) {
+    .overview-page .overview-main-panels { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+@media (max-width: 700px) {
+    .overview-page .overview-commander-status { justify-items: start; }
+    .overview-page .overview-planet-switcher { align-items: flex-start; flex-direction: column; gap: 9px; }
+    .overview-page .overview-main-panels { grid-template-columns: minmax(0, 1fr); }
+}
+
+.hud-app {
+    background:
+        linear-gradient(rgba(185, 218, 228, .045) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(185, 218, 228, .045) 1px, transparent 1px),
+        linear-gradient(180deg, rgba(27, 43, 58, .92), rgba(8, 15, 26, .96)),
+        url('../../public/vendor/hud/css/images/cover.jpg') center top / cover;
+    background-size: 48px 48px, 48px 48px, cover, cover;
+    background-attachment: fixed;
+}
+.hud-header { border-color: rgba(192, 212, 225, .12); background: rgba(20, 31, 45, .96); }
+.hud-sidebar { border-color: rgba(192, 212, 225, .1); background: rgba(21, 33, 47, .83); }
+.hud-sidebar .menu-item.active .menu-link { background: linear-gradient(90deg, rgba(68, 217, 173, .16), transparent); }
+
+.hud-app .data-panel, .hud-app .resource-card,
+.hud-app .building-card, .hud-app .research-card, .hud-app .unit-card, .hud-app .officer-card {
+    position: relative;
+    border-color: rgba(205, 222, 230, .24);
+    background: rgba(18, 30, 43, .46);
+    box-shadow: none;
+}
+.hud-app .data-panel::after, .hud-app .resource-card::after,
+.hud-app .building-card::after, .hud-app .research-card::after,
+.hud-app .unit-card::after, .hud-app .officer-card::after {
+    content: '';
+    position: absolute;
+    inset: -1px;
+    pointer-events: none;
+    background:
+        linear-gradient(#b8cbd3, #b8cbd3) left top / 8px 1px no-repeat,
+        linear-gradient(#b8cbd3, #b8cbd3) left top / 1px 8px no-repeat,
+        linear-gradient(#b8cbd3, #b8cbd3) right top / 8px 1px no-repeat,
+        linear-gradient(#b8cbd3, #b8cbd3) right top / 1px 8px no-repeat,
+        linear-gradient(#b8cbd3, #b8cbd3) left bottom / 8px 1px no-repeat,
+        linear-gradient(#b8cbd3, #b8cbd3) left bottom / 1px 8px no-repeat,
+        linear-gradient(#b8cbd3, #b8cbd3) right bottom / 8px 1px no-repeat,
+        linear-gradient(#b8cbd3, #b8cbd3) right bottom / 1px 8px no-repeat;
+}
+.hud-app .panel-heading { border-color: rgba(205, 222, 230, .14); }
+.hud-content .header-resources { border-color: rgba(205, 222, 230, .18); background: rgba(20, 33, 46, .74); }
+.hud-content .command-layout { padding-top: 16px; }
+.overview-page .overview-commander { padding: 12px 16px; background: rgba(52, 69, 78, .76); }
+.overview-commander-icon { border-color: rgba(223, 236, 240, .45); color: #d7e4e6; }
+.overview-page .overview-planet-switcher { padding: 8px 12px; }
+.overview-planet-option.is-active { color: #052d27; background: var(--accent); }
+.overview-planet-option.is-active small { color: #e8f4f2; background: rgba(12, 31, 40, .78); padding: 2px 4px; }
+.overview-resource-heading { margin-top: 14px; }
+.overview-page .resource-card { min-height: 100px; }
+.overview-page .resource-card strong { margin-top: 10px; }
+.overview-page .resource-card small { width: 100%; padding-top: 7px; border-top: 2px solid rgba(176, 199, 210, .25); }
+.overview-defences-heading { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 8px; }
+.overview-defences-heading > div { min-width: 0; overflow-wrap: anywhere; }
+.overview-defences-heading h2 { margin: 3px 0 0; font-size: 15px; }
+.overview-shield-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; }
+.overview-page .overview-shield-card { min-height: 105px; padding: 14px 16px; }
+.overview-shield-card p { margin-bottom: 0; }
+.overview-defences-detail { margin: 8px 0 0; color: #a7b7c3; font-size: 12px; }
+.overview-page .overview-colonisation .panel-heading { min-height: 0; padding: 10px 14px; }
+.overview-page .overview-colonisation .overview-panel-body { padding: 12px 14px; }
+.overview-world-visual {
+    min-height: 180px;
+    justify-content: flex-end;
+    margin-bottom: 16px;
+    padding: 16px;
+    background: linear-gradient(180deg, transparent 30%, rgba(4, 12, 22, .9)), url('../../public/vendor/hud/css/images/cover-2.jpg') center / cover;
+}
+.overview-world-visual .planet-orb { display: none; }
+.overview-world-visual small { color: #d3e2e8; }
+
+@media (max-width: 700px) {
+    .overview-shield-grid { grid-template-columns: minmax(0, 1fr); }
+    .overview-page .overview-shield-card { min-height: 0; }
+    .hud-app { background-attachment: scroll; }
 }

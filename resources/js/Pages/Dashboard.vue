@@ -1,9 +1,10 @@
 <script setup>
 import { computed, onMounted, onUnmounted, ref, watch } from 'vue';
-import { Head, Link, router, useForm, usePage } from '@inertiajs/vue3';
+import { Head, Link, router, useForm, usePage, usePoll } from '@inertiajs/vue3';
 import { route as ziggyRoute } from 'ziggy-js';
 import { useI18n } from 'vue-i18n';
 import GameLayout from '../Layouts/GameLayout.vue';
+import { projectPlanetResources } from '../liveResources.js';
 
 const page = usePage();
 const route = (name, params) => ziggyRoute(name, params, true, page.props.ziggy);
@@ -29,8 +30,16 @@ const renameForm = useForm({ name: '' });
 const isRenaming = ref(false);
 const clock = ref(Date.now());
 const serverOffset = ref(new Date(props.serverTime).getTime() - Date.now());
+const refreshInFlight = ref(false);
+const refreshedChanges = new Set();
 let timer;
 const activePlanet = computed(() => props.planets.find((planet) => planet.id === props.activePlanetId));
+const livePlanets = computed(() => props.planets.map((planet) => projectPlanetResources(planet, clock.value + serverOffset.value)));
+const empireResources = computed(() => livePlanets.value.reduce((sum, planet) => ({
+    metal: sum.metal + planet.metal,
+    crystal: sum.crystal + planet.crystal,
+    deuterium: sum.deuterium + planet.deuterium,
+}), { metal: 0, crystal: 0, deuterium: 0 }));
 const shieldTypes = [
     { key: 'small', name: 'unitNames.small_shield_dome' },
     { key: 'large', name: 'unitNames.large_shield_dome' },
@@ -40,18 +49,37 @@ const serverClock = computed(() => new Intl.DateTimeFormat(locale.value, {
     dateStyle: 'short', timeStyle: 'medium', timeZone: props.serverTimezone,
 }).format(new Date(clock.value + serverOffset.value)));
 
+const refreshOptions = {
+    only: ['planets', 'serverTime'],
+    preserveErrors: true,
+    onStart: () => { refreshInFlight.value = true; },
+    onFinish: () => { refreshInFlight.value = false; },
+};
+usePoll(60_000, refreshOptions, { background: 'pause', mode: 'rest' });
+
 watch(() => props.serverTime, (time) => {
     clock.value = Date.now();
     serverOffset.value = new Date(time).getTime() - clock.value;
 });
-watch(activePlanet, (planet) => {
-    renameForm.name = planet?.name ?? '';
+watch(() => activePlanet.value?.id, () => {
+    renameForm.name = activePlanet.value?.name ?? '';
     renameForm.clearErrors();
     isRenaming.value = false;
 }, { immediate: true });
 
 function updateClock() {
     clock.value = Date.now();
+    if (document.hidden || refreshInFlight.value) return;
+
+    const dueChange = props.planets.find((planet) => {
+        const nextChange = planet.liveResources.nextChangeAt;
+        return nextChange && Date.parse(nextChange) <= clock.value + serverOffset.value
+            && !refreshedChanges.has(`${planet.id}:${nextChange}`);
+    });
+    if (dueChange) {
+        refreshedChanges.add(`${dueChange.id}:${dueChange.liveResources.nextChangeAt}`);
+        router.reload(refreshOptions);
+    }
 }
 
 onMounted(() => {
@@ -73,6 +101,12 @@ function formatResource(value) {
 
 function selectPlanet(id) {
     router.get(route('dashboard'), { planet: id }, { preserveScroll: true });
+}
+
+function startRename() {
+    renameForm.name = activePlanet.value?.name ?? '';
+    renameForm.clearErrors();
+    isRenaming.value = true;
 }
 
 function renamePlanet() {
@@ -109,63 +143,48 @@ function researchName(key) {
 
 <template>
     <Head :title="t('dashboard.title')" />
-    <GameLayout>
+    <GameLayout :live-planets="livePlanets">
         <main class="command-layout overview-page">
             <section class="command-content">
-                <div class="command-heading"><div><p class="eyebrow"><span class="eyebrow-line"></span> {{ t('dashboard.eyebrow') }}</p><h1>{{ t('dashboard.welcome') }} <span>{{ user.name }}.</span></h1><p class="command-subtitle">{{ t('dashboard.subtitle') }}</p></div><span class="online-pill"><i></i> {{ t('dashboard.transmission') }}</span></div>
-                <p class="overview-clock">{{ t('overviewClock', { time: serverClock, zone: serverTimezone }) }}</p>
+                <div class="overview-commander data-panel">
+                    <div class="overview-commander-identity">
+                        <span class="overview-commander-icon" aria-hidden="true"><i class="bi bi-person-circle"></i></span>
+                        <div><p class="eyebrow">{{ t('dashboard.eyebrow') }}</p><h1>{{ user.name }}</h1><p class="command-subtitle">{{ hasUniverse ? universe.name : t('dashboard.subtitle') }}</p></div>
+                    </div>
+                    <div class="overview-commander-status">
+                        <span class="online-pill"><i></i> {{ t('dashboard.transmission') }}</span>
+                        <p class="overview-clock">{{ t('overviewClock', { time: serverClock, zone: serverTimezone }) }}</p>
+                    </div>
+                </div>
                 <template v-if="hasUniverse">
-                    <div class="resource-grid"><article class="resource-card"><span class="resource-symbol metal-symbol">▰</span><span class="resource-label">{{ t('dashboard.metal') }}</span><strong>{{ formatResource(planets.reduce((sum, planet) => sum + Number(planet.metal), 0)) }}</strong><small>{{ t('dashboard.primaryResource') }}</small></article><article class="resource-card"><span class="resource-symbol crystal-symbol">◇</span><span class="resource-label">{{ t('dashboard.crystal') }}</span><strong>{{ formatResource(planets.reduce((sum, planet) => sum + Number(planet.crystal), 0)) }}</strong><small>{{ t('dashboard.researchTechnology') }}</small></article><article class="resource-card"><span class="resource-symbol deut-symbol">⬡</span><span class="resource-label">{{ t('dashboard.deuterium') }}</span><strong>{{ formatResource(planets.reduce((sum, planet) => sum + Number(planet.deuterium), 0)) }}</strong><small>{{ t('dashboard.fleetFuel') }}</small></article><article class="resource-card"><span class="resource-symbol fleet-symbol">➤</span><span class="resource-label">{{ t('dashboard.fleetInFlight') }}</span><strong>{{ fleetCount }}</strong><small>{{ t('dashboard.activeMissions') }}</small></article></div>
-                    <section v-if="activePlanet" class="data-panel mb-6">
-                        <div class="panel-heading">
-                            <div><span class="panel-kicker">{{ t('overview.activePlanet') }}</span><h2>{{ activePlanet.name }} · [{{ activePlanet.coordinates }}]</h2></div>
-                            <label class="planet-select-label" for="overview-planet">{{ t('overview.choosePlanet') }}
-                                <select id="overview-planet" :value="activePlanetId" @change="selectPlanet($event.target.value)">
-                                    <option v-for="planet in planets" :key="planet.id" :value="planet.id">{{ planet.name }} · {{ planet.coordinates }}</option>
-                                </select>
-                            </label>
-                        </div>
-                        <div class="overview-panel-body">
-                            <div class="flex flex-wrap items-center gap-4">
-                                <span>{{ t('overview.fields', { used: activePlanet.usedFields, total: activePlanet.fields }) }}</span>
-                                <span>{{ t('overview.temperature', { temperature: activePlanet.max_temperature }) }}</span>
-                                <button v-if="!isRenaming" class="button button-outline" type="button" @click="isRenaming = true">{{ t('overview.rename') }}</button>
-                            </div>
-                            <form v-if="isRenaming" class="mt-4 flex flex-wrap items-end gap-3" @submit.prevent="renamePlanet">
-                                <label class="flex flex-col gap-1" for="overview-planet-name">{{ t('overview.planetName') }}
-                                    <input id="overview-planet-name" v-model="renameForm.name" class="rounded border border-slate-600 bg-slate-950 px-3 py-2 text-white" minlength="2" maxlength="80" required>
-                                </label>
-                                <button class="button button-primary" type="submit" :disabled="renameForm.processing">{{ t('overview.save') }}</button>
-                                <button class="button button-outline" type="button" @click="cancelRename">{{ t('common.cancel') }}</button>
-                                <p v-if="renameForm.errors.name" class="field-error w-full" role="alert">{{ renameForm.errors.name }}</p>
-                            </form>
-                            <div class="mt-4 flex flex-wrap gap-2">
-                                <Link class="button button-outline" :href="route('buildings.index', { planet: activePlanet.id })">{{ t('dashboard.buildings') }}</Link>
-                                <Link class="button button-outline" :href="route('research.index', { planet: activePlanet.id })">{{ t('nav.research') }}</Link>
-                                <Link class="button button-outline" :href="route('shipyard.index', { planet: activePlanet.id })">{{ t('nav.shipyard') }}</Link>
-                                <Link class="button button-outline" :href="route('fleet.index', { planet: activePlanet.id })">{{ t('nav.fleet') }}</Link>
-                            </div>
+                    <section v-if="planets.length" class="overview-planet-switcher data-panel" :aria-label="t('overview.choosePlanet')">
+                        <span class="overview-switcher-title"><i class="bi bi-globe2" aria-hidden="true"></i> {{ t('dashboard.planets') }}</span>
+                        <div class="overview-planet-options">
+                            <button v-for="planet in planets" :key="planet.id" class="overview-planet-option" :class="{ 'is-active': planet.id === activePlanetId }" type="button" :aria-pressed="planet.id === activePlanetId" @click="selectPlanet(planet.id)">
+                                <span class="overview-planet-dot" aria-hidden="true"></span>
+                                <span>{{ planet.name }}</span><small>[{{ planet.coordinates }}]</small>
+                            </button>
                         </div>
                     </section>
-                    <section v-if="activePlanet" class="data-panel mb-6">
-                        <div class="panel-heading">
+                    <p class="overview-resource-heading"><i class="bi bi-bar-chart" aria-hidden="true"></i> {{ t('dashboard.yourEmpire') }} · {{ t('common.resources') }}</p>
+                    <div class="resource-grid"><article class="resource-card"><span class="resource-symbol metal-symbol">▰</span><span class="resource-label">{{ t('dashboard.metal') }}</span><strong>{{ formatResource(empireResources.metal) }}</strong><small>{{ t('dashboard.primaryResource') }}</small></article><article class="resource-card"><span class="resource-symbol crystal-symbol">◇</span><span class="resource-label">{{ t('dashboard.crystal') }}</span><strong>{{ formatResource(empireResources.crystal) }}</strong><small>{{ t('dashboard.researchTechnology') }}</small></article><article class="resource-card"><span class="resource-symbol deut-symbol">⬡</span><span class="resource-label">{{ t('dashboard.deuterium') }}</span><strong>{{ formatResource(empireResources.deuterium) }}</strong><small>{{ t('dashboard.fleetFuel') }}</small></article><article class="resource-card"><span class="resource-symbol fleet-symbol">➤</span><span class="resource-label">{{ t('dashboard.fleetInFlight') }}</span><strong>{{ fleetCount }}</strong><small>{{ t('dashboard.activeMissions') }}</small></article></div>
+                    <section v-if="activePlanet" class="overview-defences">
+                        <div class="overview-defences-heading">
                             <div><span class="panel-kicker">{{ t('overviewDefences.subtitle') }} · {{ activePlanet.name }}</span><h2>{{ t('overviewDefences.title') }}</h2></div>
                             <Link class="button button-outline" :href="route('defences.index', { planet: activePlanet.id })">{{ t('overviewDefences.open') }}</Link>
                         </div>
-                        <div class="overview-panel-body">
-                            <div class="grid grid-cols-1 gap-3 md:grid-cols-3">
-                                <article v-for="shield in shieldTypes" :key="shield.key" class="border border-slate-700 bg-slate-950/40 p-4">
-                                    <h3 class="text-sm font-semibold text-slate-200">{{ t(shield.name) }}</h3>
-                                    <p class="mt-3 flex items-center gap-2 font-semibold" :class="activePlanet.shields[shield.key] ? 'text-emerald-400' : 'text-slate-400'">
-                                        <span aria-hidden="true">{{ activePlanet.shields[shield.key] ? '●' : '○' }}</span>
-                                        {{ t(activePlanet.shields[shield.key] ? 'overviewDefences.installed' : 'overviewDefences.absent') }}
-                                    </p>
-                                </article>
-                            </div>
-                            <p class="mt-3 text-sm text-slate-400">{{ t('overviewDefences.detail') }}</p>
+                        <div class="overview-shield-grid">
+                            <article v-for="shield in shieldTypes" :key="shield.key" class="data-panel overview-shield-card">
+                                <h3 class="text-sm font-semibold text-slate-200">{{ t(shield.name) }}</h3>
+                                <p class="mt-3 flex items-center gap-2 font-semibold" :class="activePlanet.shields[shield.key] ? 'text-emerald-400' : 'text-slate-400'">
+                                    <span aria-hidden="true">{{ activePlanet.shields[shield.key] ? '●' : '○' }}</span>
+                                    {{ t(activePlanet.shields[shield.key] ? 'overviewDefences.installed' : 'overviewDefences.absent') }}
+                                </p>
+                            </article>
                         </div>
+                        <p class="overview-defences-detail">{{ t('overviewDefences.detail') }}</p>
                     </section>
-                    <section class="data-panel mb-6">
+                    <section class="data-panel overview-colonisation">
                         <div class="panel-heading"><div><span class="panel-kicker">{{ t('dashboard.yourEmpire') }}</span><h2>{{ t('overviewDefences.colonies') }}</h2></div></div>
                         <div class="overview-panel-body flex flex-wrap items-center gap-x-8 gap-y-3">
                             <p>{{ t('overviewDefences.owned') }} : <strong>{{ formatResource(planets.length) }}</strong></p>
@@ -173,7 +192,34 @@ function researchName(key) {
                             <p class="text-sm text-slate-400">{{ t('overviewDefences.unavailable') }}</p>
                         </div>
                     </section>
-                    <div class="command-panels mb-6">
+                    <div class="command-panels overview-main-panels">
+                        <section v-if="activePlanet" class="data-panel">
+                            <div class="panel-heading">
+                                <div><span class="panel-kicker">{{ t('overview.activePlanet') }}</span><h2>{{ activePlanet.name }} · [{{ activePlanet.coordinates }}]</h2></div>
+                            </div>
+                            <div class="overview-panel-body">
+                                <div class="overview-world-visual"><span class="planet-orb" aria-hidden="true"></span><strong>{{ activePlanet.name }}</strong><small>[{{ activePlanet.coordinates }}]</small></div>
+                                <div class="flex flex-col gap-2">
+                                    <span>{{ t('overview.fields', { used: activePlanet.usedFields, total: activePlanet.fields }) }}</span>
+                                    <span>{{ t('overview.temperature', { temperature: activePlanet.max_temperature }) }}</span>
+                                    <div><button v-if="!isRenaming" class="button button-outline" type="button" @click="startRename">{{ t('overview.rename') }}</button></div>
+                                </div>
+                                <form v-if="isRenaming" class="mt-4 flex flex-wrap items-end gap-3" @submit.prevent="renamePlanet">
+                                    <label class="flex flex-col gap-1" for="overview-planet-name">{{ t('overview.planetName') }}
+                                        <input id="overview-planet-name" v-model="renameForm.name" class="rounded border border-slate-600 bg-slate-950 px-3 py-2 text-white" minlength="2" maxlength="80" required>
+                                    </label>
+                                    <button class="button button-primary" type="submit" :disabled="renameForm.processing">{{ t('overview.save') }}</button>
+                                    <button class="button button-outline" type="button" @click="cancelRename">{{ t('common.cancel') }}</button>
+                                    <p v-if="renameForm.errors.name" class="field-error w-full" role="alert">{{ renameForm.errors.name }}</p>
+                                </form>
+                                <div class="mt-4 flex flex-wrap gap-2">
+                                    <Link class="button button-outline" :href="route('buildings.index', { planet: activePlanet.id })">{{ t('dashboard.buildings') }}</Link>
+                                    <Link class="button button-outline" :href="route('research.index', { planet: activePlanet.id })">{{ t('nav.research') }}</Link>
+                                    <Link class="button button-outline" :href="route('shipyard.index', { planet: activePlanet.id })">{{ t('nav.shipyard') }}</Link>
+                                    <Link class="button button-outline" :href="route('fleet.index', { planet: activePlanet.id })">{{ t('nav.fleet') }}</Link>
+                                </div>
+                            </div>
+                        </section>
                         <section class="data-panel">
                             <div class="panel-heading"><div><span class="panel-kicker">{{ t('overview.progress') }}</span><h2>{{ t('overview.activities') }}</h2></div></div>
                             <div class="overview-panel-body">

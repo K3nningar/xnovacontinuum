@@ -8,6 +8,7 @@ import LocaleSwitcher from '../../Components/LocaleSwitcher.vue';
 import ElementInfoButton from '../../Components/ElementInfoButton.vue';
 import RarityBadge from '../../Components/RarityBadge.vue';
 import infosFr from '../../i18n/infos-fr.json';
+import { buildingCatalog, buildingCategories, buildingsInCategory } from '../../buildingCatalog.js';
 
 const page = usePage();
 const { t, n, locale } = useI18n();
@@ -26,6 +27,7 @@ const selectedPlanet = computed(() => props.planets.find((planet) => planet.id =
 const busyBuilding = computed(() => page.props.processingBuilding ?? null);
 const currentTime = ref(Date.now());
 const queuePanelOpen = ref(false);
+const selectedCategory = ref('all');
 let countdownInterval;
 const { start: startPolling, stop: stopPolling } = usePoll(5000, {
     only: ['planets'],
@@ -34,22 +36,6 @@ const { start: startPolling, stop: stopPolling } = usePoll(5000, {
     autoStart: false,
     keepAlive: true,
 });
-const buildingCatalog = [
-    { key: 'metal', level: 'metal_mine_level', activity: 'metal_mine_activity', code: 1, icon: '▰' },
-    { key: 'crystal', level: 'crystal_mine_level', activity: 'crystal_mine_activity', code: 2, icon: '◇' },
-    { key: 'deuterium', level: 'deuterium_synthesizer_level', activity: 'deuterium_synthesizer_activity', code: 3, icon: '⬡' },
-    { key: 'solar', level: 'solar_plant_level', activity: 'solar_plant_activity', code: 4, icon: '☼' },
-    { key: 'fusion', level: 'fusion_plant_level', activity: 'fusion_plant_activity', code: 12, icon: '⌬', requirementKey: 'fusionRequirement' },
-    { key: 'robot_factory', level: 'robot_factory_level', activity: null, code: 14, icon: 'R', requirementKey: 'robotEffect', maxLevel: 30 },
-    { key: 'nano_factory', level: 'nano_factory_level', activity: null, code: 15, icon: 'N', requirementKey: 'nanoRequirement', maxLevel: 30 },
-    { key: 'hangar', level: 'hangar_level', activity: null, code: 21, icon: 'H', requirementKey: 'shipyardRequirement' },
-    { key: 'metal_storage', level: 'metal_storage_level', activity: null, code: 22, icon: 'M', resource: 'metal', maxLevel: 30 },
-    { key: 'crystal_storage', level: 'crystal_storage_level', activity: null, code: 23, icon: 'C', resource: 'crystal', maxLevel: 30 },
-    { key: 'deuterium_storage', level: 'deuterium_storage_level', activity: null, code: 24, icon: 'D', resource: 'deuterium', maxLevel: 30 },
-    { key: 'laboratory', level: 'laboratory_level', activity: 'laboratory_activity', code: 31, icon: 'L', requirementKey: 'laboratoryRequirement' },
-    { key: 'terraformer', level: 'terraformer_level', activity: null, code: 33, icon: 'T', maxLevel: 30, requirementKey: 'terraformerRequirement' },
-    { key: 'missile_silo', level: 'missile_silo_level', activity: null, code: 44, icon: 'X', requirementKey: 'siloRequirement' },
-];
 const buildings = computed(() => buildingCatalog.map((building) => ({
     ...building,
     rarity: props.buildingRarities[building.code],
@@ -58,6 +44,7 @@ const buildings = computed(() => buildingCatalog.map((building) => ({
     unit: t(`buildingCatalog.${building.key}.unit`),
     requirement: building.requirementKey ? t(`buildingCatalog.${building.key}.requirement`) : null,
 })));
+const visibleBuildings = computed(() => buildingsInCategory(buildings.value, selectedCategory.value));
 
 function format(value) {
     return n(Number(value ?? 0), 'game');
@@ -208,11 +195,87 @@ function upgrade(building) {
                     </div>
                     <div class="energy-track"><span :style="{ width: `${selectedPlanet.energy.productionLevel}%` }"></span></div>
                 </div>
-                <section class="buildings-section"><div class="buildings-section-heading"><div><span class="panel-kicker">{{ t('buildings.productionSector') }}</span><h2>{{ t('buildings.availableFacilities') }}</h2></div><span class="panel-count">{{ buildings.length }}</span></div>
-                    <div class="building-list"><article v-for="building in buildings" :key="building.key" class="building-card"><div class="building-icon" :class="`${building.key}-building-icon`"><img :src="`images/buildings/${building.code}.png`" :alt="building.name" loading="lazy" @error="$event.currentTarget.hidden = true"><span aria-hidden="true">{{ building.icon }}</span></div><div class="building-main"><div class="building-title"><span class="building-code">{{ String(building.code).padStart(2, '0') }}</span><h3>{{ building.name }}</h3><RarityBadge :rarity="building.rarity" /><ElementInfoButton :id="`building_${building.code}`" :name="building.name" :description="infosFr[`building_${building.code}`]?.description" /></div><p>{{ building.description }}</p><p v-if="building.requirement" class="building-requirement">{{ building.requirement }}</p><div class="building-stats"><span>{{ t('common.level') }} <strong>{{ buildingLevel(building) }}</strong></span><span :class="building.key === 'solar' || building.key === 'fusion' ? 'energy-positive' : ''">{{ building.resource || building.key === 'terraformer' ? '' : '+' }}{{ buildingOutput(building) }} {{ building.unit }}</span><span v-if="building.key === 'fusion'" class="energy-negative">{{ t('buildings.fusionUse') }}</span></div><div v-if="building.activity !== null" class="activity-row"><label :for="`activity-${building.key}`">{{ t('buildings.activity') }} <strong>{{ selectedPlanet[building.activity] * 10 }}%</strong></label><input :id="`activity-${building.key}`" type="range" min="0" max="10" step="1" :value="selectedPlanet[building.activity]" :disabled="building.key === 'fusion' || building.key === 'laboratory'" @change="updateActivity(building, $event)"></div></div><div class="building-action"><div class="building-cost"><span>{{ t('common.nextLevel') }}</span><strong><i class="metal-symbol">▰</i>{{ format(selectedPlanet.nextCosts[building.key].metal) }}</strong><strong><i class="crystal-symbol">◇</i>{{ format(selectedPlanet.nextCosts[building.key].crystal) }}</strong><strong><i class="deut-symbol">⬡</i>{{ format(selectedPlanet.nextCosts[building.key].deuterium) }}</strong><strong v-if="selectedPlanet.nextCosts[building.key].energy" class="energy-positive">ϟ {{ format(selectedPlanet.nextCosts[building.key].energy) }}</strong></div><button class="button button-primary building-upgrade" type="button" :disabled="!canUpgrade(building) || busyBuilding === building.key" @click="upgrade(building)">{{ building.disabled ? t('common.soon') : busyBuilding === building.key ? t('buildings.constructing') : canUpgrade(building) ? building.maxLevel === 1 ? t('buildings.build') : t('buildings.buildNextLevel', { level: buildingLevel(building) + 1 }) : building.key === 'fusion' || building.key === 'nano_factory' || building.key === 'terraformer' ? t('common.missingRequirements') : buildingLevel(building) >= (building.maxLevel ?? 30) ? t('common.maxLevel') : t('common.resourcesMissing') }}</button></div></article></div>
-    
+                <section class="buildings-section">
+                    <div class="buildings-section-heading"><div><span class="panel-kicker">{{ t('buildings.productionSector') }}</span><h2>{{ t('buildings.availableFacilities') }}</h2></div><span class="panel-count">{{ visibleBuildings.length }} / {{ buildings.length }}</span></div>
+                    <div class="pos building-pos">
+                        <div class="pos-container">
+                            <nav class="pos-menu building-filters" :aria-label="t('buildingFilters.label')">
+                                <span class="panel-kicker">{{ t('buildingFilters.label') }}</span>
+                                <button v-for="category in buildingCategories" :key="category.key" type="button" class="building-filter" :class="{ active: selectedCategory === category.key }" :aria-pressed="selectedCategory === category.key" @click="selectedCategory = category.key">
+                                    <i class="bi" :class="category.icon" aria-hidden="true"></i>
+                                    <span>{{ t(`buildingFilters.${category.key}`) }}</span>
+                                    <small>{{ buildingsInCategory(buildings, category.key).length }}</small>
+                                </button>
+                            </nav>
+                            <div class="pos-content building-catalog">
+                                <div class="building-pos-grid">
+                                    <article v-for="building in visibleBuildings" :key="building.key" class="card building-pos-card">
+                                        <div class="pos-product">
+                                            <div class="img building-pos-image" :class="`${building.key}-building-icon`">
+                                                <img :src="`images/buildings/${building.code}.png`" :alt="building.name" loading="lazy" @error="$event.currentTarget.hidden = true">
+                                                <span class="building-image-fallback" aria-hidden="true">{{ building.icon }}</span>
+                                                <span class="building-level">{{ t('common.level') }} {{ buildingLevel(building) }}</span>
+                                            </div>
+                                            <div class="building-pos-body">
+                                                <div class="building-title"><span class="building-code">{{ String(building.code).padStart(2, '0') }}</span><h3>{{ building.name }}</h3><RarityBadge :rarity="building.rarity" /><ElementInfoButton :id="`building_${building.code}`" :name="building.name" :description="infosFr[`building_${building.code}`]?.description" /></div>
+                                                <div class="building-main">
+                                                    <p>{{ building.description }}</p>
+                                                    <p v-if="building.requirement" class="building-requirement">{{ building.requirement }}</p>
+                                                    <div class="building-stats"><span :class="building.key === 'solar' || building.key === 'fusion' ? 'energy-positive' : ''">{{ building.resource || building.key === 'terraformer' ? '' : '+' }}{{ buildingOutput(building) }} {{ building.unit }}</span><span v-if="building.key === 'fusion'" class="energy-negative">{{ t('buildings.fusionUse') }}</span></div>
+                                                    <div v-if="building.activity !== null" class="activity-row"><label :for="`activity-${building.key}`">{{ t('buildings.activity') }} <strong>{{ selectedPlanet[building.activity] * 10 }}%</strong></label><input :id="`activity-${building.key}`" type="range" min="0" max="10" step="1" :value="selectedPlanet[building.activity]" :disabled="building.key === 'fusion' || building.key === 'laboratory'" @change="updateActivity(building, $event)"></div>
+                                                </div>
+                                                <div class="building-action">
+                                                    <div class="building-cost"><span>{{ t('common.nextLevel') }}</span><strong><i class="metal-symbol">▰</i>{{ format(selectedPlanet.nextCosts[building.key].metal) }}</strong><strong><i class="crystal-symbol">◇</i>{{ format(selectedPlanet.nextCosts[building.key].crystal) }}</strong><strong><i class="deut-symbol">⬡</i>{{ format(selectedPlanet.nextCosts[building.key].deuterium) }}</strong><strong v-if="selectedPlanet.nextCosts[building.key].energy" class="energy-positive">ϟ {{ format(selectedPlanet.nextCosts[building.key].energy) }}</strong></div>
+                                                    <button class="button button-primary building-upgrade" type="button" :disabled="!canUpgrade(building) || busyBuilding === building.key" @click="upgrade(building)">{{ building.disabled ? t('common.soon') : busyBuilding === building.key ? t('buildings.constructing') : canUpgrade(building) ? building.maxLevel === 1 ? t('buildings.build') : t('buildings.buildNextLevel', { level: buildingLevel(building) + 1 }) : building.key === 'fusion' || building.key === 'nano_factory' || building.key === 'terraformer' ? t('common.missingRequirements') : buildingLevel(building) >= (building.maxLevel ?? 30) ? t('common.maxLevel') : t('common.resourcesMissing') }}</button>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="card-arrow" aria-hidden="true"><div class="card-arrow-top-left"></div><div class="card-arrow-top-right"></div><div class="card-arrow-bottom-left"></div><div class="card-arrow-bottom-right"></div></div>
+                                    </article>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
                 </section>
             </section>
         </main>
     </GameLayout>
 </template>
+
+<style scoped>
+.building-pos { height: auto; background: transparent; }
+.building-pos .pos-container { display: flex; height: auto; align-items: flex-start; gap: 18px; }
+.building-pos .pos-menu { width: 175px; flex: 0 0 175px; align-items: stretch; gap: 5px; overflow: visible; }
+.building-filters > .panel-kicker { padding: 8px 10px; }
+.building-filter { display: flex; align-items: center; gap: 10px; width: 100%; padding: 11px 10px; border: 1px solid transparent; color: #aab8c7; background: transparent; text-align: left; cursor: pointer; }
+.building-filter i { color: var(--accent); font-size: 16px; }
+.building-filter span { flex: 1; font-size: 11px; }
+.building-filter small { color: #8291a2; font-size: 10px; }
+.building-filter:hover, .building-filter.active { border-color: rgba(68, 217, 173, .35); color: #e6edf4; background: rgba(68, 217, 173, .1); }
+.building-filter:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.building-pos .pos-content { min-width: 0; height: auto; overflow: visible; border: 0; }
+.building-pos-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 270px), 1fr)); gap: 14px; }
+.building-pos-card { min-width: 0; border: 1px solid rgba(128, 200, 190, .2); background: rgba(5, 20, 24, .65); }
+.building-pos-card .pos-product { height: 100%; }
+.building-pos-card .building-pos-image { position: relative; display: grid; place-items: center; width: 100%; aspect-ratio: 16 / 9; overflow: hidden; color: var(--accent); background: radial-gradient(circle, rgba(86, 214, 194, .18), #071418); font-size: 40px; }
+.building-pos-image img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+.building-pos-image img:not([hidden]) + .building-image-fallback { display: none; }
+.building-level { position: absolute; top: 10px; right: 10px; padding: 4px 8px; border: 1px solid rgba(232, 190, 104, .6); color: #e8be68; background: rgba(4, 12, 16, .9); font-size: 10px; }
+.building-pos-body { display: flex; flex: 1; flex-direction: column; gap: 10px; padding: 14px; }
+.building-pos-body .building-title { align-items: center; }
+.building-pos-body .building-title h3 { font-size: 14px; }
+.building-pos-body .building-main { flex: 1; }
+.building-pos-body .building-main > p { font-size: 11px; }
+.building-pos-body .building-stats, .building-pos-body .activity-row label { font-size: 10px; }
+.building-pos-body .building-action { display: grid; grid-template-columns: minmax(0, 1fr); align-items: stretch; }
+.building-pos-body .building-upgrade { min-width: 0; font-size: 10px; }
+.building-pos-body .building-cost strong { font-size: 10px; }
+
+@media (max-width: 767px) {
+    .building-pos .pos-container { flex-direction: column; }
+    .building-pos .pos-menu { width: 100%; flex: auto; flex-direction: row; flex-wrap: wrap; }
+    .building-filters > .panel-kicker { flex-basis: 100%; }
+    .building-filter { width: auto; flex: 1 1 130px; }
+    .building-pos .pos-content { width: 100%; }
+}
+</style>

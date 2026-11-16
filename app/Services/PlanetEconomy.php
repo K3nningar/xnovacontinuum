@@ -387,6 +387,46 @@ class PlanetEconomy
         ];
     }
 
+    public function liveResourceSnapshot(Planet $planet): array
+    {
+        $productionLevel = $this->energyBalance($planet)['productionLevel'];
+        $rates = [];
+        $remainders = [];
+        foreach (['metal', 'crystal', 'deuterium'] as $resource) {
+            $rates[$resource] = $this->resourceProductionPerHour($planet, $resource, $productionLevel);
+            $remainders[$resource] = (int) $planet->{$resource.'_production_remainder'};
+        }
+
+        $nextBuilding = $planet->buildingQueue()->min('completes_at');
+        $nextSatellite = $planet->unitQueue()->where('unit_type', 'ships')->where('unit_code', 212)->min('completes_at');
+        $nextChange = collect([$nextBuilding, $nextSatellite])->filter()->map(fn ($time) => Carbon::parse($time))->min();
+
+        return [
+            'updatedAt' => ($planet->resources_updated_at ?? now())->toIso8601String(),
+            'rates' => $rates,
+            'remainders' => $remainders,
+            'capacities' => $this->storageCapacities($planet),
+            'fusionUsage' => $this->fusionConsumptionPerHour($planet),
+            'fusionRemainder' => (int) $planet->fusion_consumption_remainder,
+            'nextChangeAt' => $nextChange?->toIso8601String(),
+        ];
+    }
+
+    private function resourceProductionPerHour(Planet $planet, string $resource, int $productionLevel): int
+    {
+        return (int) floor($this->buildingProduction($planet, $resource) * $productionLevel / 100)
+            + self::BASIC_INCOME[$resource] * self::RESOURCE_MULTIPLIER;
+    }
+
+    private function fusionConsumptionPerHour(Planet $planet): int
+    {
+        if ((int) $planet->fusion_plant_level === 0 || (int) $planet->deuterium_synthesizer_level < 5) {
+            return 0;
+        }
+
+        return (int) floor(10 * (int) $planet->fusion_plant_level * (1.1 ** (int) $planet->fusion_plant_level) * ((int) $planet->fusion_plant_activity / 10) * self::RESOURCE_MULTIPLIER);
+    }
+
     private function materializeLockedPlanet(Planet $planet, ?Carbon $now = null): void
     {
         $now ??= now();
@@ -437,10 +477,7 @@ class PlanetEconomy
 
         foreach (['metal', 'crystal', 'deuterium'] as $resource) {
             $remainderColumn = $resource.'_production_remainder';
-            $baseProduction = $this->buildingProduction($planet, $resource);
-            $production = $baseProduction === 0 ? 0 : (int) floor($baseProduction * $productionLevel / 100);
-            $basicIncome = self::BASIC_INCOME[$resource] * self::RESOURCE_MULTIPLIER;
-            $hourlyProduction = $production + $basicIncome;
+            $hourlyProduction = $this->resourceProductionPerHour($planet, $resource, $productionLevel);
             $safeElapsedSeconds = $hourlyProduction > 0
                 ? min($elapsedSeconds, intdiv(PHP_INT_MAX - (int) $planet->{$remainderColumn}, $hourlyProduction))
                 : 0;
@@ -455,13 +492,15 @@ class PlanetEconomy
                 : (($elapsedSeconds > $safeElapsedSeconds) ? 0 : $total % 3600);
         }
 
-        $fusionStarted = (int) $planet->fusion_plant_level > 0
-            && (int) $planet->deuterium_synthesizer_level >= 5;
-        $deuteriumUsage = $fusionStarted
-            ? (int) floor(10 * (int) $planet->fusion_plant_level * (1.1 ** (int) $planet->fusion_plant_level) * ((int) $planet->fusion_plant_activity / 10) * self::RESOURCE_MULTIPLIER)
-            : 0;
+        $deuteriumUsage = $this->fusionConsumptionPerHour($planet);
         if ($deuteriumUsage > 0) {
-            $planet->deuterium = max(0, (int) $planet->deuterium - (int) floor($deuteriumUsage * $elapsedSeconds / 3600));
+            $remainder = (int) $planet->fusion_consumption_remainder;
+            $safeElapsedSeconds = min($elapsedSeconds, intdiv(PHP_INT_MAX - $remainder, $deuteriumUsage));
+            $total = $deuteriumUsage * $safeElapsedSeconds + $remainder;
+            $planet->deuterium = max(0, (int) $planet->deuterium - intdiv($total, 3600));
+            $planet->fusion_consumption_remainder = (int) $planet->deuterium === 0 || $safeElapsedSeconds < $elapsedSeconds
+                ? 0
+                : $total % 3600;
         }
     }
 }

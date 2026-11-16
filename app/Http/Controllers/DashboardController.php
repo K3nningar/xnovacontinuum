@@ -79,6 +79,7 @@ class DashboardController extends Controller
                 'usedFields' => collect($economy->administrativeBuildings())
                     ->sum(fn (array $building): int => (int) $planet->{$building['level']}),
                 ...$economy->snapshot($planet, (int) $user->energy_technology_level, (int) $user->computer_technology_level),
+                'liveResources' => $economy->liveResourceSnapshot($planet),
             ])->values(),
             'alliance' => $user->alliance?->only('id', 'name', 'tag', 'description'),
             'fleetCount' => $universe ? $user->fleets()->where('status', 'outbound')->count() : 0,

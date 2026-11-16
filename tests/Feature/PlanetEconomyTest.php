@@ -77,10 +77,102 @@ class PlanetEconomyTest extends TestCase
             ->where('selectedPlanetId', null)
             ->where('planets.0.metal', 120)
             ->where('planets.0.production.metal', 33)
+            ->where('planets.0.liveResources.rates.metal', 20)
             ->where('planets.0.nextCosts.metal.metal', 90)
             ->where('planets.0.crystal', 510)
             ->where('planets.0.deuterium', 0)
         );
+    }
+
+    public function test_dashboard_exposes_authoritative_rates_and_next_production_change(): void
+    {
+        $this->freezeSecond();
+        $planet = $this->createPlanet([
+            'metal_mine_level' => 1,
+            'solar_plant_level' => 1,
+            'deuterium_synthesizer_level' => 5,
+            'deuterium_synthesizer_activity' => 0,
+            'fusion_plant_level' => 1,
+            'metal_production_remainder' => 3000,
+            'fusion_consumption_remainder' => 660,
+        ]);
+        $planet->buildingQueue()->create([
+            'universe_id' => $planet->universe_id, 'building_key' => 'metal', 'building_code' => 1,
+            'target_level' => 2, 'position' => 1, 'cost_metal' => 0, 'cost_crystal' => 0, 'cost_deuterium' => 0,
+            'starts_at' => now(), 'completes_at' => now()->addMinutes(2),
+        ]);
+        $planet->unitQueue()->create([
+            'universe_id' => $planet->universe_id, 'unit_code' => 212, 'unit_type' => 'ships',
+            'quantity' => 1, 'quantity_completed' => 0, 'position' => 1,
+            'cost_metal' => 0, 'cost_crystal' => 0, 'cost_deuterium' => 0,
+            'starts_at' => now(), 'completes_at' => now()->addMinute(),
+        ]);
+
+        $this->actingAs($planet->user)->get(route('dashboard'))
+            ->assertInertia(fn (Assert $page) => $page
+                ->where('planets.0.liveResources.updatedAt', now()->toIso8601String())
+                ->where('planets.0.liveResources.rates.metal', 53)
+                ->where('planets.0.liveResources.rates.crystal', 10)
+                ->where('planets.0.liveResources.rates.deuterium', 0)
+                ->where('planets.0.liveResources.remainders.metal', 3000)
+                ->where('planets.0.liveResources.capacities.metal', 1000000)
+                ->where('planets.0.liveResources.fusionUsage', 11)
+                ->where('planets.0.liveResources.fusionRemainder', 660)
+                ->where('planets.0.liveResources.nextChangeAt', now()->addMinute()->toIso8601String()));
+    }
+
+    public function test_dashboard_partial_refresh_preserves_production_and_fusion_consumption_fractions(): void
+    {
+        $this->freezeSecond();
+        $planet = $this->createPlanet([
+            'metal' => 100,
+            'deuterium' => 100,
+            'deuterium_synthesizer_level' => 5,
+            'deuterium_synthesizer_activity' => 0,
+            'fusion_plant_level' => 1,
+            'fusion_plant_activity' => 10,
+        ]);
+        $initialPage = $this->actingAs($planet->user)->get(route('dashboard', ['planet' => $planet->id]))->viewData('page');
+        $this->withHeaders([
+            'X-Inertia' => 'true',
+            'X-Inertia-Version' => $initialPage['version'] ?? '',
+            'X-Inertia-Partial-Component' => 'Dashboard',
+            'X-Inertia-Partial-Data' => 'planets',
+        ]);
+
+        $this->travel(1)->minute();
+        $this->get(route('dashboard', ['planet' => $planet->id]))
+            ->assertOk()->assertJsonPath('props.planets.0.metal', 100)->assertJsonPath('props.planets.0.deuterium', 100);
+        $this->assertSame(660, (int) $planet->fresh()->fusion_consumption_remainder);
+
+        $this->travel(5)->minutes();
+        $this->get(route('dashboard', ['planet' => $planet->id]))
+            ->assertOk()->assertJsonPath('props.planets.0.metal', 102)->assertJsonPath('props.planets.0.deuterium', 99);
+        $this->assertSame(360, (int) $planet->fresh()->fusion_consumption_remainder);
+    }
+
+    public function test_fusion_consumption_does_not_carry_unpaid_fractions_after_deuterium_is_exhausted(): void
+    {
+        $this->freezeSecond();
+        $planet = $this->createPlanet([
+            'deuterium' => 1,
+            'deuterium_synthesizer_level' => 5,
+            'deuterium_synthesizer_activity' => 0,
+            'fusion_plant_level' => 1,
+            'fusion_plant_activity' => 10,
+        ]);
+        $economy = app(PlanetEconomy::class);
+
+        $this->travel(6)->minutes();
+        $economy->materialize($planet);
+        $this->assertSame(0, (int) $planet->fresh()->deuterium);
+        $this->assertSame(0, (int) $planet->fresh()->fusion_consumption_remainder);
+
+        $planet->refresh()->forceFill(['deuterium' => 100])->save();
+        $this->travel(1)->minute();
+        $economy->materialize($planet);
+        $this->assertSame(100, (int) $planet->fresh()->deuterium);
+        $this->assertSame(660, (int) $planet->fresh()->fusion_consumption_remainder);
     }
 
     public function test_commander_can_queue_a_mine_upgrade_and_the_cost_is_deducted(): void
