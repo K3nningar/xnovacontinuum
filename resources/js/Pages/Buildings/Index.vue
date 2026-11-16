@@ -241,3 +241,45 @@ function upgrade(building) {
         </main>
     </GameLayout>
 </template>
+<<<<<<< HEAD
+=======
+
+<style scoped>
+.building-pos { height: auto; background: transparent; }
+.building-pos .pos-container { display: flex; height: auto; align-items: flex-start; gap: 18px; }
+.building-pos .pos-menu { width: 175px; flex: 0 0 175px; align-items: stretch; gap: 5px; overflow: visible; }
+.building-filters > .panel-kicker { padding: 8px 10px; }
+.building-filter { display: flex; align-items: center; gap: 10px; width: 100%; padding: 11px 10px; border: 1px solid transparent; color: #aab8c7; background: transparent; text-align: left; cursor: pointer; }
+.building-filter i { color: var(--accent); font-size: 16px; }
+.building-filter span { flex: 1; font-size: 11px; }
+.building-filter small { color: #8291a2; font-size: 10px; }
+.building-filter:hover, .building-filter.active { border-color: rgba(68, 217, 173, .35); color: #e6edf4; background: rgba(68, 217, 173, .1); }
+.building-filter:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.building-pos .pos-content { min-width: 0; height: auto; overflow: visible; border: 0; }
+.building-pos-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 270px), 1fr)); gap: 14px; }
+.building-pos-card { min-width: 0; border: 1px solid color-mix(in srgb, currentColor 35%, transparent); background: rgba(5, 20, 24, .65); }
+.building-pos-card .pos-product { height: 100%; color: var(--text); }
+.building-pos-card .building-pos-image { position: relative; display: grid; place-items: center; width: 100%; aspect-ratio: 16 / 9; overflow: hidden; color: var(--accent); background: radial-gradient(circle, rgba(86, 214, 194, .18), #071418); font-size: 40px; }
+.building-pos-image img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+.building-pos-image img:not([hidden]) + .building-image-fallback { display: none; }
+.building-rarity { position: absolute; top: 10px; left: 10px; padding: 4px 8px; border-radius: 2px; background: rgba(4, 12, 16, .9); font-size: 10px; }
+.building-level { position: absolute; top: 10px; right: 10px; padding: 4px 8px; border: 1px solid rgba(232, 190, 104, .6); color: #e8be68; background: rgba(4, 12, 16, .9); font-size: 10px; }
+.building-pos-body { display: flex; flex: 1; flex-direction: column; gap: 10px; padding: 14px; }
+.building-pos-body .building-title { align-items: center; }
+.building-pos-body .building-title h3 { font-size: 14px; }
+.building-pos-body .building-main { flex: 1; }
+.building-pos-body .building-main > p { font-size: 11px; }
+.building-pos-body .building-stats, .building-pos-body .activity-row label { font-size: 10px; }
+.building-pos-body .building-action { display: grid; grid-template-columns: minmax(0, 1fr); align-items: stretch; }
+.building-pos-body .building-upgrade { min-width: 0; font-size: 10px; }
+.building-pos-body .building-cost strong { font-size: 10px; }
+
+@media (max-width: 767px) {
+    .building-pos .pos-container { flex-direction: column; }
+    .building-pos .pos-menu { width: 100%; flex: auto; flex-direction: row; flex-wrap: wrap; }
+    .building-filters > .panel-kicker { flex-basis: 100%; }
+    .building-filter { width: auto; flex: 1 1 130px; }
+    .building-pos .pos-content { width: 100%; }
+}
+</style>
+>>>>>>> f5ddd0077cf5fad13a3eb1c581b74895b49fdf21
