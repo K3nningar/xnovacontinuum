@@ -8,7 +8,7 @@ The project has a goal to expand and add some features that never got to be impl
 
 - New buildings
 - New researches
-- New ships (SuperNova and Planetary Destructor - <strong">Finally !!!</strong>)
+- New ships (SuperNova and Planetary Destructor - <strong>Finally !!!</strong>)
 - New defenses (Planetary Protector (<strong>TOO !!!</strong>)
 - Universes (One server, multi instances).
 
