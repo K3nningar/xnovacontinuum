@@ -1,14 +1,21 @@
 <script setup>
+import { computed, ref } from 'vue';
 import { router, usePage } from '@inertiajs/vue3';
 import { useI18n } from 'vue-i18n';
 import { route as ziggyRoute } from 'ziggy-js';
 import infosFr from '../i18n/infos-fr.json';
 import ElementInfoButton from './ElementInfoButton.vue';
 import RarityBadge from './RarityBadge.vue';
+import CatalogGrid from './CatalogGrid.vue';
+import { catalogCategories, defenceFilters, matchesCatalogCategory, shipFilters } from '../catalogFilters.js';
 
 const props = defineProps({ units: Array, queue: Array, planet: Object, unitType: String, title: String });
 const page = usePage();
 const { t, n, locale } = useI18n();
+const selectedCategory = ref('all');
+const groups = computed(() => props.unitType === 'ships' ? shipFilters : defenceFilters);
+const categories = computed(() => catalogCategories(props.units, groups.value));
+const visibleCount = computed(() => props.units.filter((unit) => matchesCatalogCategory(unit, selectedCategory.value, categories.value)).length);
 const route = (name, params) => ziggyRoute(name, params, true, page.props.ziggy);
 const researchKeys = { 106: 'spy_technology_level', 109: 'military_technology_level', 110: 'defence_technology_level', 111: 'shield_technology_level', 113: 'energy_technology_level', 114: 'hyperspace_technology_level', 115: 'combustion_technology_level', 117: 'impulse_technology_level', 118: 'hyperspace_drive_level', 120: 'laser_technology_level', 121: 'ion_technology_level', 122: 'plasma_technology_level', 199: 'graviton_technology_level' };
 const buildingKeys = { 14: 'robot_factory', 15: 'nano_factory', 21: 'hangar', 31: 'laboratory', 44: 'missile_silo' };
@@ -31,18 +38,30 @@ function build(unit, event) {
 
 <template>
     <section class="data-panel unit-catalog">
-        <div class="panel-heading"><div><span class="panel-kicker">{{ t('production.installations') }}</span><h2>{{ title }}</h2></div><span class="panel-count">{{ units.length }}</span></div>
-        <div class="unit-grid">
-            <article v-for="unit in units" :key="unit.code" class="unit-card">
-                <div class="unit-art"><slot name="image" :unit="unit" :label="unitName(unit)" /><span class="unit-code">{{ unit.code }}</span></div>
-                <div class="unit-body">
-                    <div class="unit-title"><h3>{{ unitName(unit) }}</h3><RarityBadge :rarity="unit.rarity" /><ElementInfoButton :id="`unit_${unit.code}`" :name="unitName(unit)" :description="infosFr[`unit_${unit.code}`]?.description"><template v-if="unitType === 'ships'" #image><slot name="image" :unit="unit" :label="unitName(unit)" /></template></ElementInfoButton><span class="unit-owned">{{ format(unit.count) }} {{ t('production.inService') }}<span v-if="unit.queued"> · {{ format(unit.queued) }} {{ t('production.queued') }}</span></span></div>
-                    <div class="unit-cost"><span class="metal-symbol">▰ {{ format(unit.cost.metal) }}</span><span class="crystal-symbol">◇ {{ format(unit.cost.crystal) }}</span><span class="deut-symbol">⬡ {{ format(unit.cost.deuterium) }}</span></div>
-                    <div class="unit-requirements"><span v-for="req in unit.requirements" :key="req.code" :class="{ 'requirement-met': req.current >= req.level }">{{ requirementName(req.code) }} {{ t('units.level', { level: req.level }) }} · {{ t('units.requirementProgress', { current: req.current, required: req.level }) }}</span><span v-if="!unit.requirements.length" class="requirement-met">{{ t('units.noRequirement') }}</span></div>
-                    <form class="unit-order" @submit.prevent="build(unit, $event)"><input name="quantity" type="number" min="1" :max="unit.maxAffordable || 1" value="1" :disabled="!unit.canBuild || unit.unique"><button class="button button-primary" type="submit" :disabled="!unit.canBuild">{{ unit.unique ? t('production.buildUnique') : unit.canBuild ? t('production.addToQueue') : !unit.requirementsMet ? t('units.requirementsMissing') : t('units.resourcesMissing') }}</button></form>
+        <div class="panel-heading"><div><span class="panel-kicker">{{ t('production.installations') }}</span><h2>{{ title }}</h2></div><span class="panel-count">{{ visibleCount }} / {{ units.length }}</span></div>
+        <CatalogGrid v-model="selectedCategory" :items="units" :groups="groups" class="catalog-pos-wrap">
+            <article v-for="unit in units" v-show="matchesCatalogCategory(unit, selectedCategory, categories)" :key="unit.code" class="card building-pos-card" :class="`rarity-${unit.rarity}`">
+                <div class="pos-product">
+                    <div class="img building-pos-image">
+                        <slot name="image" :unit="unit" :label="unitName(unit)" />
+                        <span class="building-image-fallback" aria-hidden="true">{{ unit.code }}</span>
+                        <RarityBadge class="building-rarity" :rarity="unit.rarity" />
+                        <span class="building-level" :aria-label="`${format(unit.count)} ${t('production.inService')}`">{{ format(unit.count) }}</span>
+                    </div>
+                    <div class="building-pos-body">
+                        <div class="building-title"><span class="building-code">{{ unit.code }}</span><h3>{{ unitName(unit) }}</h3><ElementInfoButton :id="`unit_${unit.code}`" :name="unitName(unit)" :description="infosFr[`unit_${unit.code}`]?.description"><template v-if="unitType === 'ships'" #image><slot name="image" :unit="unit" :label="unitName(unit)" /></template></ElementInfoButton></div>
+                        <div class="building-main">
+                            <span class="unit-owned">{{ format(unit.count) }} {{ t('production.inService') }}<span v-if="unit.queued"> · {{ format(unit.queued) }} {{ t('production.queued') }}</span></span>
+                            <div class="unit-requirements"><span v-for="req in unit.requirements" :key="req.code" :class="{ 'requirement-met': req.current >= req.level }">{{ requirementName(req.code) }} {{ t('units.level', { level: req.level }) }} · {{ t('units.requirementProgress', { current: req.current, required: req.level }) }}</span><span v-if="!unit.requirements.length" class="requirement-met">{{ t('units.noRequirement') }}</span></div>
+                        </div>
+                        <div class="building-action">
+                            <div class="building-cost"><span>{{ t('catalogFilters.unitCost') }}</span><strong class="metal-symbol">▰ {{ format(unit.cost.metal) }}</strong><strong class="crystal-symbol">◇ {{ format(unit.cost.crystal) }}</strong><strong class="deut-symbol">⬡ {{ format(unit.cost.deuterium) }}</strong></div>
+                            <form class="unit-order" @submit.prevent="build(unit, $event)"><input name="quantity" type="number" min="1" :max="unit.maxAffordable || 1" value="1" :disabled="!unit.canBuild || unit.unique" :aria-label="t('production.quantity', { name: unitName(unit) })"><button class="button button-primary" type="submit" :disabled="!unit.canBuild">{{ unit.unique ? t('production.buildUnique') : unit.canBuild ? t('production.addToQueue') : !unit.requirementsMet ? t('units.requirementsMissing') : t('units.resourcesMissing') }}</button></form>
+                        </div>
+                    </div>
                 </div>
             </article>
-        </div>
+        </CatalogGrid>
     </section>
     <section class="data-panel production-queue">
         <div class="panel-heading"><div><span class="panel-kicker">{{ t('production.planetarySite') }}</span><h2>{{ t('production.queue') }}</h2></div><span class="panel-count">{{ queue.length }} / 5</span></div>

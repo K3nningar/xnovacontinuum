@@ -1,4 +1,5 @@
 export default {
+  catalogFilters: { all: 'All', information: 'Information', combat: 'Combat', propulsion: 'Propulsion', energy: 'Energy', civilian: 'Civilian', artillery: 'Artillery', shields: 'Shields', missiles: 'Missiles', economy: 'Economy', science: 'Science', defence: 'Defence', command: 'Command', other: 'Other', unitCost: 'Cost per unit' },
   buildingFilters: { label: 'Categories', all: 'All facilities', production: 'Production', storage: 'Storage', industry: 'Industry', research: 'Research', defence: 'Defence', special: 'Special' },
   changelogManual: { title: 'Manual changelog', hint: 'This text is identical in all languages and is immediately visible when the version is public.', version: 'Version', date: 'Date', type: 'Type', description: 'Description', add: 'Add entry', saved: 'Entry saved.' },
   changelogPublication: { published: 'Public', publish: 'Make public', unpublish: 'Hide from public', empty: 'No public changes yet.', saved: 'Visibility updated.', baseline: 'Initial development milestone; publishing this changelog does not indicate a software release. Dates indicate when changes were made.' },

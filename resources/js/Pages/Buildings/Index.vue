@@ -189,9 +189,9 @@ function upgrade(building) {
                 <div class="energy-panel">
                     <div class="energy-head"><div><span class="panel-kicker">{{ t('buildings.energyBalance') }}</span><strong :class="selectedPlanet.energy.balance >= 0 ? 'energy-positive' : 'energy-negative'">{{ selectedPlanet.energy.balance >= 0 ? '+' : '' }}{{ format(selectedPlanet.energy.balance) }}</strong></div><div class="energy-production"><span>{{ t('buildings.production') }}</span><strong>+{{ format(selectedPlanet.energy.supply) }}</strong></div><div class="energy-production"><span>{{ t('buildings.consumption') }}</span><strong>−{{ format(selectedPlanet.energy.usage) }}</strong></div><div class="energy-rate"><span>{{ t('buildings.mineEfficiency') }}</span><strong>{{ selectedPlanet.energy.productionLevel }}%</strong></div></div>
                     <div class="mt-4 flex flex-wrap gap-x-6 gap-y-2">
-                        <div class="energy-production"><span>{{ t('buildingCatalog.solar.name') }} </span><strong>+{{ format(selectedPlanet.energy.sources.solar) }}</strong></div>
-                        <div class="energy-production"><span>{{ t('buildingCatalog.fusion.name') }} </span><strong>+{{ format(selectedPlanet.energy.sources.fusion) }}</strong></div>
-                        <div class="energy-production"><span>{{ t('unitNames.solar_satellite') }} </span><strong>+{{ format(selectedPlanet.energy.sources.satellites) }}</strong></div>
+                        <div class="energy-production"><span>{{ t('buildingCatalog.solar.name') }} </span> <strong>+{{ format(selectedPlanet.energy.sources.solar) }}</strong></div>
+                        <div class="energy-production"><span>{{ t('buildingCatalog.fusion.name') }} </span> <strong>+{{ format(selectedPlanet.energy.sources.fusion) }}</strong></div>
+                        <div class="energy-production"><span>{{ t('unitNames.solar_satellite') }} </span> <strong>+{{ format(selectedPlanet.energy.sources.satellites) }}</strong></div>
                     </div>
                     <div class="energy-track"><span :style="{ width: `${selectedPlanet.energy.productionLevel}%` }"></span></div>
                 </div>
@@ -209,15 +209,16 @@ function upgrade(building) {
                             </nav>
                             <div class="pos-content building-catalog">
                                 <div class="building-pos-grid">
-                                    <article v-for="building in visibleBuildings" :key="building.key" class="card building-pos-card">
+                                    <article v-for="building in visibleBuildings" :key="building.key" class="card building-pos-card" :class="`rarity-${building.rarity}`">
                                         <div class="pos-product">
                                             <div class="img building-pos-image" :class="`${building.key}-building-icon`">
                                                 <img :src="`images/buildings/${building.code}.png`" :alt="building.name" loading="lazy" @error="$event.currentTarget.hidden = true">
                                                 <span class="building-image-fallback" aria-hidden="true">{{ building.icon }}</span>
+                                                <RarityBadge class="building-rarity" :rarity="building.rarity" />
                                                 <span class="building-level">{{ t('common.level') }} {{ buildingLevel(building) }}</span>
                                             </div>
                                             <div class="building-pos-body">
-                                                <div class="building-title"><span class="building-code">{{ String(building.code).padStart(2, '0') }}</span><h3>{{ building.name }}</h3><RarityBadge :rarity="building.rarity" /><ElementInfoButton :id="`building_${building.code}`" :name="building.name" :description="infosFr[`building_${building.code}`]?.description" /></div>
+                                                <div class="building-title"><span class="building-code">{{ String(building.code).padStart(2, '0') }}</span><h3>{{ building.name }}</h3><ElementInfoButton :id="`building_${building.code}`" :name="building.name" :description="infosFr[`building_${building.code}`]?.description" /></div>
                                                 <div class="building-main">
                                                     <p>{{ building.description }}</p>
                                                     <p v-if="building.requirement" class="building-requirement">{{ building.requirement }}</p>
@@ -230,7 +231,6 @@ function upgrade(building) {
                                                 </div>
                                             </div>
                                         </div>
-                                        <div class="card-arrow" aria-hidden="true"><div class="card-arrow-top-left"></div><div class="card-arrow-top-right"></div><div class="card-arrow-bottom-left"></div><div class="card-arrow-bottom-right"></div></div>
                                     </article>
                                 </div>
                             </div>
@@ -241,41 +241,3 @@ function upgrade(building) {
         </main>
     </GameLayout>
 </template>
-
-<style scoped>
-.building-pos { height: auto; background: transparent; }
-.building-pos .pos-container { display: flex; height: auto; align-items: flex-start; gap: 18px; }
-.building-pos .pos-menu { width: 175px; flex: 0 0 175px; align-items: stretch; gap: 5px; overflow: visible; }
-.building-filters > .panel-kicker { padding: 8px 10px; }
-.building-filter { display: flex; align-items: center; gap: 10px; width: 100%; padding: 11px 10px; border: 1px solid transparent; color: #aab8c7; background: transparent; text-align: left; cursor: pointer; }
-.building-filter i { color: var(--accent); font-size: 16px; }
-.building-filter span { flex: 1; font-size: 11px; }
-.building-filter small { color: #8291a2; font-size: 10px; }
-.building-filter:hover, .building-filter.active { border-color: rgba(68, 217, 173, .35); color: #e6edf4; background: rgba(68, 217, 173, .1); }
-.building-filter:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
-.building-pos .pos-content { min-width: 0; height: auto; overflow: visible; border: 0; }
-.building-pos-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 270px), 1fr)); gap: 14px; }
-.building-pos-card { min-width: 0; border: 1px solid rgba(128, 200, 190, .2); background: rgba(5, 20, 24, .65); }
-.building-pos-card .pos-product { height: 100%; }
-.building-pos-card .building-pos-image { position: relative; display: grid; place-items: center; width: 100%; aspect-ratio: 16 / 9; overflow: hidden; color: var(--accent); background: radial-gradient(circle, rgba(86, 214, 194, .18), #071418); font-size: 40px; }
-.building-pos-image img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
-.building-pos-image img:not([hidden]) + .building-image-fallback { display: none; }
-.building-level { position: absolute; top: 10px; right: 10px; padding: 4px 8px; border: 1px solid rgba(232, 190, 104, .6); color: #e8be68; background: rgba(4, 12, 16, .9); font-size: 10px; }
-.building-pos-body { display: flex; flex: 1; flex-direction: column; gap: 10px; padding: 14px; }
-.building-pos-body .building-title { align-items: center; }
-.building-pos-body .building-title h3 { font-size: 14px; }
-.building-pos-body .building-main { flex: 1; }
-.building-pos-body .building-main > p { font-size: 11px; }
-.building-pos-body .building-stats, .building-pos-body .activity-row label { font-size: 10px; }
-.building-pos-body .building-action { display: grid; grid-template-columns: minmax(0, 1fr); align-items: stretch; }
-.building-pos-body .building-upgrade { min-width: 0; font-size: 10px; }
-.building-pos-body .building-cost strong { font-size: 10px; }
-
-@media (max-width: 767px) {
-    .building-pos .pos-container { flex-direction: column; }
-    .building-pos .pos-menu { width: 100%; flex: auto; flex-direction: row; flex-wrap: wrap; }
-    .building-filters > .panel-kicker { flex-basis: 100%; }
-    .building-filter { width: auto; flex: 1 1 130px; }
-    .building-pos .pos-content { width: 100%; }
-}
-</style>
