@@ -24,7 +24,7 @@ Some "on demand" modules will be added later :
 - Multi-moon planets and truly impactful system of stellar objects (distance from the star will affect temperature).
 - Tutorials and quests
 - Rarity and quality system
-- Unique droppable elements (<strong>Modified ships !<strong>)
+- Unique droppable elements (<strong>Modified ships !</strong>)
 - Truly impactful expeditions
 - Defenses no longer belong to shipyard, new dedicated building.
 - Weekend-based merchant for resources and unique stuff.
