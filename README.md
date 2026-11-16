@@ -4,42 +4,47 @@
 
 XNova Continuum is a browser-based space strategy game that reimagines XNova with Laravel and Vue. Players join a universe, develop their planet, and explore the galaxy. The project is under development: not all features of the original game are available yet.
 
-The project has a goal to expand and add some features that never got to be implemented in XNova Legacies main branch :
+The project has a goal to expand and add some features that never got to be implemented in XNova Legacies main branch.
+
+## Features
+
+- Registration, login, universe selection.
+- Management of resources, buildings, and research, with a technology tree.
+- Construction of ships, defenses, and recruitment of officers.
+- Galaxy map, expedition and recycling missions, moons, and orbital transfers.
+- Administration panel with roles and an audit log for sensitive actions.
 
 - New buildings
 - New researches
-- New ships (SuperNova and Planetary Destructor - <strong>Finally !!!</strong>)
+- New ships (SuperNova and Planetary Destroyer - <strong>Finally !!!</strong>)
 - New defenses (Planetary Protector (<strong>TOO !!!</strong>)
 - Universes (One server, multi instances).
 
-And be a bit different than OGame on some aspects (Officers now has real names and their title is their class). New officers are incoming too.
+And be a bit different than OGame on some aspects : 
+
+- Officers now has real names and their title is their class. New officers are incoming too.
+- Reworked "noob" protection system
+- New galaxy view
+- Combat simulator
+- Startup tutorial for new players
+- Truly impactful expeditions (events that impact your colonies, fleet, researches and more)
+- Rarity and quality system
+- QoL improvments like filters and searching
+- Multi-moon planets and truly impactful system of stellar objects (distance from the star will affect temperature).
+- Unique droppable elements (<strong>Modified ships !</strong>)
+- Artefacts (awesome items that impact your gameplay and add some diversity or bonuses)
+- Weekend-based merchant for resources and unique stuff.
+- Defenses no longer belong to shipyard, new dedicated building.
 
 Some "on demand" modules will be added later :
 
 - Factions ("global" alliances and diplomacy !)
 - Alignments (choice-based gameplay scenarios <strong>-DESIGN IN PROGRESS-</strong>)
-- Reworked "noob" protection system
-- New galaxy view
-- QoL improvments like filters and searching
-- Multi-moon planets and truly impactful system of stellar objects (distance from the star will affect temperature).
-- Tutorials and quests
-- Rarity and quality system
-- Unique droppable elements (<strong>Modified ships !</strong>)
-- Truly impactful expeditions
-- Defenses no longer belong to shipyard, new dedicated building.
-- Weekend-based merchant for resources and unique stuff.
-- DLCs (free of course) TBD in future !
+- Quests
+- Earthed combat (new rounds in wars with ground units)
+- DLCs (free of course) in future !
 
 - And more !
-
-## Features
-
-- Registration, login, and universe selection.
-- Management of resources, buildings, and research, with a technology tree.
-- Construction of ships and defenses, and recruitment of officers.
-- Galaxy map, expedition and recycling missions, moons, and orbital transfers.
-- Combat simulator, announcements, and voluntary multi-account declarations.
-- Administration panel with roles and an audit log for sensitive actions.
 
 The application uses Laravel 13, Inertia 3, Vue 3, and Vite.
 
