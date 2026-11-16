@@ -13,7 +13,7 @@ XNova Continuum est un jeu de stratégie spatiale par navigateur, qui réinterpr
 - Simulateur de combat, annonces et déclaration volontaire de multicomptes.
 - Panneau d'administration avec rôles et journal des actions sensibles.
 
-L'application utilise Laravel 13, Inertia 3, Vue 3 et Vite. Le répertoire `_BASE` contient le code historique, distinct de l'application Laravel.
+L'application utilise Laravel 13, Inertia 3, Vue 3 et Vite.
 
 ## Installation locale
 
