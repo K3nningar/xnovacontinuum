@@ -22,7 +22,7 @@ export default {
     "technocrat": "Technocrate - Spécialiste des technologies.",
     "constructorName": "Hadrik Vonn",
     "constructor": "Chef de chantier - Accélère les constructions.",
-    "scientistName": "Professeur Nova Kessarine",
+    "scientistName": "Professeur Zack Kessarine",
     "scientist": "Scientifique - Accélère les recherches.",
     "stockmanName": "Tavi Norrec",
     "stockman": "Logisticien - Augmente les capacités de stockage.",
@@ -34,12 +34,12 @@ export default {
     "spy": "Espion - Améliore l’espionnage.",
     "commanderName": "Duce  Sanguis Rex",
     "commander": "Duce - Augmente les flottes commandées.",
-    "destroyerName": "Légat Tiberon Valetructeur",
+    "destroyerName": "Légat Tiberon Valegon",
     "destroyer": "Légat - Expert en destruction.",
-    "generalName": "Consul Septimus Nova",
+    "generalName": "Consul Suprême Gaïa Decimus",
     "general": "Consul - Dirige les opérations militaires.",
-    "raiderName": "Magistère Solon Archeron",
-    "raider": "Magistère - Spécialiste des raids.",
+    "raiderName": "Grand-Magistère Solon Archeron",
+    "raider": "Grand-Magistère - Spécialiste des raids.",
     "emperorName": "Empereur Octavian Nexus",
     "emperor": "Empereur - Le rang suprême de l’empire."
   },
@@ -49,15 +49,15 @@ export default {
     "engineer": "Axiel Brandt",
     "technocrat": "Sorel Quantis",
     "constructor": "Hadrik Vonn",
-    "scientist": "Professeur Nova Kessarine",
+    "scientist": "Professeur Zack Kessarine",
     "stockman": "Tavi Norrec",
     "defender": "Primus Machiavel Orrin",
     "bunker": "Sentinelle Orn-Varek",
     "spy": "Agent Zéro-Sept Lyr",
     "commander": "Duce  Sanguis Rex",
-    "destroyer": "Légat Tiberon Valetructeur",
-    "general": "Consul Septimus Nova",
-    "raider": "Magistère Solon Archeron",
+    "destroyer": "Légat Tiberon Valegon",
+    "general": "Consul Suprême Gaïa Decimus",
+    "raider": "Grand-Magistère Solon Archeron",
     "emperor": "Empereur Octavian Nexus"
   },
   "production": {
@@ -70,7 +70,7 @@ export default {
     "recruitsNone": "Aucun point disponible"
   },
   "elementDescriptions": {
-    "officer_601": "Augmente la production de ressources de 5 % (niveau maximal : 20).",
+    "officer_601": "Lithéa est une experte en xénogéologie. Elle trouve toujours des solutions pour traiter de nouvelles ressources et optimiser leur exploitation. <br><br> <span class=\"alert alert-info\">Augmente la production de ressources de 5 % (niveau maximal : 20).</span>",
     "officer_602": "Accorde un bonus de 5 % aux armes, boucliers et blindages des vaisseaux (niveau maximal : 20).",
     "officer_603": "Augmente la production d’énergie de 5 % (niveau maximal : 10).",
     "officer_604": "Réduit de 5 % le temps de construction des vaisseaux (niveau maximal : 10).",
@@ -83,7 +83,7 @@ export default {
     "officer_611": "Ajoute 3 emplacements de flotte (niveau maximal : 3).",
     "officer_612": "Permet de construire deux Étoiles de la mort au lieu d’une (niveau maximal : 1).",
     "officer_613": "Augmente la vitesse des vaisseaux de 25 % (niveau maximal : 3).",
-    "officer_614": "Conseiller personnel de l'Empereur, le magistère est un haut-dignitaire important et respecté de ses pairs. Quand il prend part aux combats, l'ennemi tremble devant ses légions. Son vaisseau, la SuperNova, est à l'image de son maître. Il est temps de le mettre à profit. <br><br> <span class=\"alert alert-danger\">Débloque la SuperNova.</span>",
+    "officer_614": "Conseiller personnel de l'Empereur, le Grand-Magistère est un haut-dignitaire important et respecté de ses pairs. Quand il prend part aux combats, l'ennemi tremble devant ses légions. Son vaisseau, la SuperNova, est à l'image de son maître. Il est temps pour vous de le mettre à profit. <br><br> <span class=\"alert alert-danger\">Débloque la SuperNova.</span>",
     "officer_615": "Être mythique, quasi divin, fragment éternel de l’Univers, Octavian Nexus incarne le TOUT et le NÉANT à la fois. Guide et veilleur de l’humanité, il a vu en vous son successeur. Vous avez désormais son soutien. Imposez votre colère à la Galaxie. <br><br> <span class=\"alert alert-danger\">Débloque le Destructeur planétaire.</span>"
   }
 };
