@@ -44,7 +44,7 @@ function recruit(officer){router.post(route('officers.store'),{code:officer.code
                 <span class="building-level">{{ t('production.officerLevel', { level: officer.level, max: officer.max }) }}</span>
             </div>
             <div class="building-pos-body">
-                <div class="building-title"><span class="building-code">{{ officer.code }}</span><h3>{{ officerName(officer.code) }}</h3><ElementInfoButton :id="`officer_${officer.code}`" :name="officerName(officer.code)" /></div>
+                <div class="building-title"><span class="building-code">{{ officer.code }}</span><h3>{{ officerName(officer.code) }}</h3><ElementInfoButton :id="`officer_${officer.code}`" :name="officerName(officer.code)" :image-src="`/images/officers/${officer.code}.png`" /></div>
                 <div class="building-main">
                     <p>{{ t(`officers.${officer.key}`) }}</p>
                     <div class="unit-requirements"><span v-for="req in officer.requirements" :key="req.code" :class="{'requirement-met':req.current>=req.level}">{{ t('production.officerRequirement', { name: requirementName(req), level: req.level, current: req.current }) }}</span><span v-if="!officer.requirements.length" class="requirement-met">{{ t('units.noRequirement') }}</span></div>

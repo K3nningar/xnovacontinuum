@@ -49,7 +49,7 @@ function build(unit, event) {
                         <span class="building-level" :aria-label="`${format(unit.count)} ${t('production.inService')}`">{{ format(unit.count) }}</span>
                     </div>
                     <div class="building-pos-body">
-                        <div class="building-title"><span class="building-code">{{ unit.code }}</span><h3>{{ unitName(unit) }}</h3><ElementInfoButton :id="`unit_${unit.code}`" :name="unitName(unit)" :description="infosFr[`unit_${unit.code}`]?.description"><template v-if="unitType === 'ships'" #image><slot name="image" :unit="unit" :label="unitName(unit)" /></template></ElementInfoButton></div>
+                        <div class="building-title"><span class="building-code">{{ unit.code }}</span><h3>{{ unitName(unit) }}</h3><ElementInfoButton :id="`unit_${unit.code}`" :name="unitName(unit)" :description="infosFr[`unit_${unit.code}`]?.description" :image-src="`/images/${unitType}/${unit.code}.png`" /></div>
                         <div class="building-main">
                             <span class="unit-owned">{{ format(unit.count) }} {{ t('production.inService') }}<span v-if="unit.queued"> · {{ format(unit.queued) }} {{ t('production.queued') }}</span></span>
                             <div class="unit-requirements"><span v-for="req in unit.requirements" :key="req.code" :class="{ 'requirement-met': req.current >= req.level }">{{ requirementName(req.code) }} {{ t('units.level', { level: req.level }) }} · {{ t('units.requirementProgress', { current: req.current, required: req.level }) }}</span><span v-if="!unit.requirements.length" class="requirement-met">{{ t('units.noRequirement') }}</span></div>

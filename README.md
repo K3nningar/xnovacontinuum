@@ -23,7 +23,7 @@ The project has a goal to expand and add some features that never got to be impl
 
 And be a bit different than OGame on some aspects : 
 
-- Officers now has real names and their title is their class. New officers are incoming too.
+- Officers now has real names and their title is their class, fixed with titles from reality. New officers are incoming too.
 - Reworked "noob" protection system
 - New galaxy view
 - Combat simulator

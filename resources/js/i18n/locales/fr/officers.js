@@ -83,7 +83,7 @@ export default {
     "officer_611": "Ajoute 3 emplacements de flotte (niveau maximal : 3).",
     "officer_612": "Permet de construire deux Étoiles de la mort au lieu d’une (niveau maximal : 1).",
     "officer_613": "Augmente la vitesse des vaisseaux de 25 % (niveau maximal : 3).",
-    "officer_614": "Débloque la SuperNova.",
-    "officer_615": "Débloque le Destructeur planétaire."
+    "officer_614": "Conseiller personnel de l'Empereur, le magistère est un haut-dignitaire important et respecté de ses pairs. Quand il prend part aux combats, l'ennemi tremble devant ses légions. Son vaisseau, la SuperNova, est à l'image de son maître. Il est temps de le mettre à profit. <br><br> <span class=\"alert alert-danger\">Débloque la SuperNova.</span>",
+    "officer_615": "Être mythique, quasi divin, fragment éternel de l’Univers, Octavian Nexus incarne le TOUT et le NÉANT à la fois. Guide et veilleur de l’humanité, il a vu en vous son successeur. Vous avez désormais son soutien. Imposez votre colère à la Galaxie. <br><br> <span class=\"alert alert-danger\">Débloque le Destructeur planétaire.</span>"
   }
 };

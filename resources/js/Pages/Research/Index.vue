@@ -49,7 +49,7 @@ function cancel() { router.delete(route('researches.destroy'), { preserveScroll:
                                 <span class="building-level">{{ t('common.level') }} {{ item.level }}</span>
                             </div>
                             <div class="building-pos-body">
-                                <div class="building-title"><span class="building-code">{{ item.code }}</span><h3>{{ details[item.key].name }}</h3><ElementInfoButton :id="'research_' + item.code" :name="details[item.key].name" :description="item.key === 'spy' ? infosFr['research_106'].description + ' ' + t('galaxy.sensorsDesc') : infosFr['research_' + item.code]?.description" /></div>
+                                <div class="building-title"><span class="building-code">{{ item.code }}</span><h3>{{ details[item.key].name }}</h3><ElementInfoButton :id="'research_' + item.code" :name="details[item.key].name" :description="item.key === 'spy' ? infosFr['research_106'].description + ' ' + t('galaxy.sensorsDesc') : infosFr['research_' + item.code]?.description" :image-src="`/images/laboratory/${item.code}.png`" /></div>
                                 <div class="building-main">
                                     <p>{{ details[item.key].description }}</p>
                                     <div class="research-requirements"><span v-for="req in item.requirements" :key="req.key" :class="{ 'requirement-met': req.current >= req.required }">{{ t('researchLabels.' + req.key) }} {{ req.current }}/{{ req.required }}</span><span v-if="!item.requirements.length" class="requirement-met">{{ t('common.none') }}</span></div>

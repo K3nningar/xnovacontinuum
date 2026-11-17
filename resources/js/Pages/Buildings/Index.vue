@@ -218,7 +218,7 @@ function upgrade(building) {
                                                 <span class="building-level">{{ t('common.level') }} {{ buildingLevel(building) }}</span>
                                             </div>
                                             <div class="building-pos-body">
-                                                <div class="building-title"><span class="building-code">{{ String(building.code).padStart(2, '0') }}</span><h3>{{ building.name }}</h3><ElementInfoButton :id="`building_${building.code}`" :name="building.name" :description="infosFr[`building_${building.code}`]?.description" /></div>
+                                                <div class="building-title"><span class="building-code">{{ String(building.code).padStart(2, '0') }}</span><h3>{{ building.name }}</h3><ElementInfoButton :id="`building_${building.code}`" :name="building.name" :description="infosFr[`building_${building.code}`]?.description" :image-src="`/images/buildings/${building.code}.png`" /></div>
                                                 <div class="building-main">
                                                     <p>{{ building.description }}</p>
                                                     <p v-if="building.requirement" class="building-requirement">{{ building.requirement }}</p>

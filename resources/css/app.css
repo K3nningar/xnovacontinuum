@@ -227,6 +227,7 @@ h1, h2, h3, p { margin-top: 0; }
 .element-info-body img { width: 120px; height: 120px; object-fit: cover; border: 1px solid var(--line); }
 .element-info-body p { margin: 0 0 12px; color: #aab7c4; font-size: 13px; line-height: 1.75; white-space: pre-line; }
 .element-info-body p:last-child { margin-bottom: 0; }
+.element-info-description { color: #aab7c4; font-size: 13px; line-height: 1.75; white-space: pre-line; }
 @media (max-width: 520px) { .element-info-body { grid-template-columns: 1fr; } .element-info-body img { width: 88px; height: 88px; } }
 .energy-panel { padding: 18px; border: 1px solid rgba(86, 214, 194, .19); background: radial-gradient(ellipse at 90% 0%, rgba(28, 89, 88, .15), transparent 52%), #0c141d; }
 .energy-head { display: grid; grid-template-columns: 1.2fr 1fr 1fr 1fr; align-items: center; gap: 18px; }
