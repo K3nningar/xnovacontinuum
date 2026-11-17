@@ -8,6 +8,7 @@ The project has a goal to expand and add some features that never got to be impl
 
 ## Features
 
+- Multi-language support (Français, English, Deutsch, Español, Italiano) - More supports could be appear on the future.
 - Registration, login, universe selection.
 - Management of resources, buildings, and research, with a technology tree.
 - Construction of ships, defenses, and recruitment of officers.
