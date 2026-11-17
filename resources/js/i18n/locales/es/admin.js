@@ -1,0 +1,89 @@
+export default {
+  "changelogManual": {
+    "title": "Registro manual de cambios",
+    "hint": "Este texto es idéntico en todos los idiomas y se muestra inmediatamente cuando la versión es pública.",
+    "version": "Versión",
+    "date": "Fecha",
+    "type": "Tipo",
+    "description": "Descripción",
+    "add": "Añadir entrada",
+    "saved": "Entrada guardada."
+  },
+  "changelogPublication": {
+    "published": "Público",
+    "publish": "Hacer público",
+    "unpublish": "Ocultar al público",
+    "empty": "Todavía no hay cambios públicos.",
+    "saved": "Visibilidad actualizada.",
+    "baseline": "Hito inicial de desarrollo; publicar este registro no significa publicar el software. Las fechas indican cuándo se realizaron los cambios."
+  },
+  "adminFlights": {
+    "title": "Próximas flotas en vuelo (máximo 25)",
+    "empty": "No hay flotas en vuelo.",
+    "player": "Jugador",
+    "mission": "Misión",
+    "arrival": "Llegada"
+  },
+  "adminStats": {
+    "title": "Estadísticas",
+    "players": "Jugadores",
+    "planets": "Planetas",
+    "universes": "Universos",
+    "fleets": "Flotas en vuelo"
+  },
+  "adminLevels": {
+    "level0": "Jugador",
+    "level1": "Operador",
+    "level2": "Moderador",
+    "level3": "Administrador",
+    "level4": "Fundador"
+  },
+  "adminAudit": {
+    "title": "Últimas 50 acciones",
+    "empty": "No hay acciones registradas.",
+    "actors": "Autor #{actor} · Jugador #{target} · Planeta #{planet}"
+  },
+  "adminModeration": {
+    "title": "Moderación",
+    "protected": "No puedes modificar tu propia cuenta ni una cuenta de nivel igual o superior.",
+    "suspendedUntil": "Suspendido hasta {date}",
+    "days": "Duración en días (1 a 365)",
+    "reason": "Motivo",
+    "suspend": "Suspender cuenta",
+    "unsuspend": "Levantar suspensión",
+    "storageLimit": "Las adiciones no pueden superar la capacidad de almacenamiento."
+  },
+  "admin": {
+    "previous": "Anterior",
+    "next": "Siguiente",
+    "title": "Administración",
+    "eyebrow": "ALTO MANDO",
+    "subtitle": "Gestiona los jugadores y sus planetas.",
+    "overview": "Resumen",
+    "elements": "Elementos",
+    "resources": "Recursos",
+    "roles": "Roles",
+    "players": "Jugadores",
+    "search": "Buscar jugador",
+    "searchButton": "Buscar",
+    "noPlayers": "No se encontraron jugadores.",
+    "pagination": "Páginas de jugadores",
+    "selection": "Selección",
+    "selectPlayer": "Selecciona un jugador.",
+    "playerLevel": "Nivel de administrador: {level}",
+    "planet": "Planeta",
+    "selectPlanet": "Selecciona un planeta",
+    "noPlanets": "Este jugador no tiene planetas.",
+    "selectPlanetFirst": "Selecciona un planeta para continuar.",
+    "category": "Categoría",
+    "selectCategory": "Selecciona una categoría",
+    "element": "Elemento",
+    "selectElement": "Selecciona un elemento",
+    "noElements": "No hay elementos disponibles.",
+    "amount": "Cantidad",
+    "adminLevel": "Nivel de administrador",
+    "submit": "Guardar",
+    "saving": "Guardando…",
+    "success": "Cambio guardado."
+  }
+};
