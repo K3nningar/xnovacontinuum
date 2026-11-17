@@ -40,6 +40,19 @@ test('every page scope is available in every supported locale', () => {
     }
 });
 
+test('officer information descriptions are localized for every officer', () => {
+    for (const [locale, translations] of Object.entries(locales)) {
+        for (let code = 601; code <= 615; code++) {
+            assert.ok(
+                translations.elementDescriptions[`officer_${code}`],
+                `${locale} is missing the information text for officer ${code}`,
+            );
+        }
+    }
+
+    assert.equal(getPageTranslations(fr, 'officers').elementDescriptions.officer_601, fr.elementDescriptions.officer_601);
+});
+
 test('every locale namespace can be displayed through a page scope', () => {
     const assignedNamespaces = new Set(Object.values(pageTranslationPaths).flat().map((path) => path.split('.')[0]));
 

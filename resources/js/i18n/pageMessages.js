@@ -87,6 +87,7 @@ export const pageTranslationPaths = {
     officers: [
         'officers',
         'officerNames',
+        'elementDescriptions',
         'production.officerTitle',
         'production.officerLevel',
         'production.officerRequirement',

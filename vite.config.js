@@ -23,4 +23,11 @@ export default defineConfig({
             ignored: ['**/storage/framework/views/**'],
         },
     },
+    build: {
+        rolldownOptions: {
+            checks: {
+                bundlerTimings: false,
+            },
+        },
+    },
 });

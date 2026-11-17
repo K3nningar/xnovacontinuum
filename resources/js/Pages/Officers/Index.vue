@@ -8,7 +8,6 @@ import ElementInfoButton from '../../Components/ElementInfoButton.vue';
 import RarityBadge from '../../Components/RarityBadge.vue';
 import CatalogGrid from '../../Components/CatalogGrid.vue';
 import { catalogCategories, matchesCatalogCategory, officerFilters } from '../../catalogFilters.js';
-import infosFr from '../../i18n/infos-fr.json';
 const props=defineProps({user:Object,officers:Array,points:Number,queue:Array});
 const selectedCategory = ref('all');
 const categories = computed(() => catalogCategories(props.officers, officerFilters));
@@ -45,7 +44,7 @@ function recruit(officer){router.post(route('officers.store'),{code:officer.code
                 <span class="building-level">{{ t('production.officerLevel', { level: officer.level, max: officer.max }) }}</span>
             </div>
             <div class="building-pos-body">
-                <div class="building-title"><span class="building-code">{{ officer.code }}</span><h3>{{ officerName(officer.code) }}</h3><ElementInfoButton :id="`officer_${officer.code}`" :name="officerName(officer.code)" :description="infosFr[`officer_${officer.code}`]?.description" /></div>
+                <div class="building-title"><span class="building-code">{{ officer.code }}</span><h3>{{ officerName(officer.code) }}</h3><ElementInfoButton :id="`officer_${officer.code}`" :name="officerName(officer.code)" /></div>
                 <div class="building-main">
                     <p>{{ t(`officers.${officer.key}`) }}</p>
                     <div class="unit-requirements"><span v-for="req in officer.requirements" :key="req.code" :class="{'requirement-met':req.current>=req.level}">{{ t('production.officerRequirement', { name: requirementName(req), level: req.level, current: req.current }) }}</span><span v-if="!officer.requirements.length" class="requirement-met">{{ t('units.noRequirement') }}</span></div>

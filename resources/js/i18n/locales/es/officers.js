@@ -53,5 +53,22 @@ export default {
   },
   "units": {
     "recruitsNone": "No hay puntos disponibles"
+  },
+  "elementDescriptions": {
+    "officer_601": "Aumenta la producción de recursos un 5 % (nivel máximo: 20).",
+    "officer_602": "Otorga un 5 % de bonificación a las armas, escudos y blindaje de las naves (nivel máximo: 20).",
+    "officer_603": "Aumenta la producción de energía un 5 % (nivel máximo: 10).",
+    "officer_604": "Reduce un 5 % el tiempo de construcción de naves (nivel máximo: 10).",
+    "officer_605": "Reduce un 10 % el tiempo de construcción (nivel máximo: 3).",
+    "officer_606": "Reduce un 10 % el tiempo de investigación (nivel máximo: 3).",
+    "officer_607": "Aumenta un 50 % la capacidad de almacenamiento (nivel máximo: 2).",
+    "officer_608": "Reduce a la mitad el tiempo de construcción de defensas.",
+    "officer_609": "Desbloquea el Protector Planetario.",
+    "officer_610": "Añade 5 niveles de espionaje (nivel máximo: 2).",
+    "officer_611": "Añade 3 espacios de flota (nivel máximo: 3).",
+    "officer_612": "Permite construir dos Estrellas de la Muerte en lugar de una (nivel máximo: 1).",
+    "officer_613": "Aumenta un 25 % la velocidad de las naves (nivel máximo: 3).",
+    "officer_614": "Desbloquea la SuperNova.",
+    "officer_615": "Desbloquea el Destructor Planetario."
   }
 };

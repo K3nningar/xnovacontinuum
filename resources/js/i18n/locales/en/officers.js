@@ -53,5 +53,22 @@ export default {
   },
   "units": {
     "recruitsNone": "No points available"
+  },
+  "elementDescriptions": {
+    "officer_601": "Increases resource production by 5% (maximum level: 20).",
+    "officer_602": "Grants a 5% bonus to ship weapons, shields, and armor (maximum level: 20).",
+    "officer_603": "Increases energy production by 5% (maximum level: 10).",
+    "officer_604": "Reduces ship construction time by 5% (maximum level: 10).",
+    "officer_605": "Reduces construction time by 10% (maximum level: 3).",
+    "officer_606": "Reduces research time by 10% (maximum level: 3).",
+    "officer_607": "Increases storage capacity by 50% (maximum level: 2).",
+    "officer_608": "Cuts defensive structure construction time in half.",
+    "officer_609": "Unlocks the Planetary Protector.",
+    "officer_610": "Adds 5 Espionage levels (maximum level: 2).",
+    "officer_611": "Adds 3 fleet slots (maximum level: 3).",
+    "officer_612": "Allows two Deathstars to be built instead of one (maximum level: 1).",
+    "officer_613": "Increases ship speed by 25% (maximum level: 3).",
+    "officer_614": "Unlocks the SuperNova.",
+    "officer_615": "Unlocks the Planetary Destroyer."
   }
 };

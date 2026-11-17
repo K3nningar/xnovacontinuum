@@ -53,5 +53,22 @@ export default {
   },
   "units": {
     "recruitsNone": "Keine Punkte verfügbar"
+  },
+  "elementDescriptions": {
+    "officer_601": "Erhöht die Ressourcenproduktion um 5 % (max. Stufe: 20).",
+    "officer_602": "Gewährt 5 % Bonus auf Waffen, Schilde und Panzerung der Schiffe (max. Stufe: 20).",
+    "officer_603": "Erhöht die Energieproduktion um 5 % (max. Stufe: 10).",
+    "officer_604": "Verringert die Bauzeit von Schiffen um 5 % (max. Stufe: 10).",
+    "officer_605": "Verringert die Bauzeit um 10 % (max. Stufe: 3).",
+    "officer_606": "Verringert die Forschungszeit um 10 % (max. Stufe: 3).",
+    "officer_607": "Erhöht die Lagerkapazität um 50 % (max. Stufe: 2).",
+    "officer_608": "Halbiert die Bauzeit von Verteidigungsanlagen.",
+    "officer_609": "Schaltet den Planetaren Beschützer frei.",
+    "officer_610": "Gewährt 5 Spionagestufen (max. Stufe: 2).",
+    "officer_611": "Fügt 3 Flottenslots hinzu (max. Stufe: 3).",
+    "officer_612": "Ermöglicht den Bau von zwei Todessternen statt einem (max. Stufe: 1).",
+    "officer_613": "Erhöht die Geschwindigkeit der Schiffe um 25 % (max. Stufe: 3).",
+    "officer_614": "Schaltet die SuperNova frei.",
+    "officer_615": "Schaltet den Planetaren Zerstörer frei."
   }
 };

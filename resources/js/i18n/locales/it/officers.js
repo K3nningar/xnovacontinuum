@@ -53,5 +53,22 @@ export default {
   },
   "units": {
     "recruitsNone": "Nessun punto disponibile"
+  },
+  "elementDescriptions": {
+    "officer_601": "Aumenta del 5% la produzione di risorse (livello massimo: 20).",
+    "officer_602": "Conferisce un bonus del 5% ad armi, scudi e corazza delle navi (livello massimo: 20).",
+    "officer_603": "Aumenta del 5% la produzione di energia (livello massimo: 10).",
+    "officer_604": "Riduce del 5% il tempo di costruzione delle navi (livello massimo: 10).",
+    "officer_605": "Riduce del 10% i tempi di costruzione (livello massimo: 3).",
+    "officer_606": "Riduce del 10% i tempi di ricerca (livello massimo: 3).",
+    "officer_607": "Aumenta del 50% la capacità di stoccaggio (livello massimo: 2).",
+    "officer_608": "Dimezza il tempo di costruzione delle difese.",
+    "officer_609": "Sblocca il Protettore Planetario.",
+    "officer_610": "Aggiunge 5 livelli di spionaggio (livello massimo: 2).",
+    "officer_611": "Aggiunge 3 slot flotta (livello massimo: 3).",
+    "officer_612": "Consente di costruire due Stelle della Morte invece di una (livello massimo: 1).",
+    "officer_613": "Aumenta del 25% la velocità delle navi (livello massimo: 3).",
+    "officer_614": "Sblocca la SuperNova.",
+    "officer_615": "Sblocca il Distruttore Planetario."
   }
 };
