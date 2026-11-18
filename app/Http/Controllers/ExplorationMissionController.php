@@ -1,5 +1,12 @@
 <?php
 
+/*
+ * Author / Contributor : K3nningar
+ * Code Version : 0.1.0-alpha.4
+ * Revision : 34ddc84
+ * Description : Handles HTTP requests for ExplorationMissionController operations.
+ */
+
 namespace App\Http\Controllers;
 
 use App\Models\Planet;
@@ -10,6 +17,11 @@ use Illuminate\Validation\Rule;
 
 class ExplorationMissionController extends Controller
 {
+    /**
+     * Validates mission coordinates and ship quantities, scopes the route planet to its owner/universe, then dispatches it.
+     *
+     * Service-level checks repeat mission eligibility, visibility, inventory, and fuel rules under transaction locks.
+     */
     public function store(Request $request, Planet $planet, ExplorationMissions $missions): RedirectResponse
     {
         $attributes = $request->validate([

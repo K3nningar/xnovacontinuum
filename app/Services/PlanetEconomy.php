@@ -1,5 +1,12 @@
 <?php
 
+/*
+ * Author / Contributor : K3nningar
+ * Code Version : 0.1.0-alpha.4
+ * Revision : 34ddc84
+ * Description : Implements the PlanetEconomy application service.
+ */
+
 namespace App\Services;
 
 use App\Models\Planet;
@@ -10,11 +17,19 @@ use Illuminate\Validation\ValidationException;
 
 class PlanetEconomy
 {
+    /**
+     * Returns the canonical building definitions used by administrative element updates.
+     *
+     * @return array<string, array{level: string, activity: ?string, resource: ?string, label: string, code: int}>
+     */
     public function administrativeBuildings(): array
     {
         return self::BUILDINGS;
     }
 
+    /**
+     * Returns the highest level accepted by the building upgrade workflow.
+     */
     public function maximumBuildingLevel(): int
     {
         return self::MAX_BUILDING_LEVEL;
@@ -72,6 +87,12 @@ class PlanetEconomy
         'terraformer' => ['cost' => ['metal' => 0, 'crystal' => 50000, 'deuterium' => 100000, 'energy' => 1000], 'factor' => 2],
     ];
 
+    /**
+     * Applies elapsed resource production and completed satellite deliveries to a fresh, locked planet row.
+     *
+     * The transaction retries up to three times; when supplied, $now is the production cutoff used for
+     * deterministic catch-up calculations. The returned model is the locked planet with persisted updates.
+     */
     public function materialize(Planet $planet, ?Carbon $now = null): Planet
     {
         return DB::transaction(function () use ($planet, $now): Planet {
@@ -82,6 +103,14 @@ class PlanetEconomy
         }, 3);
     }
 
+    /**
+     * Builds the building-page view of current production, projected costs, queue, capacities and eligibility.
+     *
+     * Queued levels are included when calculating the next upgrade, while resource affordability is based on
+     * the planet's current stored stock. Technology levels supply the player-wide requirement checks.
+     *
+     * @return array<string, mixed>
+     */
     public function snapshot(Planet $planet, int $energyTechnologyLevel = 0, int $computerTechnologyLevel = 0): array
     {
         $snapshot = $planet->only('metal', 'crystal', 'deuterium', 'metal_mine_level', 'crystal_mine_level', 'deuterium_synthesizer_level', 'solar_plant_level', 'fusion_plant_level', 'laboratory_level', 'robot_factory_level', 'nano_factory_level', 'hangar_level', 'missile_silo_level', 'metal_storage_level', 'crystal_storage_level', 'deuterium_storage_level', 'terraformer_level', 'fields', 'laboratory_activity', 'metal_mine_activity', 'crystal_mine_activity', 'deuterium_synthesizer_activity', 'solar_plant_activity', 'fusion_plant_activity');
@@ -123,6 +152,12 @@ class PlanetEconomy
         return $snapshot;
     }
 
+    /**
+     * Changes a production-capable building's activity from 0 to 10 after accruing production at the old rate.
+     *
+     * The planet row is ownership-scoped and locked within a retryable transaction; invalid building/activity
+     * combinations raise a validation exception. Returns the updated locked planet.
+     */
     public function setActivity(Planet $planet, string $building, int $activity): Planet
     {
         if (! isset(self::BUILDINGS[$building]) || self::BUILDINGS[$building]['activity'] === null || $activity < 0 || $activity > 10) {
@@ -144,6 +179,13 @@ class PlanetEconomy
         }, 3);
     }
 
+    /**
+     * Validates and queues one building level, charging its full resource cost immediately.
+     *
+     * Locks the planet, settles completed work and accrued production, then rechecks requirements,
+     * field/queue limits, energy and affordability before persisting the queue entry. The next level
+     * accounts for same-building entries already queued; failures leave the transaction unapplied.
+     */
     public function upgrade(Planet $planet, string $resource, int $energyTechnologyLevel = 0, int $computerTechnologyLevel = 0): Planet
     {
         if (! array_key_exists($resource, self::BUILDINGS)) {
@@ -238,6 +280,13 @@ class PlanetEconomy
         }, 3);
     }
 
+    /**
+     * Calculates whole-second construction time from metal/crystal cost and the planet's factory levels.
+     *
+     * Missing planet data means zero factory levels; the returned duration is never less than one second.
+     *
+     * @param  array{metal: int, crystal: int, deuterium?: int, energy?: int}  $cost
+     */
     public function buildingDuration(array $cost, ?Planet $planet = null): int
     {
         $duration = (($cost['metal'] + $cost['crystal']) / 2500) * 3600;
@@ -250,6 +299,12 @@ class PlanetEconomy
         return max(1, (int) floor($duration));
     }
 
+    /**
+     * Applies all due construction entries, grants terraformers five fields each, and compacts queue positions.
+     *
+     * This method persists completed levels and deletes completed queue rows; callers that need atomicity
+     * with other planet changes must provide the surrounding transaction and row lock.
+     */
     public function completeBuildingQueue(Planet $planet): void
     {
         $now = now();
@@ -279,6 +334,11 @@ class PlanetEconomy
         }
     }
 
+    /**
+     * Returns each resource's storage capacity as floor(1,000,000 × 1.5^level).
+     *
+     * @return array{metal: int, crystal: int, deuterium: int}
+     */
     public function storageCapacities(Planet $planet): array
     {
         $capacities = [];
@@ -290,6 +350,13 @@ class PlanetEconomy
         return $capacities;
     }
 
+    /**
+     * Calculates a building's next cost by applying its configured exponential factor to the base price.
+     *
+     * Unknown building keys intentionally return zero costs; negative levels use the base-price multiplier.
+     *
+     * @return array<string, int>
+     */
     public function upgradeCost(string $resource, int $level): array
     {
         if (! isset(self::LEGACY_PRICE_LIST[$resource])) {
@@ -305,6 +372,11 @@ class PlanetEconomy
         );
     }
 
+    /**
+     * Computes the base hourly mine output at a level, before activity, concentration, temperature and energy modifiers.
+     *
+     * Unknown resources and non-positive levels produce zero.
+     */
     public function productionPerHour(string $resource, int $level): int
     {
         $baseProduction = match ($resource) {
@@ -317,6 +389,12 @@ class PlanetEconomy
         return $level > 0 ? (int) floor($baseProduction * $level * (1.1 ** $level)) : 0;
     }
 
+    /**
+     * Computes a building's integer output using its configured level, activity, and resource-specific modifiers.
+     *
+     * Storage returns projected capacity including queued storage buildings; terraformers return field expansion.
+     * Unknown keys return zero, and deuterium output is clamped to zero for sufficiently high temperatures.
+     */
     public function buildingProduction(Planet $planet, string $building): int
     {
         $definition = self::BUILDINGS[$building] ?? null;
@@ -359,6 +437,14 @@ class PlanetEconomy
         return (int) floor(50 * $level * (1.1 ** $level) * $activity * self::RESOURCE_MULTIPLIER);
     }
 
+    /**
+     * Computes planet energy supply, mine demand, net balance, production percentage and storage capacities.
+     *
+     * Production is capped at 100 percent and at a floor of zero; a planet with no energy demand is treated
+     * as operating at 100 percent production regardless of supply.
+     *
+     * @return array{ supply: int, sources: array<string, int>, usage: int, balance: int, productionLevel: int, capacity: array{metal: int, crystal: int, deuterium: int} }
+     */
     public function energyBalance(Planet $planet): array
     {
         $usage = 0;
@@ -387,6 +473,13 @@ class PlanetEconomy
         ];
     }
 
+    /**
+     * Returns rates, fractional-hour remainders, storage, fusion demand and the next queued production change.
+     *
+     * This is a read snapshot only: it does not accrue resources or modify the planet.
+     *
+     * @return array<string, mixed>
+     */
     public function liveResourceSnapshot(Planet $planet): array
     {
         $productionLevel = $this->energyBalance($planet)['productionLevel'];
@@ -412,12 +505,18 @@ class PlanetEconomy
         ];
     }
 
+    /**
+     * Combines a mine's energy-scaled output with the resource's fixed basic income.
+     */
     private function resourceProductionPerHour(Planet $planet, string $resource, int $productionLevel): int
     {
         return (int) floor($this->buildingProduction($planet, $resource) * $productionLevel / 100)
             + self::BASIC_INCOME[$resource] * self::RESOURCE_MULTIPLIER;
     }
 
+    /**
+     * Calculates fusion-plant deuterium use; consumption is disabled until a level-five synthesizer exists.
+     */
     private function fusionConsumptionPerHour(Planet $planet): int
     {
         if ((int) $planet->fusion_plant_level === 0 || (int) $planet->deuterium_synthesizer_level < 5) {
@@ -427,6 +526,12 @@ class PlanetEconomy
         return (int) floor(10 * (int) $planet->fusion_plant_level * (1.1 ** (int) $planet->fusion_plant_level) * ((int) $planet->fusion_plant_activity / 10) * self::RESOURCE_MULTIPLIER);
     }
 
+    /**
+     * Settles production around completed solar satellites so the new energy source affects only later time.
+     *
+     * The caller must hold the planet lock inside a transaction. Completed satellite queue rows are locked,
+     * applied once, and removed; the timestamp and remaining queue positions are persisted as needed.
+     */
     private function materializeLockedPlanet(Planet $planet, ?Carbon $now = null): void
     {
         $now ??= now();
@@ -467,6 +572,12 @@ class PlanetEconomy
         }
     }
 
+    /**
+     * Accrues resources and fusion fuel for an elapsed interval, retaining sub-unit hourly remainders.
+     *
+     * Production uses the energy balance after due buildings complete, caps stocks at 110% of storage,
+     * clears remainders when capped or arithmetic would overflow, and never lets deuterium fall below zero.
+     */
     private function accrueProduction(Planet $planet, int $elapsedSeconds): void
     {
         $this->completeBuildingQueue($planet);

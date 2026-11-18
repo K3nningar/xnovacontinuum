@@ -1,5 +1,12 @@
 <?php
 
+/*
+ * Author / Contributor : K3nningar
+ * Code Version : 0.1.0-alpha.4
+ * Revision : 34ddc84
+ * Description : Validates SimulateCombatRequest request data.
+ */
+
 namespace App\Http\Requests;
 
 use Illuminate\Foundation\Http\FormRequest;
@@ -7,12 +14,20 @@ use Illuminate\Validation\Validator;
 
 class SimulateCombatRequest extends FormRequest
 {
+    /**
+     * Allows any caller admitted by the route to submit a simulation; this request adds no user-specific policy.
+     */
     public function authorize(): bool
     {
         return true;
     }
 
     /**
+     * Defines allowlisted fleet codes, bounded side technologies and optional custom unit profiles.
+     *
+     * Attacker fleet codes are restricted to ships; defender codes may include all configured unit types.
+     * A custom profile's three stats become required when that custom unit is used by either side.
+     *
      * @return array<string, array<int, string>>
      */
     public function rules(): array
@@ -60,6 +75,14 @@ class SimulateCombatRequest extends FormRequest
         return $rules;
     }
 
+    /**
+     * Adds cross-field validation requiring each side to field at least one unit and stay within the total cap.
+     *
+     * Totals are checked only after that side's individual fleet fields pass validation, avoiding misleading
+     * aggregate errors for malformed fleet input.
+     *
+     * @return array<int, Closure(Validator): void>
+     */
     public function after(): array
     {
         return [
@@ -89,6 +112,8 @@ class SimulateCombatRequest extends FormRequest
     }
 
     /**
+     * Supplies localized validation feedback for common fleet and seed constraint failures.
+     *
      * @return array<string, string>
      */
     public function messages(): array

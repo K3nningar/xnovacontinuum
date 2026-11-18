@@ -1,3 +1,10 @@
+/*
+ * Author / Contributor : K3nningar
+ * Code Version : 0.1.0-alpha.4
+ * Revision : 34ddc84
+ * Description : Tests the buildingCatalog.test JavaScript module.
+ */
+
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import { buildingCatalog, buildingCategories, buildingsInCategory } from './buildingCatalog.js';
@@ -13,6 +20,7 @@ test('filters the catalog into its real facility categories', () => {
     assert.deepEqual(buildingsInCategory(buildingCatalog, 'unknown'), []);
 });
 
+// Categories form a complete, non-overlapping partition of the catalog and every filter has content.
 test('every facility belongs to one available nonempty category', () => {
     const categories = buildingCategories.filter((category) => category.key !== 'all');
     assert.equal(new Set(buildingCatalog.map((building) => building.key)).size, buildingCatalog.length);

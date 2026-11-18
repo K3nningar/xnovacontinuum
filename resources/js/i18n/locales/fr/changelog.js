@@ -10,6 +10,13 @@ export default {
     "unreleased": "Non publié",
     "baseline": "Jalon initial de développement, pas une version publiée. Les dates indiquent quand les changements ont été effectués.",
     "entries": {
+      "documentation": "Ajout de documentation en anglais aux fichiers de code du projet.",
+      "license": "Ajout du fichier de licence MIT.",
+      "semverBadges": "Ajout des badges des technologies et de la licence MIT au README.",
+      "versionBump": "Confirmation de la version de publication 0.1.0-alpha.4 dans les métadonnées du projet.",
+      "newGameContent": "Ajout d’un laboratoire de recherche, de l’antimatière, d’artéfacts, de nouvelles technologies, ainsi que de nouveaux bâtiments, vaisseaux, défenses et officiers.",
+      "groundCombat": "Ajout du combat au sol, avec des rounds dédiés et du personnel militaire.",
+      "newPlayerProtection": "Refonte de la protection des débutants en un système fondé sur les points, avec des voies Pacifiste et Belliciste.",
       "manualChangelog": "Ajout manuel d’une entrée au journal depuis l’administration de niveau 2.",
       "laravelSecurity": "Mise à jour de Laravel vers 13.42.0 pour corriger CVE-2026-128083.",
       "dependencyUpdates": "Mise à jour des dépendances PHP et JavaScript compatibles, notamment Inertia, Vue, Vite et Tailwind CSS.",

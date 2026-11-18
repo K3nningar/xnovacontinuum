@@ -1,5 +1,12 @@
 <?php
 
+/*
+ * Author / Contributor : K3nningar
+ * Code Version : 0.1.0-alpha.4
+ * Revision : 34ddc84
+ * Description : Seeds application data with DatabaseSeeder.
+ */
+
 namespace Database\Seeders;
 
 use App\Models\Universe;
@@ -11,7 +18,7 @@ class DatabaseSeeder extends Seeder
     use WithoutModelEvents;
 
     /**
-     * Seed the application's database.
+     * Ensures a single active default universe exists without overwriting any existing configuration.
      */
     public function run(): void
     {

@@ -1,5 +1,12 @@
 <?php
 
+/*
+ * Author / Contributor : K3nningar
+ * Code Version : 0.1.0-alpha.4
+ * Revision : 34ddc84
+ * Description : Handles HTTP requests for ResearchController operations.
+ */
+
 namespace App\Http\Controllers;
 
 use App\Models\Planet;
@@ -14,16 +21,29 @@ use Inertia\Response;
 
 class ResearchController extends Controller
 {
+    /**
+     * Renders the standard research catalog for an owned planet in the authenticated user's current universe.
+     */
     public function index(Request $request, PlanetEconomy $economy, ResearchService $research): Response|RedirectResponse
     {
         return $this->renderResearchPage($request, $economy, $research, 'Research/Index');
     }
 
+    /**
+     * Renders the unified technology tree with the same owned-planet preparation as the research page.
+     */
     public function tree(Request $request, PlanetEconomy $economy, ResearchService $research, UnitProductionService $production, TechnologyTreeService $technologyTree): Response|RedirectResponse
     {
         return $this->renderResearchPage($request, $economy, $research, 'Research/TechnologyGraph', $production, $technologyTree);
     }
 
+    /**
+     * Completes due research and planet work, then renders a research catalog or optional technology graph.
+     *
+     * The selected planet is constrained to the user's current universe; missing planets redirect to dashboard.
+     *
+     * @param  'Research/Index'|'Research/TechnologyGraph'  $component
+     */
     private function renderResearchPage(Request $request, PlanetEconomy $economy, ResearchService $research, string $component, ?UnitProductionService $production = null, ?TechnologyTreeService $technologyTree = null): Response|RedirectResponse
     {
         $user = $request->user();
@@ -57,6 +77,9 @@ class ResearchController extends Controller
         ]);
     }
 
+    /**
+     * Validates the requested technology, resolves an owned in-universe planet, and queues research.
+     */
     public function store(Request $request, Planet $planet, ResearchService $research): RedirectResponse
     {
         $attributes = $request->validate([
@@ -69,6 +92,9 @@ class ResearchController extends Controller
         return to_route('research.index', ['planet' => $ownedPlanet->id])->with('success', 'Recherche lancée avec succès.');
     }
 
+    /**
+     * Cancels the user's active research through the service, which refunds its recorded planet costs.
+     */
     public function destroy(Request $request, ResearchService $research): RedirectResponse
     {
         $research->cancel($request->user());

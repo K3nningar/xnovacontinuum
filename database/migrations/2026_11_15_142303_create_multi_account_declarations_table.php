@@ -1,5 +1,12 @@
 <?php
 
+/*
+ * Author / Contributor : K3nningar
+ * Code Version : 0.1.0-alpha.4
+ * Revision : 34ddc84
+ * Description : Defines database schema changes for 2026_11_15_142303_create_multi_account_declarations_table.
+ */
+
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
@@ -15,6 +22,7 @@ return new class extends Migration
             $table->id();
             $table->foreignId('universe_id')->constrained()->cascadeOnDelete();
             $table->unsignedBigInteger('declarant_id');
+            // Composite universe foreign keys prevent a declaration from linking users across universe boundaries.
             $table->foreign(['declarant_id', 'universe_id'])
                 ->references(['id', 'universe_id'])->on('users')->cascadeOnDelete();
             $table->string('reason', 500);

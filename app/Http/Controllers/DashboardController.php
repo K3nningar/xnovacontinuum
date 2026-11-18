@@ -1,5 +1,12 @@
 <?php
 
+/*
+ * Author / Contributor : K3nningar
+ * Code Version : 0.1.0-alpha.4
+ * Revision : 34ddc84
+ * Description : Handles HTTP requests for DashboardController operations.
+ */
+
 namespace App\Http\Controllers;
 
 use App\Models\Fleet;
@@ -14,6 +21,12 @@ use Inertia\Response;
 
 class DashboardController extends Controller
 {
+    /**
+     * Settles due empire research and owned-planet work, then assembles dashboard state for the current universe.
+     *
+     * A requested planet must belong to the user's loaded universe; fleet visibility includes own active fleets
+     * and outbound fleets targeting owned planets, while only active universes are offered to unjoined users.
+     */
     public function __invoke(Request $request, PlanetEconomy $economy, ResearchService $research, UnitProductionService $production): Response
     {
         $user = $request->user();
@@ -88,6 +101,12 @@ class DashboardController extends Controller
         ]);
     }
 
+    /**
+     * Renames a planet only after resolving it through the authenticated user's current-universe ownership relation.
+     *
+     * The accepted name must begin with a letter/number and may then contain letters, numbers, spaces, periods,
+     * hyphens, or apostrophes; the response returns to that planet's dashboard view.
+     */
     public function rename(Request $request, Planet $planet): RedirectResponse
     {
         $ownedPlanet = $request->user()->planets()

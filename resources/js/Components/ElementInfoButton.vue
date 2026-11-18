@@ -1,3 +1,10 @@
+<!--
+Author / Contributor : K3nningar
+Code Version : 0.1.0-alpha.4
+Revision : 34ddc84
+Description : Renders the ElementInfoButton Vue component.
+-->
+
 <script setup>
 import { computed, onBeforeUnmount, ref, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
@@ -12,6 +19,7 @@ const props = defineProps({
 const { t } = useI18n();
 const open = ref(false);
 const description = computed(() => props.description || t(`elementDescriptions.${props.id}`, t('elementInfo.unavailable')));
+// Every value destined for v-html is sanitized here, including translated labels.
 const descriptionHtml = computed(() => sanitizeElementDescription(description.value));
 const detailsHtml = computed(() => sanitizeElementDescription(t('elementInfo.details')));
 const imageSrc = computed(() => {

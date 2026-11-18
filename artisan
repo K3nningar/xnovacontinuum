@@ -1,6 +1,14 @@
 #!/usr/bin/env php
 <?php
 
+/*
+ * Auteur / Contributeur : K3nningar
+ * Version du code : 0.1.0-alpha.4
+ * Révision : 34ddc84
+ * Description : Provides the Laravel command-line entry point.
+ */
+
+
 use Illuminate\Foundation\Application;
 use Symfony\Component\Console\Input\ArgvInput;
 

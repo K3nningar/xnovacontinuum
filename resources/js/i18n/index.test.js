@@ -1,3 +1,10 @@
+/*
+ * Author / Contributor : K3nningar
+ * Code Version : 0.1.0-alpha.4
+ * Revision : 34ddc84
+ * Description : Provides application localization support for index.test.
+ */
+
 import assert from 'node:assert/strict';
 import test from 'node:test';
 

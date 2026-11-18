@@ -1,5 +1,12 @@
 <?php
 
+/*
+ * Author / Contributor : K3nningar
+ * Code Version : 0.1.0-alpha.4
+ * Revision : 34ddc84
+ * Description : Implements the TechnologyTreeService application service.
+ */
+
 namespace App\Services;
 
 use App\Models\Planet;
@@ -24,6 +31,16 @@ class TechnologyTreeService
         613 => 'officer_general_level', 614 => 'officer_raider_level', 615 => 'officer_emperor_level',
     ];
 
+    /**
+     * Assembles a unified client-facing tree from building, research, unit, and officer catalogs.
+     *
+     * Availability is inherited from the source catalogs and building snapshot; prerequisite codes are
+     * normalized here to the common tree-element format.
+     *
+     * @param  array<int, array<string, mixed>>  $researches
+     * @param  array<string, mixed>  $buildingSnapshot
+     * @return array<int, array<string, mixed>>
+     */
     public function catalog(User $user, Planet $planet, array $researches, array $buildingSnapshot, UnitProductionService $production): array
     {
         $elements = [];
@@ -68,6 +85,12 @@ class TechnologyTreeService
         return array_values($elements);
     }
 
+    /**
+     * Resolves configured prerequisite codes to their current planet or empire levels.
+     *
+     * @param  array<int|string, int|string>  $requirements
+     * @return array<int, array{code: int, required: int, current: int}>
+     */
     private function requirements(array $requirements, Planet $planet, User $user): array
     {
         $elements = [];
@@ -78,6 +101,12 @@ class TechnologyTreeService
         return $elements;
     }
 
+    /**
+     * Merges duplicate prerequisite codes, retaining the greatest required level for each code.
+     *
+     * @param  array<int, array{code: int|string, level: int|string, current: int|string}>  $requirements
+     * @return array<int, array{code: int, required: int, current: int}>
+     */
     private function uniqueRequirements(array $requirements): array
     {
         $unique = [];
@@ -93,6 +122,9 @@ class TechnologyTreeService
         return array_values($unique);
     }
 
+    /**
+     * Resolves a tree code to its planet building level or empire research/officer level; unknown codes are zero.
+     */
     private function level(int $code, Planet $planet, User $user): int
     {
         foreach (config('technology-tree.buildings') as [, $buildingCode, $column]) {
@@ -109,6 +141,15 @@ class TechnologyTreeService
         return isset(self::OFFICER_COLUMNS[$code]) ? (int) $user->{self::OFFICER_COLUMNS[$code]} : 0;
     }
 
+    /**
+     * Normalizes one catalog item into the shared technology-tree response shape.
+     *
+     * Missing resource, energy, or point costs are exposed as zero; requirements retain the supplied current levels.
+     *
+     * @param  array<int, array<string, int>>  $requirements
+     * @param  array<string, int>  $cost
+     * @return array<string, mixed>
+     */
     private function element(string $kind, string $key, int $code, int $level, int $targetLevel, array $requirements, array $cost, bool $canBuild, string $rarity): array
     {
         return [

@@ -10,6 +10,13 @@ export default {
     "unreleased": "Unreleased",
     "baseline": "Initial development milestone, not a published release. Dates indicate when changes were made.",
     "entries": {
+      "documentation": "Added English documentation to the project's code files.",
+      "license": "Added the MIT license file.",
+      "semverBadges": "Added technology and MIT license badges to the README.",
+      "versionBump": "Confirmed release version 0.1.0-alpha.4 across project metadata.",
+      "newGameContent": "Added a research laboratory, Antimatter, Artefacts, new technologies, and new buildings, ships, defenses and officers.",
+      "groundCombat": "Added ground combat with dedicated combat rounds and military personnel.",
+      "newPlayerProtection": "Reworked new-player protection into a points-based system with Pacifist and Warmonger branches.",
       "manualChangelog": "Manual changelog entry added from administration level 2.",
       "laravelSecurity": "Updated Laravel to 13.42.0 to address CVE-2026-128083.",
       "dependencyUpdates": "Updated compatible PHP and JavaScript dependencies, including Inertia, Vue, Vite and Tailwind CSS.",

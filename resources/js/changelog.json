@@ -1,5 +1,22 @@
 [
     {
+        "version": "0.1.0-alpha.4",
+        "entries": [
+            { "date": "2026-11-18", "type": "CHANGE", "key": "documentation" },
+            { "date": "2026-11-18", "type": "NEW", "key": "license" },
+            { "date": "2026-11-18", "type": "CHANGE", "key": "semverBadges" },
+            { "date": "2026-11-18", "type": "CHANGE", "key": "versionBump" }
+        ]
+    },
+    {
+        "version": "0.1.0-alpha.3",
+        "entries": [
+            { "date": "2026-11-18", "type": "NEW", "key": "newGameContent" },
+            { "date": "2026-11-18", "type": "NEW", "key": "groundCombat" },
+            { "date": "2026-11-18", "type": "CHANGE", "key": "newPlayerProtection" }
+        ]
+    },
+    {
         "version": "0.1.0-alpha.2",
         "entries": [
             { "date": "2026-11-16", "type": "NEW", "key": "manualChangelog" },

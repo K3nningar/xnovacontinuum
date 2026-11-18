@@ -1,5 +1,12 @@
 <?php
 
+/*
+ * Author / Contributor : K3nningar
+ * Code Version : 0.1.0-alpha.4
+ * Revision : 34ddc84
+ * Description : Implements the GalaxyMap application service.
+ */
+
 namespace App\Services;
 
 use App\Models\Planet;
@@ -19,6 +26,14 @@ class GalaxyMap
         'oceanic' => ['metal' => 80, 'crystal' => 105, 'deuterium' => 130],
     ];
 
+    /**
+     * Builds deterministic star/body data and viewer-filtered slots for one system.
+     *
+     * Planet and asteroid depletion records override generated asteroid stock; otherwise the same coordinates
+     * always yield the same star, body types, concentrations, and natural moons. Positions 1 and 16 are reserved.
+     *
+     * @return array{star: string, slots: array<int, array<string, mixed>>}
+     */
     public function system(Universe $universe, User $viewer, int $galaxy, int $system, int $originPosition): array
     {
         $planets = Planet::query()
@@ -112,11 +127,23 @@ class GalaxyMap
         return ['star' => $star, 'slots' => $slots];
     }
 
+    /**
+     * Returns deterministic resource concentrations for a planet at the supplied universe coordinates.
+     *
+     * @return array{metal: int, crystal: int, deuterium: int}
+     */
     public function planetConcentrations(Universe $universe, int $galaxy, int $system, int $position): array
     {
         return self::PLANET_RESOURCES[$this->planetType($universe, $galaxy, $system, $position)];
     }
 
+    /**
+     * Resolves a natural moon only when the planet belongs to the user's current universe and the orbit exists.
+     *
+     * Ownership mismatches and nonexistent moons return 404; reserved planet positions return 409.
+     *
+     * @return array{orbit: int, diameter: int}
+     */
     public function ownedMoon(User $user, Planet $planet, int $orbit): array
     {
         abort_if((int) $planet->user_id !== (int) $user->id || (int) $planet->universe_id !== (int) $user->universe_id, 404);
@@ -128,6 +155,9 @@ class GalaxyMap
         return $moon;
     }
 
+    /**
+     * Chooses a coordinate-stable planet type from a position-dependent candidate ordering.
+     */
     private function planetType(Universe $universe, int $galaxy, int $system, int $position): string
     {
         $types = $position <= 5
@@ -139,6 +169,11 @@ class GalaxyMap
         return $types[$this->roll($universe, $galaxy, $system, $position, 'planet-type', count($types))];
     }
 
+    /**
+     * Produces a deterministic integer in [0, $maximum) from a versioned coordinate-and-purpose hash.
+     *
+     * Separate purpose strings keep star, body, and moon calculations stable and independent; $maximum must be positive.
+     */
     private function roll(Universe $universe, int $galaxy, int $system, int $position, string $purpose, int $maximum): int
     {
         return (int) (hexdec(substr(hash('sha256', "galaxy-v1:{$universe->id}:{$galaxy}:{$system}:{$position}:{$purpose}"), 0, 7)) % $maximum);

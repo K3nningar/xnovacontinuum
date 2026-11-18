@@ -1,5 +1,12 @@
 <?php
 
+/*
+ * Author / Contributor : K3nningar
+ * Code Version : 0.1.0-alpha.4
+ * Revision : 34ddc84
+ * Description : Builds test data using the UserFactory factory.
+ */
+
 namespace Database\Factories;
 
 use App\Models\User;
@@ -18,7 +25,7 @@ class UserFactory extends Factory
     protected static ?string $password;
 
     /**
-     * Define the model's default state.
+     * Builds a verified user by default and memoizes the standard test password hash across factory instances.
      *
      * @return array<string, mixed>
      */
@@ -34,7 +41,7 @@ class UserFactory extends Factory
     }
 
     /**
-     * Indicate that the model's email address should be unverified.
+     * Returns a factory state with email verification cleared for flows that require an unverified account.
      */
     public function unverified(): static
     {

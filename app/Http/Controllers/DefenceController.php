@@ -1,5 +1,12 @@
 <?php
 
+/*
+ * Author / Contributor : K3nningar
+ * Code Version : 0.1.0-alpha.4
+ * Revision : 34ddc84
+ * Description : Handles HTTP requests for DefenceController operations.
+ */
+
 namespace App\Http\Controllers;
 
 use App\Models\Planet;
@@ -11,6 +18,11 @@ use Inertia\Response;
 
 class DefenceController extends Controller
 {
+    /**
+     * Completes due research and planet work before presenting the selected owned planet's defence catalog/queue.
+     *
+     * The selector is constrained to the authenticated user's current universe and defaults to the first planet.
+     */
     public function index(Request $request, PlanetEconomy $economy, ResearchService $research, UnitProductionService $production): Response
     {
         $user = $request->user();

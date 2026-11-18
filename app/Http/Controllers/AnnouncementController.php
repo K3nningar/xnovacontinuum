@@ -1,5 +1,12 @@
 <?php
 
+/*
+ * Author / Contributor : K3nningar
+ * Code Version : 0.1.0-alpha.4
+ * Revision : 34ddc84
+ * Description : Handles HTTP requests for AnnouncementController operations.
+ */
+
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
@@ -9,7 +16,9 @@ use Inertia\Response;
 class AnnouncementController extends Controller
 {
     /**
-     * Handle the incoming request.
+     * Lists only non-revoked announcements addressed to the authenticated user, newest first.
+     *
+     * Pagination is scoped through the recipient join, so users cannot see announcements for other recipients.
      */
     public function __invoke(Request $request): Response
     {

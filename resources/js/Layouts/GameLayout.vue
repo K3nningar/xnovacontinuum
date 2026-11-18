@@ -1,4 +1,11 @@
-﻿<script setup>
+﻿<!--
+Author / Contributor : K3nningar
+Code Version : 0.1.0-alpha.4
+Revision : 34ddc84
+Description : Defines the shared GameLayout Vue layout.
+-->
+
+<script setup>
 import { computed, ref } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { Link, usePage } from '@inertiajs/vue3';
@@ -10,6 +17,7 @@ const props = defineProps({ livePlanets: { type: Array, default: null } });
 const { t, n } = useI18n();
 const route = (name, params) => ziggyRoute(name, params, true, page.props.ziggy);
 const menuOpen = ref(false);
+// Admin navigation is exposed only when the shared Inertia user payload meets the minimum admin level.
 const navigation = computed(() => [
     { route: 'dashboard', component: 'Dashboard', label: 'nav.command', icon: 'bi-cpu' },
     { route: 'galaxy.index', component: 'Galaxy/Index', label: 'galaxy.title', icon: 'bi-stars' },
@@ -27,6 +35,7 @@ const navigation = computed(() => [
         ? [{ route: 'admin.index', component: 'Admin/Index', label: 'admin.title', icon: 'bi-shield-lock' }]
         : []),
 ]);
+// Show the selected world's stock when scoped to a planet; admin and empire views aggregate all planets.
 const resources = computed(() => {
     const planets = props.livePlanets ?? page.props.planets ?? [];
     const selectedPlanetId = page.component === 'Admin/Index' ? null : page.props.selectedPlanetId;

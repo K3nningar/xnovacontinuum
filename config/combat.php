@@ -1,5 +1,12 @@
 <?php
 
+/*
+ * Author / Contributor : K3nningar
+ * Code Version : 0.1.0-alpha.4
+ * Revision : 34ddc84
+ * Description : Defines the combat application configuration.
+ */
+
 return [
     'max_units_per_side' => 500,
     'max_rounds' => 6,

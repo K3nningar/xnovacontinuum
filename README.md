@@ -2,6 +2,12 @@
 
 # XNova Continuum
 
+[![SemVer](https://img.shields.io/badge/SemVer-0.1.0--alpha.4-blue)](https://semver.org/)
+![PHP](https://img.shields.io/badge/PHP-8.5-777BB4?logo=php&logoColor=white)
+![Laravel](https://img.shields.io/badge/Laravel-13-FF2D20?logo=laravel&logoColor=white)
+![Vue.js](https://img.shields.io/badge/Vue.js-3-4FC08D?logo=vuedotjs&logoColor=white)
+[![License: MIT](https://img.shields.io/badge/License-MIT-green)](LICENSE)
+
 XNova Continuum is a browser-based space strategy game that reimagines XNova with Laravel and Vue. Players join a universe, develop their planet, and explore the galaxy. The project is under development: not all features of the original game are available yet.
 
 The project has a goal to expand and add some features that never got to be implemented in XNova Legacies main branch.

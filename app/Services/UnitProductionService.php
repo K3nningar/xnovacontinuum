@@ -1,5 +1,12 @@
 <?php
 
+/*
+ * Author / Contributor : K3nningar
+ * Code Version : 0.1.0-alpha.4
+ * Revision : 34ddc84
+ * Description : Implements the UnitProductionService application service.
+ */
+
 namespace App\Services;
 
 use App\Models\Planet;
@@ -10,23 +17,46 @@ use Illuminate\Validation\ValidationException;
 
 class UnitProductionService
 {
+    /**
+     * Injects the economy service used to apply due satellites before their production effect is observed.
+     */
     public function __construct(private PlanetEconomy $economy) {}
 
+    /**
+     * Exposes ship and defence definitions for administrative element operations.
+     *
+     * @return array{ships: array<int, array<string, mixed>>, defences: array<int, array<string, mixed>>}
+     */
     public function administrativeUnits(): array
     {
         return ['ships' => self::SHIPS, 'defences' => self::DEFENCES];
     }
 
+    /**
+     * Returns officer definitions keyed by their stable unit codes for administrative updates.
+     *
+     * @return array<int, array<string, mixed>>
+     */
     public function administrativeOfficers(): array
     {
         return self::OFFICERS;
     }
 
+    /**
+     * Maps supported ship/defence codes to their persisted planet inventory columns.
+     *
+     * @return array<int, string>
+     */
     public function administrativeUnitColumns(): array
     {
         return self::COLUMNS;
     }
 
+    /**
+     * Maps officer codes to the user-level columns updated when recruitment completes.
+     *
+     * @return array<int, string>
+     */
     public function administrativeOfficerColumns(): array
     {
         return self::OFFICER_COLUMNS;
@@ -111,6 +141,14 @@ class UnitProductionService
         615 => ['key' => 'emperor', 'name' => 'Empereur', 'rarity' => 'signature', 'max' => 1, 'requirements' => [614 => 1, 609 => 1]],
     ];
 
+    /**
+     * Describes ship or defence build options using planet inventory, pending quantities, and user technologies.
+     *
+     * Includes empire-wide uniqueness checks where configured; this is a presentation snapshot, so build()
+     * repeats all consequential checks under locks before charging resources.
+     *
+     * @return array{type: string, units: array<int, array<string, mixed>>}
+     */
     public function catalog(Planet $planet, User $user, string $type): array
     {
         $definitions = $type === 'ships' ? self::SHIPS : self::DEFENCES;
@@ -183,6 +221,13 @@ class UnitProductionService
         return ['type' => $type, 'units' => $units];
     }
 
+    /**
+     * Charges a planet for a validated ship/defence order and appends it to its five-entry production queue.
+     *
+     * Locks both user and owned planet, applies due work, then rechecks prerequisites, uniqueness, queue space,
+     * and affordability. Unique items are forced to quantity one; costs are deducted immediately and completion
+     * is scheduled after the preceding entry. Any rejected order rolls back all changes.
+     */
     public function build(User $user, Planet $planet, string $type, int $code, int $quantity): void
     {
         $definitions = $type === 'ships' ? self::SHIPS : ($type === 'defences' ? self::DEFENCES : []);
@@ -268,6 +313,12 @@ class UnitProductionService
         }, 3);
     }
 
+    /**
+     * Applies all due unit and officer queue entries and normalizes the remaining queue positions.
+     *
+     * A planet lock and retryable transaction prevent duplicate completion. Due solar satellites are first
+     * materialized through the economy service so their energy contribution is time-aligned with production.
+     */
     public function complete(Planet $planet): void
     {
         DB::transaction(function () use ($planet): void {
@@ -301,21 +352,41 @@ class UnitProductionService
         }, 3);
     }
 
+    /**
+     * Returns the defence-only build catalog for the supplied planet and user.
+     *
+     * @return array{type: string, units: array<int, array<string, mixed>>}
+     */
     public function defenceCatalog(Planet $planet, User $user): array
     {
         return $this->catalog($planet, $user, 'defences');
     }
 
+    /**
+     * Returns the planet's queued defence entries in queue order as client-facing data.
+     *
+     * @return array<int, array<string, mixed>>
+     */
     public function defencesQueueSnapshot(Planet $planet): array
     {
         return $this->queueSnapshot($planet, 'defences');
     }
 
+    /**
+     * Returns the planet's queued officer recruitments in queue order as client-facing data.
+     *
+     * @return array<int, array<string, mixed>>
+     */
     public function officersQueueSnapshot(Planet $planet): array
     {
         return $this->queueSnapshot($planet, 'officers');
     }
 
+    /**
+     * Builds empire-wide officer progression options, including prerequisites, caps, and remaining points.
+     *
+     * @return array{officers: array<int, array<string, mixed>>, points: int}
+     */
     public function officerCatalog(User $user): array
     {
         $officers = [];
@@ -342,6 +413,12 @@ class UnitProductionService
         return ['officers' => $officers, 'points' => (int) $user->officer_points];
     }
 
+    /**
+     * Spends one empire officer point and queues recruitment on an owned planet.
+     *
+     * The locked transaction rechecks prerequisites, level cap, and queue capacity before decrementing the point;
+     * recruitment is serialized behind existing planet work and completes after one second.
+     */
     public function recruit(User $user, Planet $planet, int $code): void
     {
         if (! isset(self::OFFICERS[$code])) {
@@ -395,6 +472,11 @@ class UnitProductionService
         }, 3);
     }
 
+    /**
+     * Resolves a prerequisite code to its storage scope and column; unknown codes are invalid configuration.
+     *
+     * @return array{0: 'user'|'planet', 1: string}
+     */
     private function requirementColumn(int $code): array
     {
         if (isset(self::RESEARCH_COLUMNS[$code])) {
@@ -412,6 +494,9 @@ class UnitProductionService
         throw ValidationException::withMessages(['unit' => 'Configuration de prérequis invalide.']);
     }
 
+    /**
+     * Reads a building prerequisite from the planet and research/officer prerequisites from the user.
+     */
     private function requirementLevel(int $code, Planet $planet, User $user): int
     {
         [$scope, $column] = $this->requirementColumn($code);
@@ -419,6 +504,12 @@ class UnitProductionService
         return (int) ($scope === 'user' ? $user->{$column} : $planet->{$column});
     }
 
+    /**
+     * Returns the configured unit cost, doubling planetary destroyer costs once per recorded empire loss.
+     *
+     * @param  array<string, mixed>  $definition
+     * @return array<int, int>
+     */
     private function costFor(array $definition, User $user): array
     {
         if ($definition['key'] !== 'planetary_destroyer') {
@@ -439,6 +530,9 @@ class UnitProductionService
         return $cost;
     }
 
+    /**
+     * Atomically increments the empire's destroyer-loss counter used to scale future replacement costs.
+     */
     public function recordPlanetaryDestroyerLoss(User $user): void
     {
         DB::transaction(function () use ($user): void {
@@ -447,6 +541,11 @@ class UnitProductionService
         }, 3);
     }
 
+    /**
+     * Applies one completed officer entry, restoring its point if prerequisites or the level cap no longer permit it.
+     *
+     * Requires the planet completion transaction; the associated user is locked before empire-wide state changes.
+     */
     private function completeOfficerQueueEntry(Planet $planet, PlanetUnitQueue $entry): void
     {
         $officer = self::OFFICERS[$entry->unit_code];
@@ -476,11 +575,21 @@ class UnitProductionService
         }
     }
 
+    /**
+     * Exposes the same duration calculation used when scheduling a production queue entry.
+     *
+     * @param  array<int, int>  $baseCosts  Per-unit metal, crystal, and deuterium costs.
+     */
     public function estimateDuration(array $baseCosts, Planet $planet, User $user, string $type): int
     {
         return $this->duration($baseCosts, $planet, $user, $type);
     }
 
+    /**
+     * Serializes a supported production queue type, returning an empty list for unsupported types.
+     *
+     * @return array<int, array<string, mixed>>
+     */
     public function queueSnapshot(Planet $planet, string $type): array
     {
         $definitions = match ($type) {
@@ -513,6 +622,13 @@ class UnitProductionService
         return self::OFFICER_COLUMNS[$code];
     }
 
+    /**
+     * Calculates per-unit production seconds from factories and applies the relevant officer discount.
+     *
+     * The discount cannot reduce the base duration below ten percent, and the result is at least one second.
+     *
+     * @param  array<int, int>  $unitCost
+     */
     private function duration(array $unitCost, Planet $planet, User $user, string $type): int
     {
         $baseSeconds = (int) floor((($unitCost[0] + $unitCost[1]) / 2500) / (((int) $planet->hangar_level + 1) * (2 ** (int) $planet->nano_factory_level) * ((int) $planet->robot_factory_level + 1)) * 3600);

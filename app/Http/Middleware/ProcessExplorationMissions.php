@@ -1,5 +1,12 @@
 <?php
 
+/*
+ * Author / Contributor : K3nningar
+ * Code Version : 0.1.0-alpha.4
+ * Revision : 34ddc84
+ * Description : Applies the ProcessExplorationMissions HTTP middleware.
+ */
+
 namespace App\Http\Middleware;
 
 use App\Services\ExplorationMissions;
@@ -10,7 +17,7 @@ use Symfony\Component\HttpFoundation\Response;
 class ProcessExplorationMissions
 {
     /**
-     * Handle an incoming request.
+     * Handle an incoming request after settling due fleet arrivals and returns.
      *
      * @param  Closure(Request): (Response)  $next
      */

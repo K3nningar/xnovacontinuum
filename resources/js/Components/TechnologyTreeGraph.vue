@@ -1,3 +1,10 @@
+<!--
+Author / Contributor : K3nningar
+Code Version : 0.1.0-alpha.4
+Revision : 34ddc84
+Description : Renders the TechnologyTreeGraph Vue component.
+-->
+
 <script setup>
 import { computed, nextTick, onBeforeUnmount, ref } from 'vue';
 import { useI18n } from 'vue-i18n';
@@ -43,9 +50,11 @@ const selectedCosts = computed(() => {
         }))
         .filter((cost) => cost.amount > 0);
 });
+// Render edges only when both endpoints survive the category filter; detail relationships use the full catalog.
 const links = computed(() => nodes.value.flatMap((node) => node.requirements
     .map((requirement) => ({ source: nodeByCode.value[requirement.code], target: node, requirement }))
     .filter((link) => link.source && link.source.id !== link.target.id)));
+// Focus highlights only immediate prerequisite/dependent neighbors, not transitive descendants.
 const relatedElementIds = computed(() => {
     if (!focusedElementId.value || !nodes.value.some((node) => node.id === focusedElementId.value)) return null;
 
@@ -117,6 +126,7 @@ function requirementStatus(current, required) {
     return t(current >= required ? 'technologyTree.requirementMet' : 'technologyTree.requirementMissing');
 }
 
+// Remember the trigger so closing the dialog restores keyboard focus to its originating node.
 function openElement(element, event) {
     modalReturnFocus = event.currentTarget;
     selectedElement.value = element;
@@ -124,6 +134,7 @@ function openElement(element, event) {
     nextTick(() => modalCloseButton.value?.focus());
 }
 
+// Remove the global key handler and restore focus only when the original node remains mounted.
 function closeElementModal() {
     selectedElement.value = null;
     window.removeEventListener('keydown', closeOnEscape);

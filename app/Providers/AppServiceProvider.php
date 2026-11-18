@@ -1,5 +1,12 @@
 <?php
 
+/*
+ * Author / Contributor : K3nningar
+ * Code Version : 0.1.0-alpha.4
+ * Revision : 34ddc84
+ * Description : Provides application functionality for AppServiceProvider.
+ */
+
 namespace App\Providers;
 
 use Illuminate\Cache\RateLimiting\Limit;
@@ -10,6 +17,9 @@ class AppServiceProvider extends ServiceProvider
 {
     public function register(): void {}
 
+    /**
+     * Defines named request limits, keying unauthenticated flows by IP and game actions by player identity.
+     */
     public function boot(): void
     {
         RateLimiter::for('login', fn ($request) => Limit::perMinute(5)->by(strtolower((string) $request->input('email')).'|'.$request->ip()));

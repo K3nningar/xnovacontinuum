@@ -1,3 +1,10 @@
+<!--
+Author / Contributor : K3nningar
+Code Version : 0.1.0-alpha.4
+Revision : 34ddc84
+Description : Renders the Index Inertia page.
+-->
+
 <script setup>
 import { computed } from 'vue';
 import { Head, Link, router, usePage, usePoll } from '@inertiajs/vue3';
@@ -22,6 +29,7 @@ const outcomeName = (outcome) => {
     if (outcome === 'moon_deposit' || outcome === 'moon_withdraw') return t(`moonLogistics.${outcome}`);
     return t(`galaxyMissions.${outcome}`);
 };
+/** Count down to arrival or, once returning, the return deadline (falling back for legacy missions). */
 function timeLeft(mission) {
     const seconds = Math.max(0, Math.ceil((new Date(mission.status === 'returning' ? (mission.returnsAt ?? mission.arrivesAt) : mission.arrivesAt).getTime() - Date.now()) / 1000));
     return [Math.floor(seconds / 3600), Math.floor((seconds % 3600) / 60), seconds % 60].map((part) => String(part).padStart(2, '0')).join(':');

@@ -1,5 +1,12 @@
 <?php
 
+/*
+ * Author / Contributor : K3nningar
+ * Code Version : 0.1.0-alpha.4
+ * Revision : 34ddc84
+ * Description : Defines database schema changes for 2026_11_12_144128_ensure_unit_and_officer_schema.
+ */
+
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
@@ -26,6 +33,7 @@ return new class extends Migration
             'officer_raider_level' => fn (Blueprint $table) => $table->unsignedSmallInteger('officer_raider_level')->default(0),
             'officer_emperor_level' => fn (Blueprint $table) => $table->unsignedSmallInteger('officer_emperor_level')->default(0),
         ];
+        // Missing-column guards make this repair migration safe across partially upgraded installations.
         foreach ($userColumns as $column => $definition) {
             if (! Schema::hasColumn('users', $column)) {
                 Schema::table('users', $definition);

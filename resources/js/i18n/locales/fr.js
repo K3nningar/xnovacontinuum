@@ -1,3 +1,10 @@
+/*
+ * Author / Contributor : K3nningar
+ * Code Version : 0.1.0-alpha.4
+ * Revision : 34ddc84
+ * Description : Assembles translated messages for the French locale.
+ */
+
 import mergeMessages from './mergeMessages.js';
 import shared from './fr/shared.js';
 import welcome from './fr/welcome.js';

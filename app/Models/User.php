@@ -1,5 +1,12 @@
 <?php
 
+/*
+ * Author / Contributor : K3nningar
+ * Code Version : 0.1.0-alpha.4
+ * Revision : 34ddc84
+ * Description : Defines the User Eloquent model.
+ */
+
 namespace App\Models;
 
 // use Illuminate\Contracts\Auth\MustVerifyEmail;
@@ -20,7 +27,7 @@ class User extends Authenticatable
     use HasFactory, Notifiable;
 
     /**
-     * Get the attributes that should be cast.
+     * Hashes assigned passwords and casts verification, administrator, and suspension state for safe comparisons.
      *
      * @return array<string, string>
      */
@@ -34,31 +41,49 @@ class User extends Authenticatable
         ];
     }
 
+    /**
+     * Determines whether the suspension deadline is still in the future; null or expired deadlines are inactive.
+     */
     public function isSuspended(): bool
     {
         return $this->suspended_until !== null && $this->suspended_until->isFuture();
     }
 
+    /**
+     * The player's selected universe, which scopes owned planets and fleets.
+     */
     public function universe(): BelongsTo
     {
         return $this->belongsTo(Universe::class);
     }
 
+    /**
+     * The player's alliance, when they belong to one.
+     */
     public function alliance(): BelongsTo
     {
         return $this->belongsTo(Alliance::class);
     }
 
+    /**
+     * All planets owned by this player across their universe records.
+     */
     public function planets(): HasMany
     {
         return $this->hasMany(Planet::class);
     }
 
+    /**
+     * Fleets dispatched by this player, including missions in transit and completed history.
+     */
     public function fleets(): HasMany
     {
         return $this->hasMany(Fleet::class);
     }
 
+    /**
+     * The player's research queue; services enforce the single active entry across the empire.
+     */
     public function researchQueues(): HasMany
     {
         return $this->hasMany(ResearchQueue::class);

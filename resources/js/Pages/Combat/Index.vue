@@ -1,3 +1,10 @@
+<!--
+Author / Contributor : K3nningar
+Code Version : 0.1.0-alpha.4
+Revision : 34ddc84
+Description : Renders the Index Inertia page.
+-->
+
 <script setup>
 import { computed } from 'vue';
 import { Head, useForm, usePage } from '@inertiajs/vue3';
@@ -44,6 +51,7 @@ const form = useForm({
     ])),
     seed: '',
 });
+// Custom combat profiles are shown only while that unit participates on either side.
 const selectedSpecialUnits = computed(() => specialUnits.value.filter((unit) =>
     Number(form.attacker.fleet[unit.code]) > 0 || Number(form.defender.fleet[unit.code]) > 0,
 ));
@@ -80,6 +88,7 @@ function reloadPlanetFleet() {
     }
 }
 
+// Reset the complete form shape and clear stale validation feedback together.
 function clearFields() {
     Object.assign(form, emptyCombatForm(props.units));
     form.clearErrors();

@@ -1,3 +1,10 @@
+<!--
+Author / Contributor : K3nningar
+Code Version : 0.1.0-alpha.4
+Revision : 34ddc84
+Description : Renders the CatalogGrid Vue component.
+-->
+
 <script setup>
 import { computed } from 'vue';
 import { useI18n } from 'vue-i18n';

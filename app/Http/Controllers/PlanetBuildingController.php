@@ -1,5 +1,12 @@
 <?php
 
+/*
+ * Author / Contributor : K3nningar
+ * Code Version : 0.1.0-alpha.4
+ * Revision : 34ddc84
+ * Description : Handles HTTP requests for PlanetBuildingController operations.
+ */
+
 namespace App\Http\Controllers;
 
 use App\Models\Planet;
@@ -10,6 +17,12 @@ use Illuminate\Validation\Rule;
 
 class PlanetBuildingController extends Controller
 {
+    /**
+     * Validates a building action and scopes the route planet to the authenticated user's current universe.
+     *
+     * Supplying activity changes the production rate; otherwise the service queues a level using the player's
+     * current energy and computer technology levels.
+     */
     public function upgrade(Request $request, Planet $planet, PlanetEconomy $economy): RedirectResponse
     {
         $attributes = $request->validate([
