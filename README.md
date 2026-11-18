@@ -8,7 +8,7 @@
 ![Vue.js](https://img.shields.io/badge/Vue.js-3-4FC08D?logo=vuedotjs&logoColor=white)
 [![License: MIT](https://img.shields.io/badge/License-MIT-green)](LICENSE)
 
-XNova Continuum is an in-development browser-based space strategy game inspired by XNova. It is built with Laravel 13, Inertia.js 3, Vue 3, and Vite. Players develop planets, research technologies, build fleets, and explore a shared universe.
+XNova Continuum is an in-development browser-based space strategy game forked from XNova Legacies project, ported using Laravel and PHP 8.5. It is built with Laravel 13, Inertia.js 3, Vue 3, and Vite. Players develop planets, research technologies, build fleets, and explore a shared universe.
 
 > **Status:** `0.1.0-alpha.4` is a pre-release. Features, balance, and database schema may change between versions. Back up your database before upgrading; do not deploy this version as a production game without reviewing its operational and security requirements.
 
