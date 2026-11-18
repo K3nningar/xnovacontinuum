@@ -9,18 +9,22 @@ test('element descriptions preserve safe formatting tags', () => {
 });
 
 test('element descriptions preserve spans with approved alert classes', () => {
-    const description = '<span class="alert alert-danger">Unlocks the planetary destroyer.</span>';
-    const primaryDescription = '<span class="alert alert-primary">Increases resource production.</span>';
+    const alertTypes = ['primary', 'secondary', 'success', 'danger', 'warning', 'info', 'light', 'dark'];
 
-    assert.equal(sanitizeElementDescription(description), description);
-    assert.equal(sanitizeElementDescription(primaryDescription), primaryDescription);
+    for (const type of alertTypes) {
+        const description = `<span class="alert alert-${type}">Alert text.</span>`;
+
+        assert.equal(sanitizeElementDescription(description), description);
+    }
 });
 
 test('element descriptions escape scripts, images, and attributes', () => {
     const description = '<script>alert(1)</script><img src=x onerror=alert(1)><strong onclick="alert(1)">safe text</strong><span style="color:red">untrusted style</span>';
     const sanitized = sanitizeElementDescription(description);
+    const unsupportedAlert = sanitizeElementDescription('<span class="alert alert-custom">untrusted alert</span>');
 
     assert.equal(sanitized, '&lt;script&gt;alert(1)&lt;/script&gt;&lt;img src=x onerror=alert(1)&gt;&lt;strong onclick=&quot;alert(1)&quot;&gt;safe text</strong>&lt;span style=&quot;color:red&quot;&gt;untrusted style</span>');
+    assert.equal(unsupportedAlert, '&lt;span class=&quot;alert alert-custom&quot;&gt;untrusted alert</span>');
 });
 
 test('element descriptions accept only string content', () => {

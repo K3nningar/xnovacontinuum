@@ -1,4 +1,4 @@
-const formattingTagPattern = /<(\/?)(b|strong|i|em|u|s|del|ins|sub|sup|code|pre|p|br|hr|ul|ol|li|blockquote|span)(?:\s+(class="alert alert-(?:danger|primary)"))?(\s*\/?)>/gi;
+const formattingTagPattern = /<(\/?)(b|strong|i|em|u|s|del|ins|sub|sup|code|pre|p|br|hr|ul|ol|li|blockquote|span)(?:\s+(class="alert alert-(?:primary|secondary|success|danger|warning|info|light|dark)"))?(\s*\/?)>/gi;
 
 function escapeHtml(text) {
     return text
