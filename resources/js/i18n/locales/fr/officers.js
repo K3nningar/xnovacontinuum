@@ -70,7 +70,7 @@ export default {
     "recruitsNone": "Aucun point disponible"
   },
   "elementDescriptions": {
-    "officer_601": "Lithéa est une experte en xénogéologie. Elle trouve toujours des solutions pour traiter de nouvelles ressources et optimiser leur exploitation. <br><br> <span class=\"alert alert-info\">Augmente la production de ressources de 5 % (niveau maximal : 20).</span>",
+    "officer_601": "Lithéa est une experte en xénogéologie. Elle trouve toujours des solutions pour traiter de nouvelles ressources et optimiser leur exploitation. <br><br> <span class=\"alert alert-primary\">Augmente la production de ressources de 5 % (niveau maximal : 20).</span>",
     "officer_602": "Accorde un bonus de 5 % aux armes, boucliers et blindages des vaisseaux (niveau maximal : 20).",
     "officer_603": "Augmente la production d’énergie de 5 % (niveau maximal : 10).",
     "officer_604": "Réduit de 5 % le temps de construction des vaisseaux (niveau maximal : 10).",

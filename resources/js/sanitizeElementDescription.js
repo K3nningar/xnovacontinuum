@@ -1,4 +1,4 @@
-const formattingTagPattern = /<(\/?)(b|strong|i|em|u|s|del|ins|sub|sup|code|pre|p|br|hr|ul|ol|li|blockquote|span)(?:\s+(class="alert alert-danger"))?(\s*\/?)>/gi;
+const formattingTagPattern = /<(\/?)(b|strong|i|em|u|s|del|ins|sub|sup|code|pre|p|br|hr|ul|ol|li|blockquote|span)(?:\s+(class="alert alert-(?:danger|primary)"))?(\s*\/?)>/gi;
 
 function escapeHtml(text) {
     return text
@@ -30,7 +30,7 @@ export function sanitizeElementDescription(description) {
         } else if (selfClosing) {
             sanitized += escapeHtml(match[0]);
         } else {
-            const safeClass = classAttribute ? ' class="alert alert-danger"' : '';
+            const safeClass = classAttribute ? ` ${classAttribute.toLowerCase()}` : '';
             sanitized += closing ? `</${normalizedTag}>` : `<${normalizedTag}${safeClass}>`;
         }
 

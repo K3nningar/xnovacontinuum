@@ -8,10 +8,12 @@ test('element descriptions preserve safe formatting tags', () => {
     assert.equal(sanitizeElementDescription(description), description);
 });
 
-test('element descriptions preserve spans with the approved alert class', () => {
+test('element descriptions preserve spans with approved alert classes', () => {
     const description = '<span class="alert alert-danger">Unlocks the planetary destroyer.</span>';
+    const primaryDescription = '<span class="alert alert-primary">Increases resource production.</span>';
 
     assert.equal(sanitizeElementDescription(description), description);
+    assert.equal(sanitizeElementDescription(primaryDescription), primaryDescription);
 });
 
 test('element descriptions escape scripts, images, and attributes', () => {
