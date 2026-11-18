@@ -10,9 +10,9 @@ The project has a goal to expand and add some features that never got to be impl
 
 - Multi-language support (Français, English, Deutsch, Español, Italiano) - More supports could be appear on the future.
 - Registration, login, universe selection.
-- Management of resources, buildings, and research, with a technology tree.
-- Construction of ships, defenses, and recruitment of officers.
-- Galaxy map, expedition and recycling missions, moons, and orbital transfers.
+- Construction of facilities, ships, defenses and recruitment of officers.
+- Laboratory for researches
+- Galaxy map, expedition and missions, moons, and orbital transfers.
 - Administration panel with roles and an audit log for sensitive actions.
 
 - New buildings
@@ -24,7 +24,7 @@ The project has a goal to expand and add some features that never got to be impl
 And be a bit different than OGame on some aspects : 
 
 - Officers now has real names and their title is their class, fixed with titles from reality. New officers are incoming too.
-- Reworked "noob" protection system
+- Reworked "noob" protection system (division system based on points earned by player actions). Two branches = Pacifist or Warmonger.
 - New galaxy view
 - Combat simulator
 - Startup tutorial for new players
