@@ -20,7 +20,8 @@ The project has a goal to expand and add some features that never got to be impl
 - New buildings (<strong>Excavation site, Defense center, Enrollment center, Space dock, Particle accelerator</strong>)
 - New researches (Antimatter-based technology)
 - New ships (SuperNova and Planetary Destroyer - <strong>Finally !!!</strong>)
-- New defenses (Planetary Protector (<strong>TOO !!!</strong>)
+- New defenses (Planetary Protector - <strong>TOO !!!</strong>)
+- New combat "mode" : New rounds for ground combat and adding military personal.
 - Universes (One server, multi instances).
 
 And be a bit different than OGame on some aspects : 
