@@ -15,8 +15,10 @@ The project has a goal to expand and add some features that never got to be impl
 - Galaxy map, expedition and missions, moons, and orbital transfers.
 - Administration panel with roles and an audit log for sensitive actions.
 
-- New buildings
-- New researches
+- New resource (Antimatter)
+- New item (Artefacts)
+- New buildings (<strong>Excavation site, Defense center, Enrollment center, Space dock, Particle accelerator</strong>)
+- New researches (Antimatter-based technology)
 - New ships (SuperNova and Planetary Destroyer - <strong>Finally !!!</strong>)
 - New defenses (Planetary Protector (<strong>TOO !!!</strong>)
 - Universes (One server, multi instances).
