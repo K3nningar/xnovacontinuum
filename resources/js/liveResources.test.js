@@ -1,3 +1,10 @@
+/*
+ * Author / Contributor : K3nningar
+ * Code Version : 0.1.0-alpha.4
+ * Revision : 34ddc84
+ * Description : Tests the liveResources.test JavaScript module.
+ */
+
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import { projectPlanetResources } from './liveResources.js';
@@ -44,6 +51,7 @@ test('subtracts fusion consumption without allowing negative resources', () => {
     assert.equal(result.deuterium, 0);
 });
 
+// Projection must stop at state-changing events, expire stale snapshots, and never run backward in time.
 test('does not extrapolate past a queued change or the next synchronization', () => {
     const queued = planet({}, { nextChangeAt: '2026-01-01T00:00:03Z' });
     assert.equal(projectPlanetResources(queued, start + 30_000).metal, 103);

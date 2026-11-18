@@ -1,5 +1,12 @@
 <?php
 
+/*
+ * Author / Contributor : K3nningar
+ * Code Version : 0.1.0-alpha.4
+ * Revision : 34ddc84
+ * Description : Registers the application's console routes.
+ */
+
 use App\Models\User;
 use App\Services\ExplorationMissions;
 use Illuminate\Foundation\Inspiring;
@@ -11,12 +18,20 @@ Artisan::command('inspire', function () {
     $this->comment(Inspiring::quote());
 })->purpose('Display an inspiring quote');
 
+/*
+ * Fleet transitions are also run on a non-overlapping minute schedule; authenticated web requests
+ * invoke the same processor so due missions are not dependent solely on scheduler cadence.
+ */
 Artisan::command('fleets:process', function (ExplorationMissions $missions): void {
     $missions->processDue();
 })->purpose('Traiter les missions de flotte arrivées à échéance');
 
 Schedule::command('fleets:process')->everyMinute()->withoutOverlapping();
 
+/*
+ * Bootstraps the one founder role only when none exists. The broad ordered-row lock serializes competing
+ * bootstrap attempts, and the role change plus audit entry are committed together.
+ */
 Artisan::command('admin:founder {userId}', function (string $userId): int {
     if (! ctype_digit($userId) || (int) $userId < 1) {
         $this->error('L’identifiant du joueur doit être un entier positif.');

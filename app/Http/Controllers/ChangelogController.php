@@ -1,5 +1,12 @@
 <?php
 
+/*
+ * Author / Contributor : K3nningar
+ * Code Version : 0.1.0-alpha.4
+ * Revision : 34ddc84
+ * Description : Handles HTTP requests for ChangelogController operations.
+ */
+
 namespace App\Http\Controllers;
 
 use App\Services\Changelog;
@@ -11,23 +18,40 @@ use Inertia\Response;
 
 class ChangelogController extends Controller
 {
+    /**
+     * Injects the shared release-definition source used for display and publication validation.
+     */
     public function __construct(private Changelog $changelog) {}
 
+    /**
+     * Renders the welcome page with only releases whose publication state is enabled.
+     */
     public function welcome(): Response
     {
         return inertia('Welcome', ['releases' => $this->releases(true)]);
     }
 
+    /**
+     * Renders the public changelog, excluding releases not marked as published.
+     */
     public function index(): Response
     {
         return inertia('Changelog', ['releases' => $this->releases(true), 'administration' => false]);
     }
 
+    /**
+     * Renders all release definitions and publication state for the authorized administrator.
+     */
     public function administration(): Response
     {
         return inertia('Changelog', ['releases' => $this->releases(false), 'administration' => true]);
     }
 
+    /**
+     * Updates a release's publication flag and records the actor/action in the admin audit log atomically.
+     *
+     * Versions must exist in the shared release definitions; the upsert creates or updates one state row.
+     */
     public function update(Request $request): RedirectResponse
     {
         $data = $request->validate([
@@ -58,6 +82,11 @@ class ChangelogController extends Controller
         return redirect()->route('admin.changelog');
     }
 
+    /**
+     * Adds a dated manual release entry and its audit record in the same transaction.
+     *
+     * The version must be defined and the entry type/date/description must satisfy the accepted changelog contract.
+     */
     public function storeEntry(Request $request): RedirectResponse
     {
         $data = $request->validate([
@@ -89,6 +118,11 @@ class ChangelogController extends Controller
     }
 
     /**
+     * Combines source-defined release entries with database-managed publication flags and manual entries.
+     *
+     * Manual and source entries are merged and sorted newest-first; when requested, unpublished releases are
+     * removed before querying their manual entries.
+     *
      * @return array<int, array<string, mixed>>
      */
     private function releases(bool $publishedOnly): array

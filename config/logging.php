@@ -1,5 +1,12 @@
 <?php
 
+/*
+ * Author / Contributor : K3nningar
+ * Code Version : 0.1.0-alpha.4
+ * Revision : 34ddc84
+ * Description : Defines the logging application configuration.
+ */
+
 use Monolog\Handler\NullHandler;
 use Monolog\Handler\StreamHandler;
 use Monolog\Handler\SyslogUdpHandler;

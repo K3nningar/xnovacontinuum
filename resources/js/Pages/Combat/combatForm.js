@@ -1,7 +1,15 @@
+/*
+ * Author / Contributor : K3nningar
+ * Code Version : 0.1.0-alpha.4
+ * Revision : 34ddc84
+ * Description : Renders the combatForm Inertia page.
+ */
+
 const sides = ['attacker', 'defender'];
 const technologyKeys = ['weapons', 'shields', 'armour'];
 const uniqueUnits = new Set([217, 407, 408, 409]);
 
+/** Create blank inputs for valid attacker/defender unit sets and only applicable custom profiles. */
 export function emptyCombatForm(units) {
     const side = (sideUnits) => ({
         fleet: Object.fromEntries(sideUnits.map((unit) => [unit.code, ''])),
@@ -18,12 +26,14 @@ export function emptyCombatForm(units) {
     };
 }
 
+/** Generate validation-bounded sample fleets; an injectable RNG keeps boundary behavior testable. */
 export function randomCombatForm(units, maxUnitsPerSide, random = Math.random) {
     const integer = (max) => Math.floor(random() * (max + 1));
     const form = emptyCombatForm(units);
 
     for (const side of sides) {
         const sideUnits = side === 'attacker' ? units.filter((unit) => unit.type === 'ships') : units;
+        // Per-type limits keep each generated fleet within the global cap as counts are consumed.
         const unitLimit = Math.min(10, Math.max(1, Math.floor(maxUnitsPerSide / sideUnits.length)));
         let remaining = maxUnitsPerSide;
         for (const unit of sideUnits) {
@@ -52,6 +62,7 @@ export function randomCombatForm(units, maxUnitsPerSide, random = Math.random) {
     return form;
 }
 
+/** Convert untouched numeric fields to zero in the payload while leaving editable form state intact. */
 export function prepareCombatSubmission(form) {
     const zeroIfEmpty = (value) => value === '' || value === null ? 0 : value;
     const side = (value) => ({

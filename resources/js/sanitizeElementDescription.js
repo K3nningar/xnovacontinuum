@@ -1,5 +1,13 @@
+/*
+ * Author / Contributor : K3nningar
+ * Code Version : 0.1.0-alpha.4
+ * Revision : 34ddc84
+ * Description : Provides application functionality for sanitizeElementDescription.
+ */
+
 const formattingTagPattern = /<(\/?)(b|strong|i|em|u|s|del|ins|sub|sup|code|pre|p|br|hr|ul|ol|li|blockquote|span)(?:\s+(class="alert alert-(?:primary|secondary|success|danger|warning|info|light|dark)"))?(\s*\/?)>/gi;
 
+/** Escape plain-text fragments while retaining already-encoded entities. */
 function escapeHtml(text) {
     return text
         .replace(/&(?!(?:amp|lt|gt|quot|apos|#\d+|#x[\da-f]+);)/gi, '&amp;')
@@ -9,6 +17,7 @@ function escapeHtml(text) {
         .replace(/'/g, '&#39;');
 }
 
+/** Allow only the formatting subset and approved alert spans; escape all other markup as text. */
 export function sanitizeElementDescription(description) {
     if (typeof description !== 'string') {
         return '';
@@ -20,6 +29,7 @@ export function sanitizeElementDescription(description) {
     for (const match of description.matchAll(formattingTagPattern)) {
         sanitized += escapeHtml(description.slice(cursor, match.index));
 
+        // Only spans may carry the tightly constrained alert class; unsupported attributes stay escaped.
         const [, closing, tag, classAttribute, selfClosing] = match;
         const normalizedTag = tag.toLowerCase();
 

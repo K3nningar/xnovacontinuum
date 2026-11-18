@@ -1,3 +1,10 @@
+/*
+ * Author / Contributor : K3nningar
+ * Code Version : 0.1.0-alpha.4
+ * Revision : 34ddc84
+ * Description : Provides translated messages for the fr galaxy interface.
+ */
+
 export default {
   "galaxyLegacySensors": "Cette ancienne recherche n’améliore plus la visibilité. Vous pouvez l’annuler pour récupérer ses ressources.",
   "galaxyMap": {

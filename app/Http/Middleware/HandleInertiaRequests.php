@@ -1,5 +1,12 @@
 <?php
 
+/*
+ * Author / Contributor : K3nningar
+ * Code Version : 0.1.0-alpha.4
+ * Revision : 34ddc84
+ * Description : Applies the HandleInertiaRequests HTTP middleware.
+ */
+
 namespace App\Http\Middleware;
 
 use App\Services\Changelog;
@@ -11,6 +18,9 @@ use Tighten\Ziggy\Ziggy;
 
 class HandleInertiaRequests extends Middleware
 {
+    /**
+     * Provides the current published game version for authenticated Inertia visits.
+     */
     public function __construct(private Changelog $changelog) {}
 
     /**
@@ -22,6 +32,11 @@ class HandleInertiaRequests extends Middleware
      */
     protected $rootView = 'app';
 
+    /**
+     * Applies a supported locale cookie; unsupported or missing values use the configured application locale.
+     *
+     * @param  Closure(Request): (Response)  $next
+     */
     public function handle(Request $request, Closure $next): Response
     {
         $locale = $request->cookie('xnova.locale');
@@ -32,7 +47,7 @@ class HandleInertiaRequests extends Middleware
     }
 
     /**
-     * Determines the current asset version.
+     * Delegates asset version selection to the parent Inertia middleware.
      *
      * @see https://inertiajs.com/asset-versioning
      */
@@ -45,6 +60,9 @@ class HandleInertiaRequests extends Middleware
      * Define the props that are shared by default.
      *
      * @see https://inertiajs.com/shared-data
+     *
+     * Shares the safe user projection, locale, deferred flash/version values, and request-specific Ziggy data.
+     * Sensitive auth fields are excluded; the game version is resolved only for authenticated requests.
      *
      * @return array<string, mixed>
      */

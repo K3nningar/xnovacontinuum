@@ -1,5 +1,12 @@
 <?php
 
+/*
+ * Author / Contributor : K3nningar
+ * Code Version : 0.1.0-alpha.4
+ * Revision : 34ddc84
+ * Description : Handles HTTP requests for RegisteredUserController operations.
+ */
+
 namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
@@ -11,11 +18,19 @@ use Illuminate\Support\Facades\Auth;
 
 class RegisteredUserController extends Controller
 {
+    /**
+     * Renders the guest registration form.
+     */
     public function create()
     {
         return inertia('Auth/Register');
     }
 
+    /**
+     * Validates and creates a user, emits the registration event, then authenticates with a regenerated session.
+     *
+     * Email is normalized to lowercase and passwords must be confirmed and at least twelve characters long.
+     */
     public function store(Request $request): RedirectResponse
     {
         $attributes = $request->validate([

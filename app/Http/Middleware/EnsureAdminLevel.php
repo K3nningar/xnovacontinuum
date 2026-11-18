@@ -1,5 +1,12 @@
 <?php
 
+/*
+ * Author / Contributor : K3nningar
+ * Code Version : 0.1.0-alpha.4
+ * Revision : 34ddc84
+ * Description : Applies the EnsureAdminLevel HTTP middleware.
+ */
+
 namespace App\Http\Middleware;
 
 use Closure;
@@ -9,7 +16,7 @@ use Symfony\Component\HttpFoundation\Response;
 class EnsureAdminLevel
 {
     /**
-     * Handle an incoming request.
+     * Handle an incoming request, requiring the route's minimum privilege and rejecting levels above founder.
      *
      * @param  Closure(Request): (Response)  $next
      */

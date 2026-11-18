@@ -1,5 +1,12 @@
 <?php
 
+/*
+ * Author / Contributor : K3nningar
+ * Code Version : 0.1.0-alpha.4
+ * Revision : 34ddc84
+ * Description : Handles HTTP requests for MoonController operations.
+ */
+
 namespace App\Http\Controllers;
 
 use App\Models\Planet;
@@ -15,6 +22,11 @@ use Inertia\Response;
 
 class MoonController extends Controller
 {
+    /**
+     * Shows an owned planet's moon orbit after validating ownership and settling due resource/unit production.
+     *
+     * An absent moon-stock row is presented as zero stock; moon existence is checked by the galaxy-map service.
+     */
     public function show(Request $request, Planet $planet, int $orbit, GalaxyMap $map, PlanetEconomy $economy, UnitProductionService $production): Response
     {
         $planet = $this->ownedPlanet($request, $planet);
@@ -39,6 +51,11 @@ class MoonController extends Controller
         ]);
     }
 
+    /**
+     * Validates and dispatches a moon resource transfer for an orbit belonging to the authenticated user's planet.
+     *
+     * The mission service performs transactional stock, ship, cargo-capacity, and fuel checks before enqueueing.
+     */
     public function store(Request $request, Planet $planet, int $orbit, GalaxyMap $map, ExplorationMissions $missions): RedirectResponse
     {
         $planet = $this->ownedPlanet($request, $planet);
@@ -55,6 +72,9 @@ class MoonController extends Controller
         return to_route('moon.show', ['planet' => $planet->id, 'orbit' => $orbit])->with('success', 'Transport orbital lancé.');
     }
 
+    /**
+     * Resolves a route-bound planet only when it belongs to the authenticated user in the selected universe.
+     */
     private function ownedPlanet(Request $request, Planet $planet): Planet
     {
         return $request->user()->planets()->where('universe_id', $request->user()->universe_id)->whereKey($planet->id)->firstOrFail();

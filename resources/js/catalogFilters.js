@@ -1,3 +1,10 @@
+/*
+ * Author / Contributor : K3nningar
+ * Code Version : 0.1.0-alpha.4
+ * Revision : 34ddc84
+ * Description : Provides application functionality for catalogFilters.
+ */
+
 export const researchFilters = [
     { key: 'information', icon: 'bi-radar', codes: [106, 108, 123, 124] },
     { key: 'combat', icon: 'bi-crosshair', codes: [109, 110, 111, 120, 121, 122] },
@@ -23,6 +30,7 @@ export const officerFilters = [
     { key: 'command', icon: 'bi-crosshair', codes: [602, 611, 612, 613, 614, 615] },
 ];
 
+/** Count nonempty configured groups and expose unclassified items in an explicit fallback group. */
 export function catalogCategories(items, groups) {
     const assignedCodes = new Set(groups.flatMap((group) => group.codes));
     const categories = groups.map((group) => ({
@@ -38,6 +46,7 @@ export function catalogCategories(items, groups) {
     return [{ key: 'all', icon: 'bi-grid', count: items.length }, ...categories];
 }
 
+/** Match the inclusive all view or an item's code against a currently available category. */
 export function matchesCatalogCategory(item, category, categories) {
     return category === 'all' || categories.find((group) => group.key === category)?.codes?.includes(item.code) === true;
 }

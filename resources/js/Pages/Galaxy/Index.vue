@@ -1,3 +1,10 @@
+<!--
+Author / Contributor : K3nningar
+Code Version : 0.1.0-alpha.4
+Revision : 34ddc84
+Description : Renders the Index Inertia page.
+-->
+
 <script setup>
 import { computed, ref, watch } from 'vue';
 import { Head, Link, router, useForm, usePage } from '@inertiajs/vue3';
@@ -29,6 +36,7 @@ const selectedPosition = ref(1);
 const dismissedTooltip = ref(null);
 const missionForm = useForm({ mission: '', galaxy: props.galaxy, system: props.system, position: 16, ships: {} });
 const sendingShips = computed(() => props.availableShips.filter((ship) => ship.count > 0 && (missionForm.mission !== 'recycle' || ship.code === 209)));
+// Match mission distance tiers: galaxy travel, same-galaxy system travel, then same-system orbit travel.
 const distance = computed(() => {
     const origin = props.planets.find((planet) => planet.id === props.selectedPlanetId)?.coordinates?.split(':').map(Number);
     if (!origin) return 0;
@@ -79,6 +87,7 @@ function slotLabel(slot) {
     return `${position} · ${body}${owner}`;
 }
 
+/** Reset the ship selection and stale errors whenever a new target/mission is prepared. */
 function prepareMission(mission, position) {
     missionForm.mission = mission;
     missionForm.galaxy = props.galaxy;
@@ -92,6 +101,7 @@ function sendMission() {
     missionForm.post(route('planet.missions.store', props.selectedPlanetId));
 }
 
+// Keep local navigation and mission state synchronized after an Inertia visit changes the viewed system.
 watch(() => [props.galaxy, props.system, props.selectedPlanetId], ([galaxy, system, planet]) => {
     targetGalaxy.value = galaxy;
     targetSystem.value = system;

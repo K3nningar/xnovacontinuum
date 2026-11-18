@@ -1,5 +1,12 @@
 <?php
 
+/*
+ * Author / Contributor : K3nningar
+ * Code Version : 0.1.0-alpha.4
+ * Revision : 34ddc84
+ * Description : Handles HTTP requests for ProductionController operations.
+ */
+
 namespace App\Http\Controllers;
 
 use App\Models\Planet;
@@ -11,16 +18,28 @@ use Inertia\Response;
 
 class ProductionController extends Controller
 {
+    /**
+     * Renders the shipyard using the shared production-page preparation flow.
+     */
     public function shipyard(Request $request, PlanetEconomy $economy, UnitProductionService $production): Response|RedirectResponse
     {
         return $this->render($request, 'ships', 'Shipyard/Index', $economy, $production);
     }
 
+    /**
+     * Renders the defences catalog using the shared production-page preparation flow.
+     */
     public function defences(Request $request, PlanetEconomy $economy, UnitProductionService $production): Response|RedirectResponse
     {
         return $this->render($request, 'defences', 'Defences/Index', $economy, $production);
     }
 
+    /**
+     * Displays empire fleets and recent completed mission reports after settling each planet's due work.
+     *
+     * Fleet and report queries are scoped to the authenticated user's selected universe; an optional planet
+     * selector falls back to the first ordered owned planet.
+     */
     public function fleet(Request $request, PlanetEconomy $economy, UnitProductionService $production): Response|RedirectResponse
     {
         $user = $request->user();
@@ -65,6 +84,13 @@ class ProductionController extends Controller
         ]);
     }
 
+    /**
+     * Prepares the selected owned planet, settles due economy/buildings/units, then renders its catalog and queue.
+     *
+     * Redirects to the dashboard if the user has no planet in their current universe.
+     *
+     * @param  'ships'|'defences'  $type
+     */
     private function render(Request $request, string $type, string $component, PlanetEconomy $economy, UnitProductionService $production): Response|RedirectResponse
     {
         $user = $request->user();

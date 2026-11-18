@@ -1,5 +1,12 @@
 <?php
 
+/*
+ * Author / Contributor : K3nningar
+ * Code Version : 0.1.0-alpha.4
+ * Revision : 34ddc84
+ * Description : Implements the ResearchService application service.
+ */
+
 namespace App\Services;
 
 use App\Models\Planet;
@@ -10,11 +17,19 @@ use Illuminate\Validation\ValidationException;
 
 class ResearchService
 {
+    /**
+     * Returns the technology definitions used to resolve administrative changes to research levels.
+     *
+     * @return array<string, array<string, mixed>>
+     */
     public function administrativeTechnologies(): array
     {
         return self::TECHNOLOGIES;
     }
 
+    /**
+     * Injects the economy calculator used to validate research energy requirements and settle planet state.
+     */
     public function __construct(private PlanetEconomy $economy) {}
 
     private const TECHNOLOGIES = [
@@ -36,6 +51,14 @@ class ResearchService
         'graviton' => ['code' => 199, 'column' => 'graviton_technology_level', 'rarity' => 'mythic', 'cost' => [0, 0, 0], 'energy' => 300000, 'requirements' => ['laboratory_level' => 12]],
     ];
 
+    /**
+     * Builds the research catalog for one planet and the user's empire-wide technology levels.
+     *
+     * Availability includes laboratory/technology prerequisites, stored planet resources, energy supply,
+     * and the single active research queue allowed per user.
+     *
+     * @return array{researches: array<int, array<string, mixed>>, activeResearch: ?array<string, mixed>}
+     */
     public function catalog(User $user, Planet $planet): array
     {
         $queue = $user->researchQueues()->with('planet')->first();
@@ -70,6 +93,13 @@ class ResearchService
         ] : null];
     }
 
+    /**
+     * Starts the next research level after settling due research, planet production, and building completions.
+     *
+     * A retryable transaction locks the user and owned planet, rechecks the single-queue rule and prerequisites,
+     * deducts costs from that planet, then creates the completion record. Invalid or unaffordable requests fail
+     * without retaining partial deductions.
+     */
     public function start(User $user, Planet $planet, string $technologyKey): ResearchQueue
     {
         $this->complete($user);
@@ -125,6 +155,12 @@ class ResearchService
         }, 3);
     }
 
+    /**
+     * Cancels the user's active research and refunds its recorded metal, crystal, and deuterium to its origin planet.
+     *
+     * If completion is already due, it is applied before cancellation is attempted. The refund and queue deletion
+     * occur under locks in one retryable transaction; no active queue raises a validation exception.
+     */
     public function cancel(User $user): void
     {
         $this->complete($user);
@@ -146,6 +182,12 @@ class ResearchService
         }, 3);
     }
 
+    /**
+     * Applies a research queue entry whose completion time has passed and removes that entry.
+     *
+     * The due check is repeated after locking the user to avoid applying stale queue state; a missing or
+     * not-yet-due entry is a no-op. The target level never lowers an existing level.
+     */
     public function complete(User $user): void
     {
         DB::transaction(function () use ($user): void {
@@ -169,6 +211,12 @@ class ResearchService
         }, 3);
     }
 
+    /**
+     * Scales base metal/crystal/deuterium prices exponentially by current level; energy is a fixed requirement.
+     *
+     * @param  array<string, mixed>  $technology
+     * @return array{metal: int, crystal: int, deuterium: int, energy: int}
+     */
     private function cost(array $technology, int $level): array
     {
         $multiplier = ($technology['factor'] ?? ($technology['code'] === 199 ? 3 : 2)) ** $level;
@@ -179,6 +227,11 @@ class ResearchService
             'energy' => (int) ($technology['energy'] ?? 0)];
     }
 
+    /**
+     * Computes research duration from metal/crystal cost and laboratory level, with a one-second minimum.
+     *
+     * @param  array{metal: int, crystal: int, deuterium: int, energy: int}  $cost
+     */
     private function duration(array $cost, Planet $planet): int
     {
         return max(1, (int) floor(($cost['metal'] + $cost['crystal']) / (((int) $planet->laboratory_level + 1) * 2) * 3600));

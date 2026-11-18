@@ -1,5 +1,12 @@
 <?php
 
+/*
+ * Author / Contributor : K3nningar
+ * Code Version : 0.1.0-alpha.4
+ * Revision : 34ddc84
+ * Description : Handles HTTP requests for GalaxyController operations.
+ */
+
 namespace App\Http\Controllers;
 
 use App\Services\GalaxyMap;
@@ -11,6 +18,12 @@ use Inertia\Response;
 
 class GalaxyController extends Controller
 {
+    /**
+     * Renders a validated galaxy/system view using an owned planet as the visibility and fleet-stock context.
+     *
+     * Settles due research and unit queues before computing the map; coordinates remain bounded by both
+     * configured universe dimensions and the game's hard display limits.
+     */
     public function __invoke(Request $request, GalaxyMap $map, ResearchService $research, UnitProductionService $production): Response|RedirectResponse
     {
         $user = $request->user();

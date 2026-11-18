@@ -1,5 +1,12 @@
 <?php
 
+/*
+ * Author / Contributor : K3nningar
+ * Code Version : 0.1.0-alpha.4
+ * Revision : 34ddc84
+ * Description : Handles HTTP requests for MultiAccountDeclarationController operations.
+ */
+
 namespace App\Http\Controllers;
 
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
@@ -12,6 +19,9 @@ use Inertia\Response;
 
 class MultiAccountDeclarationController extends Controller
 {
+    /**
+     * Shows the authenticated user's declarations and whether their account has joined a universe.
+     */
     public function index(Request $request): Response
     {
         return inertia('MultiAccounts/Index', [
@@ -20,11 +30,20 @@ class MultiAccountDeclarationController extends Controller
         ]);
     }
 
+    /**
+     * Presents the paginated declaration list to the admin route's authorized caller.
+     */
     public function administration(): Response
     {
         return inertia('Admin/Declarations', ['declarations' => $this->declarations()]);
     }
 
+    /**
+     * Creates a declaration for one to three distinct other players in the declarant's current universe.
+     *
+     * Requires the declarant to have joined a universe; the declaration and all player links are inserted
+     * together in a retryable transaction.
+     */
     public function store(Request $request): RedirectResponse
     {
         $user = $request->user();
@@ -60,6 +79,11 @@ class MultiAccountDeclarationController extends Controller
         return redirect()->route('multi-accounts.index')->with('success', 'Déclaration enregistrée.');
     }
 
+    /**
+     * Paginates declarations and attaches their linked players without issuing a query per declaration.
+     *
+     * A null declarant id returns all declarations for administration; a supplied id restricts results to its owner.
+     */
     private function declarations(?int $declarantId = null): LengthAwarePaginator
     {
         $declarations = DB::table('multi_account_declarations as declarations')

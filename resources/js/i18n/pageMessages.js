@@ -1,3 +1,10 @@
+/*
+ * Author / Contributor : K3nningar
+ * Code Version : 0.1.0-alpha.4
+ * Revision : 34ddc84
+ * Description : Provides application localization support for pageMessages.
+ */
+
 const unitCatalogProductionPaths = [
     'production.installations',
     'production.queue',
@@ -96,6 +103,7 @@ export const pageTranslationPaths = {
     shared: ['common', 'nav', 'hud', 'rarities'],
 };
 
+/** Validate required nested keys, then copy only the page's declared translation branches. */
 export function getPageTranslations(messages, page) {
     if (!Object.prototype.hasOwnProperty.call(pageTranslationPaths, page)) {
         throw new RangeError(`Unknown translation page "${page}". Available pages: ${Object.keys(pageTranslationPaths).join(', ')}`);

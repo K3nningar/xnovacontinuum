@@ -1,3 +1,10 @@
+/*
+ * Author / Contributor : K3nningar
+ * Code Version : 0.1.0-alpha.4
+ * Revision : 34ddc84
+ * Description : Tests the technologyTreeLayout.test JavaScript module.
+ */
+
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import de from './i18n/locales/de.js';
@@ -16,6 +23,7 @@ const elements = [
     { id: 'ship-advanced', code: 203, kind: 'ship', requirements: [{ code: 202 }] },
 ];
 
+// This is the primary graph invariant: every resolvable direct prerequisite occupies an earlier depth.
 test('technology tree puts every prerequisite to the left of its dependent', () => {
     const graph = layoutTechnologyTree(elements);
 
@@ -83,6 +91,7 @@ test('all technology tree buildings have localized catalog names', () => {
     }
 });
 
+// Verify connector endpoints use the same node geometry as the rendered cards and never leak invalid coordinates.
 test('technology tree produces finite SVG curves from parent to dependent', () => {
     const graph = layoutTechnologyTree(elements);
     const path = dependencyPath(graph.byCode[21], graph.byCode[202], TECHNOLOGY_TREE_NODE_WIDTH);

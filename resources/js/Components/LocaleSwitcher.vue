@@ -1,3 +1,10 @@
+<!--
+Author / Contributor : K3nningar
+Code Version : 0.1.0-alpha.4
+Revision : 34ddc84
+Description : Renders the LocaleSwitcher Vue component.
+-->
+
 <script setup>
 import { useI18n } from 'vue-i18n';
 import { localeOptions, setLocale } from '../i18n';

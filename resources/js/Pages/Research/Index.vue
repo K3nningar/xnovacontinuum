@@ -1,3 +1,10 @@
+<!--
+Author / Contributor : K3nningar
+Code Version : 0.1.0-alpha.4
+Revision : 34ddc84
+Description : Renders the Index Inertia page.
+-->
+
 <script setup>
 import { computed, ref } from 'vue';
 import { Head, Link, router, useForm, usePage } from '@inertiajs/vue3';
@@ -25,6 +32,7 @@ const details = computed(() => Object.fromEntries(props.researches.map((item) =>
 const format = (value) => n(Number(value ?? 0), 'game');
 const date = (value) => new Intl.DateTimeFormat(locale.value, { dateStyle: 'short', timeStyle: 'medium' }).format(new Date(value));
 function duration(seconds) { const h=Math.floor(seconds/3600), m=Math.floor((seconds%3600)/60), s=seconds%60; return [h,m,s].map(v=>String(v).padStart(2,'0')).join(':'); }
+/** Post the selected technology key to the currently selected planet's research queue. */
 function start(item) { form.technology=item.key; form.post(route('planet.researches.store', planet.value.id), { preserveScroll:true }); }
 function cancel() { router.delete(route('researches.destroy'), { preserveScroll: true }); }
 </script>

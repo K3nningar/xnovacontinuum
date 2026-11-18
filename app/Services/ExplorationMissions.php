@@ -1,5 +1,12 @@
 <?php
 
+/*
+ * Author / Contributor : K3nningar
+ * Code Version : 0.1.0-alpha.4
+ * Revision : 34ddc84
+ * Description : Implements the ExplorationMissions application service.
+ */
+
 namespace App\Services;
 
 use App\Models\Fleet;
@@ -17,6 +24,9 @@ class ExplorationMissions
         213 => 2000, 214 => 1000000, 215 => 750, 216 => 10000,
     ];
 
+    /**
+     * Injects map/economy, production/research, and combat collaborators used by mission dispatch and resolution.
+     */
     public function __construct(
         private GalaxyMap $map,
         private PlanetEconomy $economy,
@@ -25,6 +35,15 @@ class ExplorationMissions
         private CombatSimulatorService $combat,
     ) {}
 
+    /**
+     * Validates and dispatches an expedition or recycling fleet from an owned planet.
+     *
+     * Due missions, research, planet resources, and unit queues are settled before locking the user and planet.
+     * The transaction then verifies coordinates, mission-specific technology/visibility and ship stock, deducts
+     * fuel and ships, and records outbound/return times. Invalid orders do not retain partial deductions.
+     *
+     * @param  array<int|string, int>  $ships  Unit code to requested quantity.
+     */
     public function send(User $user, Planet $planet, string $mission, int $galaxy, int $system, int $position, array $ships): Fleet
     {
         $this->processDue();
@@ -105,6 +124,12 @@ class ExplorationMissions
         }, 3);
     }
 
+    /**
+     * Repeatedly claims and processes the earliest due outbound arrival or returning fleet.
+     *
+     * Each fleet is selected under a row lock and processed in a retryable transaction, so concurrent
+     * requests cannot apply the same arrival or return twice. Processing stops once no eligible fleet remains.
+     */
     public function processDue(): void
     {
         while (true) {
@@ -133,6 +158,16 @@ class ExplorationMissions
         }
     }
 
+    /**
+     * Queues a ship-and-resource transfer to or from an owned moon orbit.
+     *
+     * The locked transaction verifies orbit ownership, transfer bounds, allowed transport ships, capacity and
+     * stocks; it deducts the ships, travel fuel and source resources before creating the outbound fleet record.
+     *
+     * @param  'deposit'|'withdraw'  $direction
+     * @param  'metal'|'crystal'|'deuterium'  $resource
+     * @param  array<int|string, int>  $ships
+     */
     public function sendMoon(User $user, Planet $planet, int $orbit, string $direction, string $resource, int $amount, array $ships): Fleet
     {
         $this->processDue();
@@ -205,6 +240,12 @@ class ExplorationMissions
         }, 3);
     }
 
+    /**
+     * Resolves an arrived fleet's mission, records its outcome/cargo, and changes its state to returning.
+     *
+     * Recycling locks and decrements the shared asteroid stock; expeditions roll an outcome and may run combat.
+     * The caller must process the fleet within the due-fleet transaction to make the state change atomic.
+     */
     private function arrive(Fleet $fleet): void
     {
         if (in_array($fleet->mission, ['moon_deposit', 'moon_withdraw'], true)) {
@@ -281,6 +322,11 @@ class ExplorationMissions
         $fleet->save();
     }
 
+    /**
+     * Applies a moon deposit to locked moon stock or marks a withdrawal as ready to return.
+     *
+     * Deposits create the stock row if needed, reject integer overflow, and clear delivered fleet cargo.
+     */
     private function arriveMoon(Fleet $fleet): void
     {
         if ($fleet->mission === 'moon_deposit') {
@@ -304,6 +350,14 @@ class ExplorationMissions
         $fleet->save();
     }
 
+    /**
+     * Resolves a pirate/alien encounter using current player technologies and stores survivors plus the report.
+     *
+     * Research due by the fleet's arrival timestamp is applied before attacker technology is read; opponent
+     * levels are adjusted by the encounter type, and only the attacker's surviving units remain in the fleet.
+     *
+     * @param  'pirates'|'aliens'  $enemy
+     */
     private function encounter(Fleet $fleet, string $enemy): void
     {
         if ($fleet->user->researchQueues()->where('completes_at', '<=', $fleet->arrives_at)->exists()) {
@@ -329,11 +383,20 @@ class ExplorationMissions
         $fleet->combat_report = $result;
     }
 
+    /**
+     * Returns an inclusive cryptographically secure random integer; overridable to make mission outcomes testable.
+     */
     protected function random(int $minimum, int $maximum): int
     {
         return random_int($minimum, $maximum);
     }
 
+    /**
+     * Restores surviving ships and cargo to the origin planet, then marks the fleet completed.
+     *
+     * The caller holds the fleet-processing transaction; the origin planet is locked and resource/unit integer
+     * overflows abort the whole update. Production is materialized at the fleet's recorded return time first.
+     */
     private function returnFleet(Fleet $fleet): void
     {
         $planet = Planet::query()->whereKey($fleet->origin_planet_id)->where('user_id', $fleet->user_id)->lockForUpdate()->firstOrFail();

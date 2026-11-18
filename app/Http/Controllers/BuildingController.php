@@ -1,5 +1,12 @@
 <?php
 
+/*
+ * Author / Contributor : K3nningar
+ * Code Version : 0.1.0-alpha.4
+ * Revision : 34ddc84
+ * Description : Handles HTTP requests for BuildingController operations.
+ */
+
 namespace App\Http\Controllers;
 
 use App\Models\Planet;
@@ -11,6 +18,12 @@ use Inertia\Response;
 
 class BuildingController extends Controller
 {
+    /**
+     * Settles due research and each owned planet's economy/building queue before rendering building snapshots.
+     *
+     * A requested planet is honored only within the authenticated user's current universe; without an owned
+     * planet the visitor is redirected to the dashboard.
+     */
     public function index(Request $request, PlanetEconomy $economy, ResearchService $research): Response|RedirectResponse
     {
         $user = $request->user();

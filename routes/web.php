@@ -1,5 +1,12 @@
 <?php
 
+/*
+ * Author / Contributor : K3nningar
+ * Code Version : 0.1.0-alpha.4
+ * Revision : 34ddc84
+ * Description : Registers the application's web routes.
+ */
+
 use App\Http\Controllers\AdminController;
 use App\Http\Controllers\AnnouncementController;
 use App\Http\Controllers\Auth\AuthenticatedSessionController;
@@ -22,6 +29,11 @@ use App\Http\Middleware\EnsureAccountIsActive;
 use App\Http\Middleware\ProcessExplorationMissions;
 use Illuminate\Support\Facades\Route;
 
+/*
+ * Public release pages and guest-only authentication are separated from the authenticated game pipeline.
+ * Game routes first enforce active accounts and process due fleets; admin route groups add progressively
+ * higher privilege thresholds, while mutating game operations carry named rate limits.
+ */
 Route::get('/', [ChangelogController::class, 'welcome'])->name('home');
 Route::get('/changelog', [ChangelogController::class, 'index'])->name('changelog');
 

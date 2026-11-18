@@ -1,7 +1,15 @@
+/*
+ * Author / Contributor : K3nningar
+ * Code Version : 0.1.0-alpha.4
+ * Revision : 34ddc84
+ * Description : Tests the catalogFilters.test JavaScript module.
+ */
+
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import { catalogCategories, defenceFilters, matchesCatalogCategory, officerFilters, researchFilters, shipFilters } from './catalogFilters.js';
 
+// Group definitions must partition the known catalogs exactly once, with no dropped or duplicated codes.
 test('catalog filters classify each real research, ship, defence and officer once', () => {
     for (const [groups, codes] of [
         [researchFilters, [106, 108, 109, 110, 111, 113, 114, 115, 117, 118, 120, 121, 122, 123, 124, 199]],

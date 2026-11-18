@@ -1,3 +1,10 @@
+/*
+ * Author / Contributor : K3nningar
+ * Code Version : 0.1.0-alpha.4
+ * Revision : 34ddc84
+ * Description : Provides application functionality for technologyTreeLayout.
+ */
+
 export const TECHNOLOGY_TREE_NODE_WIDTH = 300;
 const COLUMN_GAP = 72;
 const ROW_HEIGHT = 168;
@@ -9,12 +16,14 @@ const NODE_ENTRY_OFFSET = 10;
 const NODE_EXIT_OFFSET = NODE_ENTRY_OFFSET + TECHNOLOGY_TREE_NODE_WIDTH - 20;
 const CATEGORY_ORDER = ['building', 'research', 'ship', 'defence', 'officer'];
 
+/** Keep only nodes whose kind is enabled; relationships to filtered nodes are omitted later. */
 export function filterTechnologyTreeElements(elements, visibleKinds) {
     const kinds = new Set(visibleKinds);
 
     return elements.filter((element) => kinds.has(element.kind));
 }
 
+/** Resolve the selected node's direct prerequisites and direct dependents from the full catalog. */
 export function getTechnologyTreeRelationships(elements, element) {
     const byCode = new Map(elements.map((item) => [item.code, item]));
     const prerequisites = element.requirements
@@ -27,6 +36,7 @@ export function getTechnologyTreeRelationships(elements, element) {
     return { prerequisites, dependencies };
 }
 
+/** Build a cubic SVG connector from the right edge of a prerequisite to its dependent. */
 export function dependencyPath(source, target, nodeWidth = TECHNOLOGY_TREE_NODE_WIDTH) {
     const startX = source.x + (nodeWidth === TECHNOLOGY_TREE_NODE_WIDTH ? NODE_EXIT_OFFSET : nodeWidth);
     const startY = source.y + NODE_CENTER_OFFSET;
@@ -37,10 +47,12 @@ export function dependencyPath(source, target, nodeWidth = TECHNOLOGY_TREE_NODE_
     return `M ${startX} ${startY} C ${startX + bend} ${startY}, ${endX - bend} ${endY}, ${endX} ${endY}`;
 }
 
+/** Assign dependency-depth columns and reorder rows to keep related branches visually aligned. */
 export function layoutTechnologyTree(elements) {
     const byCode = Object.fromEntries(elements.map((element) => [element.code, element]));
     const depthById = new Map();
 
+    // A cycle-safe longest-prerequisite walk keeps every resolvable parent in an earlier column.
     function depthOf(element, visiting = new Set()) {
         if (depthById.has(element.id)) return depthById.get(element.id);
         if (visiting.has(element.id)) return 0;
@@ -92,6 +104,7 @@ export function layoutTechnologyTree(elements) {
         columnElements.forEach((element, row) => rowById.set(element.id, row));
     };
 
+    // Alternating barycenter sweeps reduce edge crossings without changing dependency depth.
     const reverseColumns = () => {
         for (const [, columnElements] of orderedColumns.slice(0, -1).reverse()) {
             orderColumn(columnElements, (element) => childrenById.get(element.id));

@@ -1,3 +1,10 @@
+<!--
+Author / Contributor : K3nningar
+Code Version : 0.1.0-alpha.4
+Revision : 34ddc84
+Description : Renders the Show Inertia page.
+-->
+
 <script setup>
 import { computed } from 'vue';
 import { Head, Link, useForm, usePage } from '@inertiajs/vue3';
@@ -16,6 +23,7 @@ const { t, n } = useI18n();
 const route = (name, params) => ziggyRoute(name, params, true, page.props.ziggy);
 const form = useForm({ direction: 'deposit', resource: 'metal', amount: 1, ships: { 202: 0, 203: 0, 209: 0 } });
 const capacities = { 202: 5000, 203: 25000, 209: 20000 };
+// Transfer capacity is the combined cargo volume of the three supported transport ship classes.
 const capacity = computed(() => Object.entries(form.ships).reduce((sum, [code, count]) => sum + Number(count || 0) * capacities[code], 0));
 const fuel = computed(() => Object.values(form.ships).reduce((sum, count) => sum + Number(count || 0), 0));
 const flight = computed(() => props.fleetSpeed > 0 ? Math.max(60, Math.ceil(300 / props.fleetSpeed)) : '—');

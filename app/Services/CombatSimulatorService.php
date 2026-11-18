@@ -1,5 +1,12 @@
 <?php
 
+/*
+ * Author / Contributor : K3nningar
+ * Code Version : 0.1.0-alpha.4
+ * Revision : 34ddc84
+ * Description : Implements the CombatSimulatorService application service.
+ */
+
 namespace App\Services;
 
 use Random\Engine\Mt19937;
@@ -9,6 +16,12 @@ use Random\Randomizer;
 class CombatSimulatorService
 {
     /**
+     * Simulates both sides until one is eliminated or the configured round limit is reached.
+     *
+     * Each invocation uses a secure random source when no seed is provided; a supplied seed selects the
+     * deterministic Mt19937 engine for repeatable outcomes. Both sides fire using their pre-round shooter
+     * lists, so losses in a round do not suppress that round's already-scheduled return fire.
+     *
      * @param  array{fleet: array<int, int>, technologies: array{weapons: int, shields: int, armour: int}}  $attackerInput
      * @param  array{fleet: array<int, int>, technologies: array{weapons: int, shields: int, armour: int}}  $defenderInput
      * @param  array<int, array{attack: int, shield: int, hull: int}>  $specialProfiles
@@ -73,6 +86,10 @@ class CombatSimulatorService
     }
 
     /**
+     * Expands one side's fleet counts into individual units with technology-adjusted attack, shields, and hull.
+     *
+     * Special profiles replace configured base stats for custom-profile units before technology multipliers apply.
+     *
      * @param  array{fleet: array<int, int>, technologies: array{weapons: int, shields: int, armour: int}}  $input
      * @param  array<int, array{attack: int, shield: int, hull: int}>  $specialProfiles
      * @return array{units: array<int, array<string, int|float>>, alive: array<int, int>, positions: array<int, int>}
@@ -113,6 +130,10 @@ class CombatSimulatorService
     }
 
     /**
+     * Fires once per initially alive shooter, applying rapid fire while each shot destroys its target.
+     *
+     * Target selection and rapid-fire continuation consume the supplied randomizer, keeping seeded runs repeatable.
+     *
      * @param  array<int, int>  $shooterIds
      * @param  array{units: array<int, array<string, int|float>>, alive: array<int, int>, positions: array<int, int>}  $shooters
      * @param  array{units: array<int, array<string, int|float>>, alive: array<int, int>, positions: array<int, int>}  $targets
@@ -142,6 +163,11 @@ class CombatSimulatorService
     }
 
     /**
+     * Applies one shot to a target, returning true only when that shot destroys the unit.
+     *
+     * Damage that does not exceed one percent of maximum shields is discarded; remaining shield absorbs damage
+     * before hull, with a random explosion check once hull reaches 30 percent or less.
+     *
      * @param  array<string, int|float>  $shooter
      * @param  array{units: array<int, array<string, int|float>>, alive: array<int, int>, positions: array<int, int>}  $targets
      */
@@ -186,6 +212,10 @@ class CombatSimulatorService
     }
 
     /**
+     * Removes a destroyed unit from the live index using swap-with-last to keep the index compact.
+     *
+     * The unit record remains in the full unit list for stable IDs, but its alive position is removed.
+     *
      * @param  array{units: array<int, array<string, int|float>>, alive: array<int, int>, positions: array<int, int>}  $fleet
      */
     private function removeUnit(int $unitId, array &$fleet): void
@@ -203,6 +233,8 @@ class CombatSimulatorService
     }
 
     /**
+     * Restores every surviving unit's shield to its technology-adjusted maximum at the start of a round.
+     *
      * @param  array{units: array<int, array<string, int|float>>, alive: array<int, int>, positions: array<int, int>}  $fleet
      */
     private function resetShields(array &$fleet): void
@@ -213,6 +245,8 @@ class CombatSimulatorService
     }
 
     /**
+     * Counts surviving units by code and sorts codes numerically for stable report serialization.
+     *
      * @param  array{units: array<int, array<string, int|float>>, alive: array<int, int>, positions: array<int, int>}  $fleet
      * @return array<int, int>
      */
@@ -231,6 +265,8 @@ class CombatSimulatorService
     }
 
     /**
+     * Converts sorted code-to-count data into the compact unit-line format used by round reports.
+     *
      * @param  array<int, int>  $counts
      * @return array<int, array{code: int, count: int}>
      */
@@ -246,6 +282,10 @@ class CombatSimulatorService
     }
 
     /**
+     * Summarizes initial and surviving counts, including per-code and aggregate losses.
+     *
+     * Unit rows are emitted for codes present initially; absent survivors count as zero.
+     *
      * @param  array<int, int>  $initial
      * @param  array<int, int>  $remaining
      * @return array{units: array<int, array{code: int, initial: int, remaining: int, losses: int}>, totalInitial: int, totalRemaining: int, totalLosses: int}

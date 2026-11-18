@@ -1,5 +1,12 @@
 <?php
 
+/*
+ * Author / Contributor : K3nningar
+ * Code Version : 0.1.0-alpha.4
+ * Revision : 34ddc84
+ * Description : Handles HTTP requests for FleetController operations.
+ */
+
 namespace App\Http\Controllers;
 
 use App\Models\Planet;
@@ -9,6 +16,12 @@ use Inertia\Response;
 
 class FleetController extends Controller
 {
+    /**
+     * Materializes owned planets and returns their ship stocks with the user's current-universe fleet list.
+     *
+     * A requested planet is honored only if it occurs in the owned collection; otherwise the first ordered
+     * planet is selected. With no planets, the user is redirected to the dashboard.
+     */
     public function index(Request $request, PlanetEconomy $economy): Response
     {
         $user = $request->user();

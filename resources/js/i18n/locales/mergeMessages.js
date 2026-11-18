@@ -1,3 +1,10 @@
+/*
+ * Author / Contributor : K3nningar
+ * Code Version : 0.1.0-alpha.4
+ * Revision : 34ddc84
+ * Description : Combines locale message objects with their shared translations.
+ */
+
 export default function mergeMessages(...sources) {
     const merged = {};
 

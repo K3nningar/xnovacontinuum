@@ -10,6 +10,13 @@ export default {
     "unreleased": "Sin publicar",
     "baseline": "Hito inicial de desarrollo, no una versión publicada. Las fechas indican cuándo se realizaron los cambios.",
     "entries": {
+      "documentation": "Se añadió documentación en inglés a los archivos de código del proyecto.",
+      "license": "Se añadió el archivo de licencia MIT.",
+      "semverBadges": "Se añadieron insignias de tecnologías y de licencia MIT al README.",
+      "versionBump": "Se confirmó la versión de lanzamiento 0.1.0-alpha.4 en los metadatos del proyecto.",
+      "newGameContent": "Se añadieron un laboratorio de investigación, antimateria, artefactos, nuevas tecnologías y nuevos edificios, naves, defensas y oficiales.",
+      "groundCombat": "Se añadió el combate terrestre, con rondas específicas y personal militar.",
+      "newPlayerProtection": "Se reformuló la protección para nuevos jugadores como un sistema basado en puntos con ramas Pacifista y Belicista.",
       "manualChangelog": "Entrada manual añadida al registro desde la administración de nivel 2.",
       "laravelSecurity": "Laravel actualizado a 13.42.0 para corregir CVE-2026-128083.",
       "dependencyUpdates": "Actualizadas las dependencias compatibles de PHP y JavaScript, incluidas Inertia, Vue, Vite y Tailwind CSS.",

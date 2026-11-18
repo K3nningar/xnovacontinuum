@@ -1,3 +1,10 @@
+/*
+ * Author / Contributor : K3nningar
+ * Code Version : 0.1.0-alpha.4
+ * Revision : 34ddc84
+ * Description : Provides application functionality for buildingCatalog.
+ */
+
 export const buildingCategories = [
     { key: 'all', icon: 'bi-grid' },
     { key: 'production', icon: 'bi-lightning-charge' },
@@ -25,6 +32,7 @@ export const buildingCatalog = [
     { key: 'missile_silo', category: 'defence', level: 'missile_silo_level', activity: null, code: 44, icon: 'X', requirementKey: 'siloRequirement' },
 ];
 
+/** Return all facilities for the reset option, or only those assigned to a category. */
 export function buildingsInCategory(buildings, category) {
     return category === 'all' ? buildings : buildings.filter((building) => building.category === category);
 }

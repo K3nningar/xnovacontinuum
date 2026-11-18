@@ -1,5 +1,12 @@
 <?php
 
+/*
+ * Author / Contributor : K3nningar
+ * Code Version : 0.1.0-alpha.4
+ * Revision : 34ddc84
+ * Description : Applies the EnsureAccountIsActive HTTP middleware.
+ */
+
 namespace App\Http\Middleware;
 
 use Closure;
@@ -11,6 +18,8 @@ class EnsureAccountIsActive
 {
     /**
      * Handle an incoming request.
+     *
+     * Prevents an actively suspended user from continuing by clearing authentication/session state.
      *
      * @param  Closure(Request): (Response)  $next
      */

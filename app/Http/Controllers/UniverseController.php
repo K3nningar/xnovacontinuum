@@ -1,5 +1,12 @@
 <?php
 
+/*
+ * Author / Contributor : K3nningar
+ * Code Version : 0.1.0-alpha.4
+ * Revision : 34ddc84
+ * Description : Handles HTTP requests for UniverseController operations.
+ */
+
 namespace App\Http\Controllers;
 
 use App\Models\Planet;
@@ -13,6 +20,12 @@ use Illuminate\Validation\ValidationException;
 
 class UniverseController extends Controller
 {
+    /**
+     * Atomically joins an active universe and creates a starting planet in a randomly chosen unoccupied system.
+     *
+     * Locks the user and selected universe to prevent duplicate joins and concurrent allocation races. System
+     * selection walks every bounded slot from a random offset; a full/invalid universe leaves the user unchanged.
+     */
     public function join(Request $request, GalaxyMap $map): RedirectResponse
     {
         $attributes = $request->validate([

@@ -1,5 +1,12 @@
 <?php
 
+/*
+ * Author / Contributor : K3nningar
+ * Code Version : 0.1.0-alpha.4
+ * Revision : 34ddc84
+ * Description : Handles HTTP requests for OfficerController operations.
+ */
+
 namespace App\Http\Controllers;
 
 use App\Services\UnitProductionService;
@@ -10,6 +17,9 @@ use Inertia\Response;
 
 class OfficerController extends Controller
 {
+    /**
+     * Applies due officer/unit production on an available planet and renders empire officer progress and queue.
+     */
     public function index(Request $request, UnitProductionService $production): Response
     {
         $user = $request->user();
@@ -26,6 +36,9 @@ class OfficerController extends Controller
         ]);
     }
 
+    /**
+     * Validates an officer code and queues recruitment on the user's first planet in the current universe.
+     */
     public function store(Request $request, UnitProductionService $production): RedirectResponse
     {
         $attributes = $request->validate([

@@ -1,5 +1,12 @@
 <?php
 
+/*
+ * Author / Contributor : K3nningar
+ * Code Version : 0.1.0-alpha.4
+ * Revision : 34ddc84
+ * Description : Handles HTTP requests for AdminController operations.
+ */
+
 namespace App\Http\Controllers;
 
 use App\Models\Fleet;
@@ -17,32 +24,54 @@ use Inertia\Response;
 
 class AdminController extends Controller
 {
+    /**
+     * Injects the canonical game catalogs and economy service used by audited administrative adjustments.
+     */
     public function __construct(
         private PlanetEconomy $economy,
         private ResearchService $research,
         private UnitProductionService $production,
     ) {}
 
+    /**
+     * Renders aggregate administration overview and player selection data.
+     */
     public function index(Request $request): Response
     {
         return $this->page($request, 'overview');
     }
 
+    /**
+     * Renders the canonical building/research/unit/officer adjustment catalog.
+     */
     public function elements(Request $request): Response
     {
         return $this->page($request, 'elements');
     }
 
+    /**
+     * Renders player and planet selection data for resource adjustments.
+     */
     public function resources(Request $request): Response
     {
         return $this->page($request, 'resources');
     }
 
+    /**
+     * Renders administrator role/suspension data and recent audit records.
+     */
     public function roles(Request $request): Response
     {
         return $this->page($request, 'roles');
     }
 
+    /**
+     * Adds a bounded amount of a catalog element to an eligible player's planet or empire state.
+     *
+     * The transaction locks the target and planet, rejects conflicting queues/requirements and field or missile
+     * capacity overflow, then writes the adjustment and audit record together. Buildings and solar satellites
+     * settle economy first so the resulting stock/field state is current.
+     */
     public function storeElement(Request $request): RedirectResponse
     {
         $data = $request->validate([
@@ -152,6 +181,11 @@ class AdminController extends Controller
             ->with('success', 'Élément ajouté.');
     }
 
+    /**
+     * Adds at least one resource to an eligible player's planet without exceeding computed storage capacities.
+     *
+     * Production is materialized first; the resource change and before/added/after audit details commit together.
+     */
     public function storeResources(Request $request, PlanetEconomy $economy): RedirectResponse
     {
         $data = $request->validate([
@@ -191,6 +225,11 @@ class AdminController extends Controller
             ->with('success', 'Ressources ajoutées.');
     }
 
+    /**
+     * Assigns an admin level from 0 to 3, preserving the founder account and auditing the previous/new level.
+     *
+     * The target is locked and may not be the actor or a level-four founder.
+     */
     public function updateRole(Request $request): RedirectResponse
     {
         $data = $request->validate([
@@ -217,6 +256,11 @@ class AdminController extends Controller
             ->with('success', 'Niveau administratif mis à jour.');
     }
 
+    /**
+     * Suspends a lower-privilege, non-self target for one to 365 days and records the reason in the audit log.
+     *
+     * Already-active suspensions are rejected; target state and audit event are persisted atomically.
+     */
     public function suspend(Request $request): RedirectResponse
     {
         $data = $request->validate([
@@ -242,6 +286,11 @@ class AdminController extends Controller
             ->with('success', 'Compte suspendu.');
     }
 
+    /**
+     * Clears a lower-privilege target's suspension deadline/reason and audits the previous suspension details.
+     *
+     * The operation is rejected when the target is not suspended and is committed atomically with its audit row.
+     */
     public function unsuspend(Request $request): RedirectResponse
     {
         $data = $request->validate([
@@ -264,6 +313,9 @@ class AdminController extends Controller
             ->with('success', 'Suspension levée.');
     }
 
+    /**
+     * Publishes an announcement to a snapshot of all current user ids and records its audit event atomically.
+     */
     public function storeAnnouncement(Request $request): RedirectResponse
     {
         $data = $request->validate([
@@ -289,6 +341,12 @@ class AdminController extends Controller
         return redirect()->route('admin.index')->with('success', 'Annonce publiée.');
     }
 
+    /**
+     * Marks an existing announcement as revoked once, preserving its record and recipient history.
+     *
+     * The announcement row is locked; missing ids return 404 and repeated revocation is rejected. The revocation
+     * timestamp and audit event commit together.
+     */
     public function revokeAnnouncement(Request $request, int $announcement): RedirectResponse
     {
         DB::transaction(function () use ($request, $announcement): void {
@@ -305,6 +363,15 @@ class AdminController extends Controller
         return redirect()->route('admin.index')->with('success', 'Annonce retirée.');
     }
 
+    /**
+     * Builds shared administration page props, limiting overview/audit/catalog queries to the active mode.
+     *
+     * A selected planet id is retained only when it belongs to the selected player; player results preserve
+     * validated search and pagination query parameters.
+     *
+     * @param  Request  $request  Validated selection/search query context.
+     * @param  'overview'|'elements'|'resources'|'roles'  $mode  Page data mode.
+     */
     private function page(Request $request, string $mode): Response
     {
         $data = $request->validate([
@@ -357,6 +424,11 @@ class AdminController extends Controller
         ]);
     }
 
+    /**
+     * Combines canonical economy, research, unit, and officer metadata into the admin adjustment lookup.
+     *
+     * @return array<string, array<string, array<string, mixed>>>
+     */
     private function elementDefinitions(): array
     {
         $buildings = [];
@@ -388,6 +460,8 @@ class AdminController extends Controller
     }
 
     /**
+     * Writes an immutable audit snapshot of the actor, action, target context, and action-specific details.
+     *
      * @param  array<string, mixed>  $details
      */
     private function audit(Request $request, string $action, ?int $targetUserId, ?int $planetId, array $details): void
@@ -404,6 +478,11 @@ class AdminController extends Controller
         ]);
     }
 
+    /**
+     * Enforces the hierarchy rule that administrators may modify only other users below their own level.
+     *
+     * Self-targeting and equal/higher-level targets raise a validation exception.
+     */
     private function ensureEligibleTarget(Request $request, User $target): void
     {
         if ($target->id === $request->user()->id || $target->admin_level >= $request->user()->admin_level) {

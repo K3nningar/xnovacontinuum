@@ -1,3 +1,10 @@
+<!--
+Author / Contributor : K3nningar
+Code Version : 0.1.0-alpha.4
+Revision : 34ddc84
+Description : Renders the UnitCatalog Vue component.
+-->
+
 <script setup>
 import { computed, ref } from 'vue';
 import { router, usePage } from '@inertiajs/vue3';
@@ -12,6 +19,7 @@ import { catalogCategories, defenceFilters, matchesCatalogCategory, shipFilters 
 const props = defineProps({ units: Array, queue: Array, planet: Object, unitType: String, title: String });
 const page = usePage();
 const { t, n, locale } = useI18n();
+// Keep the selected category across reactive catalog updates while deriving counts from current props.
 const selectedCategory = ref('all');
 const groups = computed(() => props.unitType === 'ships' ? shipFilters : defenceFilters);
 const categories = computed(() => catalogCategories(props.units, groups.value));
@@ -30,6 +38,7 @@ function requirementName(code) {
     const officer = officerKeys[code];
     return research ? t(`researchLabels.${research}`) : building ? t(`buildingCatalog.${building}.name`) : officer ? t(`officerNames.${officer}`) : t('units.requirementPrefix', { code });
 }
+/** Submit one unit order through the type-specific endpoint; unique units always have quantity one. */
 function build(unit, event) {
     const endpoint = props.unitType === 'ships' ? 'planet.ships.store' : 'planet.defences.store';
     router.post(route(endpoint, props.planet.id), { code: unit.code, quantity: unit.unique ? 1 : Number(event.target.quantity.value) }, { preserveScroll: true });

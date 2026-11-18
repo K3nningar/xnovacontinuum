@@ -1,3 +1,10 @@
+/*
+ * Author / Contributor : K3nningar
+ * Code Version : 0.1.0-alpha.4
+ * Revision : 34ddc84
+ * Description : Renders the combatForm.test Inertia page.
+ */
+
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import { emptyCombatForm, prepareCombatSubmission, randomCombatForm } from './combatForm.js';
@@ -43,6 +50,7 @@ test('empty army and technology fields are submitted as zero without changing th
     assert.equal(submitted.special_profiles[216].attack, '');
 });
 
+// Exercise RNG extremes and army-size boundaries to lock down server-validation-compatible generated inputs.
 test('random data stays within validation limits even at random and army boundaries', () => {
     for (const random of [() => 0, () => 0.999999999]) {
         for (const maxUnits of [1, 500]) {

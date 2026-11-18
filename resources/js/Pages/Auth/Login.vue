@@ -1,3 +1,10 @@
+<!--
+Author / Contributor : K3nningar
+Code Version : 0.1.0-alpha.4
+Revision : 34ddc84
+Description : Renders the Login Inertia page.
+-->
+
 <script setup>
 import { Head, Link, useForm, usePage } from '@inertiajs/vue3';
 import { route as ziggyRoute } from 'ziggy-js';

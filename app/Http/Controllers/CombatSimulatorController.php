@@ -1,5 +1,12 @@
 <?php
 
+/*
+ * Author / Contributor : K3nningar
+ * Code Version : 0.1.0-alpha.4
+ * Revision : 34ddc84
+ * Description : Handles HTTP requests for CombatSimulatorController operations.
+ */
+
 namespace App\Http\Controllers;
 
 use App\Http\Requests\SimulateCombatRequest;
@@ -11,6 +18,11 @@ use Inertia\Response;
 
 class CombatSimulatorController extends Controller
 {
+    /**
+     * Renders the simulator with configured unit metadata and a starting fleet/technology preset from the user's first planet.
+     *
+     * Presets are read-only and the previous simulation result is restored from the session.
+     */
     public function index(Request $request): Response
     {
         /** @var User $user */
@@ -52,6 +64,11 @@ class CombatSimulatorController extends Controller
         ]);
     }
 
+    /**
+     * Runs the validated battle and stores its report in the session before redirecting to the simulator page.
+     *
+     * An omitted seed selects nondeterministic simulation; provided custom unit profiles are passed through unchanged.
+     */
     public function simulate(SimulateCombatRequest $request, CombatSimulatorService $simulator): RedirectResponse
     {
         $validated = $request->validated();

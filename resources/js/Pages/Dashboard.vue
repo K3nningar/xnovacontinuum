@@ -1,3 +1,10 @@
+<!--
+Author / Contributor : K3nningar
+Code Version : 0.1.0-alpha.4
+Revision : 34ddc84
+Description : Renders the Dashboard Inertia page.
+-->
+
 <script setup>
 import { computed, onMounted, onUnmounted, ref, watch } from 'vue';
 import { Head, Link, router, useForm, usePage, usePoll } from '@inertiajs/vue3';
