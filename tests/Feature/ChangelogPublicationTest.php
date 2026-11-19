@@ -2,7 +2,7 @@
 
 /*
  * Author / Contributor : K3nningar
- * Code Version : 0.1.0-alpha.4
+ * Code Version : 0.1.0-alpha.5
  * Revision : 34ddc84
  * Description : Tests the application's ChangelogPublicationTest behavior.
  */
@@ -27,7 +27,7 @@ class ChangelogPublicationTest extends TestCase
         $this->actingAs($player)->get(route('dashboard'))->assertOk()
             ->assertInertia(fn (Assert $page) => $page
                 ->component('Dashboard')
-                ->where('gameVersion', '0.1.0-alpha.4'));
+                ->where('gameVersion', '0.1.0-alpha.5'));
         $this->get(route('changelog'))->assertInertia(fn (Assert $page) => $page->has('releases', 0));
     }
 
@@ -41,8 +41,10 @@ class ChangelogPublicationTest extends TestCase
         $this->actingAs($operator)->get(route('admin.changelog'))->assertOk()
             ->assertInertia(fn (Assert $page) => $page
                 ->where('administration', true)
-                ->where('releases.0.version', '0.1.0-alpha.4')
+                ->where('releases.0.version', '0.1.0-alpha.5')
                 ->where('releases.0.published', false)
+                ->where('releases.1.version', '0.1.0-alpha.4')
+                ->where('releases.1.published', false)
                 ->has('releases.0.entries'));
     }
 
@@ -61,14 +63,16 @@ class ChangelogPublicationTest extends TestCase
         $this->get(route('changelog'))->assertInertia(fn (Assert $page) => $page
             ->has('releases', 1)->where('releases.0.version', '0.1.0-alpha.1'));
         $this->actingAs($operator)->get(route('admin.changelog'))->assertInertia(fn (Assert $page) => $page
-            ->where('releases.0.version', '0.1.0-alpha.4')
+            ->where('releases.0.version', '0.1.0-alpha.5')
             ->where('releases.0.published', false)
-            ->where('releases.1.version', '0.1.0-alpha.3')
+            ->where('releases.1.version', '0.1.0-alpha.4')
             ->where('releases.1.published', false)
-            ->where('releases.2.version', '0.1.0-alpha.2')
+            ->where('releases.2.version', '0.1.0-alpha.3')
             ->where('releases.2.published', false)
-            ->where('releases.3.version', '0.1.0-alpha.1')
-            ->where('releases.3.published', true));
+            ->where('releases.3.version', '0.1.0-alpha.2')
+            ->where('releases.3.published', false)
+            ->where('releases.4.version', '0.1.0-alpha.1')
+            ->where('releases.4.published', true));
     }
 
     public function test_an_operator_can_publish_and_hide_a_version(): void
@@ -143,10 +147,10 @@ class ChangelogPublicationTest extends TestCase
             'action' => 'changelog_entry_added',
         ]);
         $this->get(route('admin.changelog'))->assertInertia(fn (Assert $page) => $page
-            ->where('releases.2.version', '0.1.0-alpha.2')
-            ->where('releases.2.entries.0.text', 'A manually recorded fix')
-            ->where('releases.2.entries.0.date', '2026-11-17')
-            ->where('releases.2.entries.0.type', 'HOTFIX'));
+            ->where('releases.3.version', '0.1.0-alpha.2')
+            ->where('releases.3.entries.0.text', 'A manually recorded fix')
+            ->where('releases.3.entries.0.date', '2026-11-17')
+            ->where('releases.3.entries.0.type', 'HOTFIX'));
     }
 
     public static function manual_entry_levels(): array

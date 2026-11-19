@@ -17,6 +17,7 @@ export default {
       "moonLogistics": "Mondverwaltung mit Gebäuden, Ressourcen, stationierten Flotten, Phalanx-Scans und Sprungtoren hinzugefügt.",
       "fleetMissions": "Flottenmissionen um Transport, Angriff, Spionage, Kolonisierung, Recycling und Mondeinsätze erweitert.",
       "commandCenterMoons": "Die Monde jedes Planeten werden mit direkten Links zur Mondverwaltung in der Kommandozentrale angezeigt.",
+      "versionBumpAlpha5": "Die Vorabversion wurde für die nächste abwärtskompatible Funktionsausgabe auf 0.1.0-alpha.5 angehoben.",
       "newGameContent": "Ein Forschungslabor, Antimaterie, Artefakte, neue Technologien sowie neue Gebäude, Schiffe, Verteidigungen und Offiziere wurden hinzugefügt.",
       "groundCombat": "Bodenkämpfe mit eigenen Kampfrunden und Militärpersonal wurden hinzugefügt.",
       "newPlayerProtection": "Der Anfängerschutz wurde zu einem punktebasierten System mit den Zweigen Pazifist und Kriegstreiber überarbeitet.",
