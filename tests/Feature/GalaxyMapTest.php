@@ -37,6 +37,8 @@ class GalaxyMapTest extends TestCase
         $response->assertInertia(fn (Assert $page) => $page
             ->component('Galaxy/Index')
             ->where('galaxy', 1)->where('system', 1)->where('spyLevel', 0)
+            ->where('missionConfig.missions', ['transport', 'attack', 'station', 'spy', 'colonize', 'recycle', 'destroy_moon', 'destroy_planet', 'expedition'])
+            ->where('missionConfig.planetaryDestroyerAvailable', false)
             ->where('planets.0.coordinates', '1:1:8')
             ->has('slots', 14)
             ->where('slots.0.visible', false)

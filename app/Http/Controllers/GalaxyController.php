@@ -62,13 +62,20 @@ class GalaxyController extends Controller
             'selectedPlanetId' => $planet->id,
             'fleetSpeed' => (float) $universe->fleet_speed,
             'combatLimit' => (int) config('combat.max_units_per_side'),
-            'availableShips' => collect([202, 203, 204, 205, 206, 207, 208, 209, 210, 211, 213, 214, 215, 216])
+            'availableShips' => collect([202, 203, 204, 205, 206, 207, 208, 209, 210, 211, 213, 214, 215, 216, 217])
                 ->map(fn (int $code): array => ['code' => $code, 'count' => (int) $planet->{'unit_'.$code}])->values(),
             'galaxy' => $galaxy,
             'system' => $system,
             'galaxyLimit' => min(9, (int) $universe->galaxies),
             'systemLimit' => min(499, (int) $universe->systems_per_galaxy),
             'spyLevel' => (int) $user->spy_technology_level,
+            'missionConfig' => [
+                'missions' => ['transport', 'attack', 'station', 'spy', 'colonize', 'recycle', 'destroy_moon', 'destroy_planet', 'expedition'],
+                'targetTypes' => ['planet', 'moon', 'asteroid', 'debris', 'depot'],
+                'experimentalPlanetaryDestroyerEnabled' => (bool) config('combat.experimental_planetary_destroyer', false),
+                'planetaryDestroyerAvailable' => (bool) config('combat.experimental_planetary_destroyer', false) && (int) $user->officer_emperor_level > 0 && (int) $planet->unit_217 > 0,
+                'hasAlliance' => $user->alliance_id !== null,
+            ],
             ...$map->system($universe, $user, $galaxy, $system, $planet->position),
         ]);
     }

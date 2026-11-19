@@ -72,6 +72,12 @@ Route::middleware(['auth', EnsureAccountIsActive::class, ProcessExplorationMissi
     Route::get('/planets/{planet}/moons/{orbit}', [MoonController::class, 'show'])->whereNumber('orbit')->name('moon.show');
     Route::post('/planets/{planet}/moons/{orbit}/transfer', [MoonController::class, 'store'])
         ->whereNumber('orbit')->middleware('throttle:game-action')->name('moon.transfer');
+    Route::post('/planets/{planet}/moons/{orbit}/buildings', [MoonController::class, 'upgrade'])
+        ->whereNumber('orbit')->middleware('throttle:game-action')->name('moon.buildings.upgrade');
+    Route::get('/planets/{planet}/moons/{orbit}/phalanx', [MoonController::class, 'phalanx'])
+        ->whereNumber('orbit')->name('moon.phalanx');
+    Route::post('/planets/{planet}/moons/{orbit}/jump', [MoonController::class, 'jump'])
+        ->whereNumber('orbit')->middleware('throttle:game-action')->name('moon.jump');
     Route::patch('/planets/{planet}/name', [DashboardController::class, 'rename'])
         ->middleware('throttle:game-action')->name('planet.rename');
     Route::get('/buildings', [BuildingController::class, 'index'])->name('buildings.index');

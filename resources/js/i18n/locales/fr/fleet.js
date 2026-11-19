@@ -23,8 +23,8 @@ export default {
     "unknownOrigin": "Origine inconnue",
     "unknownPosition": "Position inconnue",
     "noMissions": "Aucune mission enregistrée.",
-    "missionUnavailable": "L’envoi et la résolution des missions ne sont pas encore implémentés.",
     "ship": "Vaisseau {code}",
+    "openGalaxy": "Voir la galaxie",
     "planetOverview": "Vaisseaux stationnés et missions enregistrées dans {planet}."
   },
   "units": {

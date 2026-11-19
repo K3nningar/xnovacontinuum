@@ -42,7 +42,9 @@ export default {
     "noFleetEvents": "Nessuna flotta in volo.",
     "outbound": "Andata",
     "returning": "Ritorno",
-    "fleetLimit": "Sono mostrati i prossimi 25 movimenti."
+    "fleetLimit": "Sono mostrati i prossimi 25 movimenti.",
+    "moons": "Lune",
+    "noMoons": "Nessuna luna."
   },
   "dashboard": {
     "title": "Comando",

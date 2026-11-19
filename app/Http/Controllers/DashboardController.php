@@ -12,6 +12,7 @@ namespace App\Http\Controllers;
 use App\Models\Fleet;
 use App\Models\Planet;
 use App\Models\Universe;
+use App\Services\GalaxyMap;
 use App\Services\PlanetEconomy;
 use App\Services\ResearchService;
 use App\Services\UnitProductionService;
@@ -26,8 +27,9 @@ class DashboardController extends Controller
      *
      * A requested planet must belong to the user's loaded universe; fleet visibility includes own active fleets
      * and outbound fleets targeting owned planets, while only active universes are offered to unjoined users.
+     * Natural moons are resolved once per owned star system and included with each planet's dashboard data.
      */
-    public function __invoke(Request $request, PlanetEconomy $economy, ResearchService $research, UnitProductionService $production): Response
+    public function __invoke(Request $request, PlanetEconomy $economy, ResearchService $research, UnitProductionService $production, GalaxyMap $map): Response
     {
         $user = $request->user();
         $research->complete($user);
@@ -42,6 +44,36 @@ class DashboardController extends Controller
                     return $planet->fresh();
                 })
             : collect();
+        $moonsByPlanet = [];
+        $moonSystems = [];
+        $reservedSystems = $planets
+            ->filter(fn (Planet $planet): bool => $planet->position < 2 || $planet->position > 15)
+            ->mapWithKeys(fn (Planet $planet): array => ["{$planet->galaxy}:{$planet->system}" => true]);
+
+        foreach ($planets as $planet) {
+            $systemKey = "{$planet->galaxy}:{$planet->system}";
+
+            if (isset($reservedSystems[$systemKey])) {
+                $moonsByPlanet[$planet->id] = [];
+
+                continue;
+            }
+
+            if ($planet->position < 2 || $planet->position > 15) {
+                $moonsByPlanet[$planet->id] = [];
+
+                continue;
+            }
+            $moonSystems[$systemKey] ??= $map->system(
+                $universe,
+                $user,
+                (int) $planet->galaxy,
+                (int) $planet->system,
+                (int) $planet->position,
+            )['slots'];
+            $moonsByPlanet[$planet->id] = $moonSystems[$systemKey][$planet->position - 2]['naturalMoons'] ?? [];
+        }
+
         $planetId = $request->integer('planet');
         $activePlanet = $planetId > 0 ? $planets->firstWhere('id', $planetId) : $planets->first();
         if ($planetId > 0 && ! $activePlanet) {
@@ -84,6 +116,7 @@ class DashboardController extends Controller
                 ->toArray(),
             'planets' => $planets->map(fn ($planet) => [
                 ...$planet->only('id', 'name', 'galaxy', 'system', 'position', 'coordinates', 'fields', 'max_temperature'),
+                'moons' => $moonsByPlanet[$planet->id] ?? [],
                 'shields' => [
                     'small' => (int) $planet->unit_407 > 0,
                     'large' => (int) $planet->unit_408 > 0,

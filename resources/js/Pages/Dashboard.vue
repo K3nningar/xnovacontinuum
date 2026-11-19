@@ -265,6 +265,15 @@ function researchName(key) {
                                     <strong>{{ planet.name }}</strong><small>{{ planet.coordinates }}</small>
                                     <small v-if="planet.queue.length">{{ buildingName(planet.queue[0].building_key) }} · {{ t('common.level') }} {{ planet.queue[0].target_level }} · {{ remaining(planet.queue[0].completes_at) }}</small>
                                     <small v-else>{{ t('overview.noConstruction') }}</small>
+                                    <span class="planet-moons">
+                                        <small>{{ t('overview.moons') }}</small>
+                                        <template v-if="planet.moons.length">
+                                            <Link v-for="moon in planet.moons" :key="moon.orbit" class="planet-moon-link" :href="route('moon.show', { planet: planet.id, orbit: moon.orbit })">
+                                                {{ t('galaxyMoon', { orbit: moon.orbit, diameter: formatResource(moon.diameter) }) }}
+                                            </Link>
+                                        </template>
+                                        <small v-else>{{ t('overview.noMoons') }}</small>
+                                    </span>
                                 </span>
                                 <span class="planet-stock"><small>{{ t('dashboard.fields') }}</small><strong>{{ planet.usedFields }} / {{ planet.fields }}</strong></span>
                                 <div class="planet-links">

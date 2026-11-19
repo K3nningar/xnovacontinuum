@@ -11,6 +11,8 @@ import { Head, Link, router, useForm, usePage } from '@inertiajs/vue3';
 import { route as ziggyRoute } from 'ziggy-js';
 import { useI18n } from 'vue-i18n';
 import GameLayout from '../../Layouts/GameLayout.vue';
+import { translateUnitName } from '../../unitNames.js';
+import { normalizeFleetMission } from '../../fleetMissionForm.js';
 
 const props = defineProps({
     planets: { type: Array, required: true },
@@ -25,6 +27,7 @@ const props = defineProps({
     availableShips: { type: Array, required: true },
     fleetSpeed: { type: Number, required: true },
     combatLimit: { type: Number, required: true },
+    missionConfig: { type: Object, required: true },
 });
 const page = usePage();
 const { t, n } = useI18n();
@@ -34,8 +37,55 @@ const targetSystem = ref(props.system);
 const originPlanet = ref(props.selectedPlanetId);
 const selectedPosition = ref(1);
 const dismissedTooltip = ref(null);
-const missionForm = useForm({ mission: '', galaxy: props.galaxy, system: props.system, position: 16, ships: {} });
-const sendingShips = computed(() => props.availableShips.filter((ship) => ship.count > 0 && (missionForm.mission !== 'recycle' || ship.code === 209)));
+const missionForm = useForm({ mission: '', galaxy: props.galaxy, system: props.system, position: 16, ships: {}, target_type: 'planet', moon_orbit: null, origin_target_type: 'planet', origin_moon_orbit: null, cargo: { metal: 0, crystal: 0, deuterium: 0 } });
+const shipNames = computed(() => Object.fromEntries(props.availableShips.map((ship) => [ship.code, translateUnitName(ship.code, t)])));
+const sendingShips = computed(() => {
+    const available = missionForm.origin_target_type === 'moon'
+        ? props.availableShips.filter((ship) => Object.hasOwn(missionForm.ships, ship.code))
+        : props.availableShips.filter((ship) => ship.count > 0);
+    if (missionForm.mission === 'destroy_moon') return available.filter((ship) => ship.code === 214);
+    if (missionForm.mission === 'destroy_planet') return available.filter((ship) => ship.code === 217);
+    if (missionForm.mission === 'spy') return available.filter((ship) => ship.code === 210);
+    if (missionForm.mission === 'recycle') return available.filter((ship) => ship.code === 209);
+
+    return available;
+});
+const selectedTarget = computed(() => props.slots.find((slot) => slot.position === missionForm.position));
+const selectedOriginPlanet = computed(() => props.planets.find((planet) => Number(planet.id) === Number(props.selectedPlanetId)));
+const selectedOriginTarget = computed(() => props.slots.find((slot) => Number(slot.position) === Number(selectedOriginPlanet.value?.coordinates?.split(':')[2])));
+const originPlanetName = computed(() => selectedOriginPlanet.value?.name ?? '');
+const originMoonOptions = computed(() => {
+    if (!selectedOriginPlanet.value) return [];
+    const [galaxy, system, position] = selectedOriginPlanet.value.coordinates.split(':').map(Number);
+    if (galaxy !== props.galaxy || system !== props.system) return [];
+
+    return props.slots.find((slot) => slot.position === position)?.naturalMoons ?? [];
+});
+const targetMissions = computed(() => {
+    const slot = selectedTarget.value;
+    if (missionForm.position === 16) return ['expedition'];
+    if (!slot?.visible) return [];
+    if (slot.kind === 'asteroid') return ['recycle'];
+    if (slot.kind !== 'planet') return [];
+    if (!slot.planet) return ['colonize'];
+    if (slot.planet.owned) return ['transport'];
+    return [
+        'transport', 'attack', 'spy',
+        ...(slot.naturalMoons?.length ? ['destroy_moon'] : []),
+        ...(props.missionConfig.hasAlliance && slot.planet.alliedDepot ? ['station'] : []),
+        ...(props.missionConfig.planetaryDestroyerAvailable ? ['destroy_planet'] : []),
+    ];
+});
+const availableMissionOptions = computed(() => props.missionConfig.missions.filter((mission) => targetMissions.value.includes(mission) && (mission !== 'destroy_planet' || props.missionConfig.planetaryDestroyerAvailable)));
+const targetTypeOptions = computed(() => {
+    if (missionForm.mission === 'recycle') return ['asteroid', 'debris'];
+    if (missionForm.mission === 'destroy_moon') return ['moon'];
+    if (missionForm.mission === 'station') return ['depot', 'moon'];
+    if (['transport', 'attack', 'spy', 'destroy_planet'].includes(missionForm.mission)) return ['planet', 'moon'];
+    return ['planet'];
+});
+const cargoCapacity = computed(() => Object.entries(missionForm.ships).reduce((sum, [code, count]) => sum + Number(count || 0) * ({ 202: 5000, 203: 25000, 204: 50, 205: 100, 206: 800, 207: 1500, 209: 20000, 211: 500, 213: 2000, 214: 1000000, 215: 750, 216: 10000 }[code] || 0), 0));
+const cargoTotal = computed(() => Object.values(missionForm.cargo).reduce((sum, amount) => sum + Number(amount || 0), 0));
 // Match mission distance tiers: galaxy travel, same-galaxy system travel, then same-system orbit travel.
 const distance = computed(() => {
     const origin = props.planets.find((planet) => planet.id === props.selectedPlanetId)?.coordinates?.split(':').map(Number);
@@ -88,17 +138,39 @@ function slotLabel(slot) {
 }
 
 /** Reset the ship selection and stale errors whenever a new target/mission is prepared. */
+function missionsForSlot(slot) {
+    if (!slot.visible) return [];
+    if (slot.kind === 'asteroid') return ['recycle'];
+    if (slot.kind !== 'planet') return [];
+    if (!slot.planet) return ['colonize'];
+    if (slot.planet.owned) return ['transport'];
+    return [
+        'transport', 'attack', 'spy',
+        ...(slot.naturalMoons?.length ? ['destroy_moon'] : []),
+        ...(props.missionConfig.hasAlliance && slot.planet.alliedDepot ? ['station'] : []),
+        ...(props.missionConfig.planetaryDestroyerAvailable ? ['destroy_planet'] : []),
+    ];
+}
+
 function prepareMission(mission, position) {
     missionForm.mission = mission;
     missionForm.galaxy = props.galaxy;
     missionForm.system = props.system;
-    missionForm.position = position;
+    missionForm.position = mission === 'expedition' ? 16 : position;
+    missionForm.target_type = mission === 'recycle' ? 'asteroid' : mission === 'station' ? 'depot' : mission === 'destroy_moon' ? 'moon' : 'planet';
+    if (mission === 'transport' && missionForm.position === (originPlanet.value?.coordinates?.split(':').map(Number)[2] ?? -1)) {
+        missionForm.position = missionForm.position === 15 ? 14 : missionForm.position + 1;
+    }
+    missionForm.origin_target_type = 'planet';
+    missionForm.origin_moon_orbit = null;
+    missionForm.moon_orbit = null;
     missionForm.ships = Object.fromEntries(props.availableShips.map((ship) => [ship.code, 0]));
+    missionForm.cargo = { metal: 0, crystal: 0, deuterium: 0 };
     missionForm.clearErrors();
 }
 
 function sendMission() {
-    missionForm.post(route('planet.missions.store', props.selectedPlanetId));
+    missionForm.transform(normalizeFleetMission).post(route('planet.missions.store', props.selectedPlanetId));
 }
 
 // Keep local navigation and mission state synchronized after an Inertia visit changes the viewed system.
@@ -209,12 +281,13 @@ function navigate(galaxy = targetGalaxy.value, system = targetSystem.value) {
                                 <p class="mt-2 text-sm text-slate-400">{{ t('galaxy.moons', { count: slot.moons }) }}</p>
                                 <ul v-if="slot.naturalMoons.length" class="mt-1 text-sm text-slate-400"><li v-for="moon in slot.naturalMoons" :key="moon.orbit"><Link v-if="slot.planet?.owned" class="text-cyan-300 underline" :href="route('moon.show', { planet: slot.planet.id, orbit: moon.orbit })">{{ t('galaxyMoon', { orbit: moon.orbit, diameter: n(moon.diameter, 'game') }) }}</Link><template v-else>{{ t('galaxyMoon', { orbit: moon.orbit, diameter: n(moon.diameter, 'game') }) }}</template></li></ul>
                                 <p class="mt-2 text-sm text-slate-400">{{ t('galaxy.potential') }} : ▰ {{ slot.resources.metal }}% · ◇ {{ slot.resources.crystal }}% · ⬡ {{ slot.resources.deuterium }}%</p>
+                                <div class="mt-3 flex flex-wrap gap-2"><button v-for="mission in missionsForSlot(slot)" :key="mission" class="button button-outline" type="button" @click="prepareMission(mission, slot.position)">{{ t(`galaxyMissions.${mission}`) }}</button></div>
                             </template>
                             <template v-else>
                                 <h3 class="mt-2 font-semibold text-amber-300">{{ t('galaxy.asteroid', { type: t(`galaxy.types.${slot.type}`) }) }}</h3>
                                 <p class="mt-2 text-sm">{{ t('galaxy.concentration', { value: slot.concentration }) }}</p>
                                 <p class="mt-2 text-sm text-slate-400">{{ t('common.metal') }} {{ n(slot.remaining.metal, 'game') }} · {{ t('common.crystal') }} {{ n(slot.remaining.crystal, 'game') }} · {{ t('common.deuterium') }} {{ n(slot.remaining.deuterium, 'game') }}</p>
-                                <button class="button button-outline mt-3" type="button" @click="prepareMission('recycle', slot.position)">{{ t('galaxyMissions.recycle') }}</button>
+                                <div class="mt-3 flex flex-wrap gap-2"><button v-for="mission in missionsForSlot(slot)" :key="mission" class="button button-outline" type="button" @click="prepareMission(mission, slot.position)">{{ t(`galaxyMissions.${mission}`) }}</button></div>
                             </template>
                         </article>
                         <article id="galaxy-position-16" class="galaxy-position-card border border-slate-700 bg-slate-950/40 p-4" :class="{ 'is-selected': selectedPosition === 16 }">
@@ -228,10 +301,36 @@ function navigate(galaxy = targetGalaxy.value, system = targetSystem.value) {
                 </section>
                 <form v-if="missionForm.mission" class="data-panel galaxy-search mt-4 p-4" @submit.prevent="sendMission">
                     <h2 class="text-lg font-semibold">{{ t('galaxyMissions.prepare') }} · {{ galaxy }}:{{ system }}:{{ missionForm.position }}</h2>
+                    <label v-if="originMoonOptions.length" class="mt-3 flex max-w-sm flex-col gap-1 text-sm">{{ t('galaxyMissions.originMoon') }}
+                        <select v-model="missionForm.origin_target_type" @change="missionForm.origin_moon_orbit = null; missionForm.ships = Object.fromEntries(props.availableShips.map((ship) => [ship.code, 0]))" class="rounded border border-slate-600 bg-slate-950 px-3 py-2 text-white"><option value="planet">{{ originPlanetName }}</option><option value="moon">{{ t('galaxyMissions.moonOnOrigin') }}</option></select>
+                    </label>
+                    <label v-if="missionForm.origin_target_type === 'moon'" class="mt-3 flex max-w-sm flex-col gap-1 text-sm">{{ t('galaxyMissions.originOrbit') }}
+                        <select v-model.number="missionForm.origin_moon_orbit" class="rounded border border-slate-600 bg-slate-950 px-3 py-2 text-white" @change="missionForm.ships = Object.fromEntries(props.availableShips.map((ship) => [ship.code, 0]))"><option :value="null">{{ t('common.select') }}</option><option v-for="moon in originMoonOptions" :key="moon.orbit" :value="moon.orbit">{{ t('galaxyMoon', { orbit: moon.orbit, diameter: n(moon.diameter, 'game') }) }}</option></select>
+                    </label>
+                    <label class="mt-3 flex max-w-sm flex-col gap-1 text-sm">{{ t('galaxyMissions.mission') }}
+                        <select :value="missionForm.mission" class="rounded border border-slate-600 bg-slate-950 px-3 py-2 text-white" @change="prepareMission($event.target.value, missionForm.position)">
+                            <option v-for="mission in availableMissionOptions" :key="mission" :value="mission">{{ t(`galaxyMissions.${mission}`) }}</option>
+                        </select>
+                    </label>
+                    <label v-if="targetTypeOptions.length > 1" class="mt-3 flex max-w-sm flex-col gap-1 text-sm">{{ t('galaxyMissions.targetType') }}
+                        <select v-model="missionForm.target_type" class="rounded border border-slate-600 bg-slate-950 px-3 py-2 text-white" @change="missionForm.moon_orbit = null">
+                            <option v-for="type in targetTypeOptions" :key="type" :value="type">{{ t(`galaxyMissions.targetTypes.${type}`) }}</option>
+                        </select>
+                    </label>
+                    <label v-if="missionForm.target_type === 'moon' || missionForm.mission === 'destroy_moon'" class="mt-3 flex max-w-sm flex-col gap-1 text-sm">{{ t('galaxyMissions.moonOrbit') }}
+                        <select v-model.number="missionForm.moon_orbit" class="rounded border border-slate-600 bg-slate-950 px-3 py-2 text-white">
+                            <option :value="null">{{ t('common.select') }}</option>
+                            <option v-for="moon in (missionForm.mission === 'destroy_moon' ? (selectedOriginTarget?.naturalMoons ?? []) : (selectedTarget?.naturalMoons ?? []))" :key="moon.orbit" :value="moon.orbit">{{ t('galaxyMoon', { orbit: moon.orbit, diameter: n(moon.diameter, 'game') }) }}</option>
+                        </select>
+                    </label>
+                    <div v-if="missionForm.mission === 'transport'" class="mt-3 grid max-w-2xl grid-cols-1 gap-3 sm:grid-cols-3">
+                        <label v-for="resource in ['metal', 'crystal', 'deuterium']" :key="resource" class="flex flex-col gap-1 text-sm">{{ t(`common.${resource}`) }}<input v-model.number="missionForm.cargo[resource]" type="number" min="0" max="1000000000" step="1" class="rounded border border-slate-600 bg-slate-950 px-3 py-2 text-white"></label>
+                        <p class="text-sm text-slate-400 sm:col-span-3">{{ t('galaxyMissions.cargoCapacity', { used: n(cargoTotal, 'game'), capacity: n(cargoCapacity, 'game') }) }}</p>
+                    </div>
                     <p class="mt-2 text-sm">{{ t('galaxyMissions.selectShips') }}</p>
                     <div class="mt-3 flex flex-wrap gap-3">
                         <label v-for="ship in sendingShips" :key="ship.code" class="flex flex-col gap-1 text-sm">
-                            {{ t('fleet.ship', { code: ship.code }) }} · {{ t('galaxyMissions.available', { count: ship.count }) }}
+                            {{ shipNames[ship.code] }} · {{ t('galaxyMissions.available', { count: n(ship.count, 'game') }) }}
                             <input v-model.number="missionForm.ships[ship.code]" type="number" min="0" :max="ship.count" step="1" class="w-32 rounded border border-slate-600 bg-slate-950 px-3 py-2 text-white">
                         </label>
                     </div>
@@ -239,7 +338,7 @@ function navigate(galaxy = targetGalaxy.value, system = targetSystem.value) {
                     <p v-if="missionForm.mission === 'expedition'" class="mt-2 text-sm">{{ t('galaxyMissions.expeditionTime') }}</p>
                     <p v-if="missionForm.mission === 'expedition'" class="mt-2 text-sm text-slate-400">{{ t('galaxyCombatLimit', { limit: combatLimit }) }}</p>
                     <p v-for="(error, key) in missionForm.errors" :key="key" role="alert" class="mt-2 text-sm text-red-300">{{ error }}</p>
-                    <div class="mt-3 flex gap-3"><button class="button button-primary" type="submit" :disabled="missionForm.processing || !sendingShips.length">{{ missionForm.processing ? t('galaxyMissions.sending') : t('galaxyMissions.send') }}</button><button class="button button-outline" type="button" @click="missionForm.mission = ''">{{ t('common.cancel') }}</button></div>
+                    <div class="mt-3 flex gap-3"><button class="button button-primary" type="submit" :disabled="missionForm.processing || !sendingShips.length || !availableMissionOptions.includes(missionForm.mission)">{{ missionForm.processing ? t('galaxyMissions.sending') : t('galaxyMissions.send') }}</button><button class="button button-outline" type="button" @click="missionForm.mission = ''">{{ t('common.cancel') }}</button></div>
                 </form>
                 </div>
             </section>

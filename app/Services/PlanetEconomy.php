@@ -68,6 +68,7 @@ class PlanetEconomy
         'crystal_storage' => ['level' => 'crystal_storage_level', 'activity' => null, 'resource' => null, 'label' => 'Hangar à cristal', 'code' => 23],
         'deuterium_storage' => ['level' => 'deuterium_storage_level', 'activity' => null, 'resource' => null, 'label' => 'Réservoir de deutérium', 'code' => 24],
         'terraformer' => ['level' => 'terraformer_level', 'activity' => null, 'resource' => null, 'label' => 'Terraformeur', 'code' => 33],
+        'alliance_depot' => ['level' => 'alliance_depot_level', 'activity' => null, 'resource' => null, 'label' => 'Dépôt d’alliance', 'code' => 34],
     ];
 
     private const LEGACY_PRICE_LIST = [
@@ -85,6 +86,7 @@ class PlanetEconomy
         'crystal_storage' => ['cost' => ['metal' => 2000, 'crystal' => 1000, 'deuterium' => 0], 'factor' => 2],
         'deuterium_storage' => ['cost' => ['metal' => 2000, 'crystal' => 2000, 'deuterium' => 0], 'factor' => 2],
         'terraformer' => ['cost' => ['metal' => 0, 'crystal' => 50000, 'deuterium' => 100000, 'energy' => 1000], 'factor' => 2],
+        'alliance_depot' => ['cost' => ['metal' => 20000, 'crystal' => 40000, 'deuterium' => 0], 'factor' => 2],
     ];
 
     /**
@@ -113,7 +115,7 @@ class PlanetEconomy
      */
     public function snapshot(Planet $planet, int $energyTechnologyLevel = 0, int $computerTechnologyLevel = 0): array
     {
-        $snapshot = $planet->only('metal', 'crystal', 'deuterium', 'metal_mine_level', 'crystal_mine_level', 'deuterium_synthesizer_level', 'solar_plant_level', 'fusion_plant_level', 'laboratory_level', 'robot_factory_level', 'nano_factory_level', 'hangar_level', 'missile_silo_level', 'metal_storage_level', 'crystal_storage_level', 'deuterium_storage_level', 'terraformer_level', 'fields', 'laboratory_activity', 'metal_mine_activity', 'crystal_mine_activity', 'deuterium_synthesizer_activity', 'solar_plant_activity', 'fusion_plant_activity');
+        $snapshot = $planet->only('metal', 'crystal', 'deuterium', 'metal_mine_level', 'crystal_mine_level', 'deuterium_synthesizer_level', 'solar_plant_level', 'fusion_plant_level', 'laboratory_level', 'robot_factory_level', 'nano_factory_level', 'hangar_level', 'missile_silo_level', 'metal_storage_level', 'crystal_storage_level', 'deuterium_storage_level', 'terraformer_level', 'alliance_depot_level', 'fields', 'laboratory_activity', 'metal_mine_activity', 'crystal_mine_activity', 'deuterium_synthesizer_activity', 'solar_plant_activity', 'fusion_plant_activity');
         $snapshot['production'] = [];
         $snapshot['nextCosts'] = [];
         $snapshot['canUpgrade'] = [];
@@ -130,6 +132,7 @@ class PlanetEconomy
                 'fusion' => (int) $planet->deuterium_synthesizer_level >= 5 && $energyTechnologyLevel >= 3,
                 'nano_factory' => ((int) $planet->robot_factory_level + $planet->buildingQueue->where('building_key', 'robot_factory')->count()) >= 10 && $computerTechnologyLevel >= 10,
                 'terraformer' => $energyTechnologyLevel >= 12,
+                'alliance_depot' => $this->hasAlliance($planet),
                 default => true,
             };
             $snapshot['canUpgrade'][$building] = $requirementsMet
@@ -139,7 +142,9 @@ class PlanetEconomy
                 && (int) $planet->deuterium >= $cost['deuterium'];
         }
 
-        $snapshot['requirements']['fusion'] = 'Synthétiseur de deutérium niveau 5 · Technologie énergie niveau 3';
+            $snapshot['requirements']['fusion'] = 'Synthétiseur de deutérium niveau 5 · Technologie énergie niveau 3';
+            $snapshot['requirements']['alliance_depot'] = 'Rejoignez une alliance pour construire un dépôt qui accepte le stationnement des flottes alliées.';
+
         $snapshot['queue'] = $planet->buildingQueue()->get()->map(fn (PlanetBuildingQueue $queuedBuilding) => [
             ...$queuedBuilding->only('id', 'building_key', 'building_code', 'target_level', 'position'),
             'starts_at' => $queuedBuilding->starts_at->toIso8601String(),
@@ -230,6 +235,10 @@ class PlanetEconomy
 
             if ($resource === 'terraformer' && ($energyTechnologyLevel < 12 || $this->energyBalance($lockedPlanet)['supply'] < 1000)) {
                 throw ValidationException::withMessages(['building' => 'Le terraformeur nécessite la technologie énergie niveau 12.']);
+            }
+
+            if ($resource === 'alliance_depot' && ! $this->hasAlliance($lockedPlanet)) {
+                throw ValidationException::withMessages(['building' => 'Le dépôt d’alliance nécessite une alliance active dans cet univers.']);
             }
 
             if ($lockedPlanet->buildingQueue()->count() >= 5) {
@@ -512,6 +521,11 @@ class PlanetEconomy
     {
         return (int) floor($this->buildingProduction($planet, $resource) * $productionLevel / 100)
             + self::BASIC_INCOME[$resource] * self::RESOURCE_MULTIPLIER;
+    }
+
+    private function hasAlliance(Planet $planet): bool
+    {
+        return $planet->user()->whereNotNull('alliance_id')->whereHas('alliance', fn ($query) => $query->where('universe_id', $planet->universe_id))->exists();
     }
 
     /**

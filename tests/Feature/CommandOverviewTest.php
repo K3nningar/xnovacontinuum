@@ -15,6 +15,7 @@ use App\Models\PlanetBuildingQueue;
 use App\Models\ResearchQueue;
 use App\Models\Universe;
 use App\Models\User;
+use App\Services\GalaxyMap;
 use Illuminate\Foundation\Testing\LazilyRefreshDatabase;
 use Inertia\Testing\AssertableInertia as Assert;
 use Tests\TestCase;
@@ -35,10 +36,38 @@ class CommandOverviewTest extends TestCase
         $this->get(route('dashboard', ['planet' => $second->id]))->assertInertia(fn (Assert $page) => $page
             ->where('activePlanetId', $second->id)
             ->where('planets.1.usedFields', 5)
-            ->where('planets.1.max_temperature', 33));
+            ->where('planets.1.max_temperature', 33)
+            ->where('planets.1.moons', []));
         $other = User::factory()->create(['universe_id' => $universe->id]);
         $foreign = $this->planet($other, 3);
         $this->get(route('dashboard', ['planet' => $foreign->id]))->assertNotFound();
+    }
+
+    public function test_overview_lists_the_owned_planets_natural_moons(): void
+    {
+        $universe = Universe::create(['name' => 'Test', 'slug' => 'test']);
+        $user = User::factory()->create(['universe_id' => $universe->id]);
+        $map = app(GalaxyMap::class);
+        $position = null;
+        $moons = [];
+
+        foreach (range(2, 15) as $candidatePosition) {
+            $moons = $map->system($universe, $user, 1, 1, $candidatePosition)['slots'][$candidatePosition - 2]['naturalMoons'];
+
+            if ($moons !== []) {
+                $position = $candidatePosition;
+                break;
+            }
+        }
+
+        $this->assertNotNull($position);
+        $planet = $this->planet($user, (int) $position);
+
+        $this->actingAs($user)->get(route('dashboard'))->assertInertia(fn (Assert $page) => $page
+            ->where('planets.0.id', $planet->id)
+            ->has('planets.0.moons', count($moons))
+            ->where('planets.0.moons.0.orbit', $moons[0]['orbit'])
+            ->where('planets.0.moons.0.diameter', $moons[0]['diameter']));
     }
 
     public function test_overview_shows_installed_and_completed_shields_for_each_planet(): void

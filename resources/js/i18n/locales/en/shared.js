@@ -30,6 +30,7 @@ export default {
     "language": "Language",
     "close": "Close",
     "cancel": "Cancel",
+    "select": "Select",
     "level": "Level",
     "levelShort": "Lvl.",
     "resources": "Resources",

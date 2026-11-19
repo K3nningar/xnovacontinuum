@@ -5,6 +5,7 @@
     "scripts": {
         "build": "vite build",
         "dev": "vite",
+        "test": "node --test",
         "translations:page": "node resources/js/i18n/show-page-translations.js",
         "test:technology-tree": "node --test resources/js/technologyTreeLayout.test.js"
     },

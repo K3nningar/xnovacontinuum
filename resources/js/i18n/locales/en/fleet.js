@@ -17,6 +17,7 @@ export default {
     "noShips": "No ships stationed.",
     "produceShips": "Build your first ships at the shipyard.",
     "openShipyard": "Open shipyard",
+    "openGalaxy": "View galaxy",
     "missions": "RECORDED MISSIONS",
     "inFlight": "Fleets in flight",
     "origin": "Origin",

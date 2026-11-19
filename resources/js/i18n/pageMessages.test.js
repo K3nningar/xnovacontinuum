@@ -31,7 +31,7 @@ test('locale dictionaries are physically split by page type', () => {
 test('page translation output contains only the namespaces assigned to that page', () => {
     const messages = getPageTranslations(fr, 'galaxy');
 
-    assert.deepEqual(Object.keys(messages), ['galaxyLegacySensors', 'galaxyMap', 'galaxyCombatLimit', 'galaxyEncounter', 'galaxyEarlyReturn', 'galaxyMoon', 'galaxyShipsFound', 'galaxyMissions', 'galaxyConcentrationNote', 'galaxy']);
+    assert.deepEqual(Object.keys(messages), ['galaxyLegacySensors', 'galaxyMap', 'galaxyCombatLimit', 'galaxyEncounter', 'galaxyEarlyReturn', 'galaxyMoon', 'galaxyShipsFound', 'galaxyMissions', 'galaxyConcentrationNote', 'galaxy', 'unitNames', 'fleet', 'common']);
     assert.equal(messages.galaxy.title, fr.galaxy.title);
     assert.equal(Object.hasOwn(messages, 'auth'), false);
 });

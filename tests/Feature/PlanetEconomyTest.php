@@ -581,6 +581,19 @@ class PlanetEconomyTest extends TestCase
         $this->assertSame(1_500_000, (int) $planet->fresh()->metal);
     }
 
+    public function test_alliance_depot_requires_alliance_and_queues_for_allied_players(): void
+    {
+        $planet = $this->createPlanet(['metal' => 100000, 'crystal' => 100000]);
+        $this->actingAs($planet->user)->from(route('buildings.index'))->post(route('planet.buildings.upgrade', $planet), ['building' => 'alliance_depot'])
+            ->assertSessionHasErrors('building');
+
+        $alliance = \App\Models\Alliance::create(['universe_id' => $planet->universe_id, 'name' => 'Depot Guild', 'tag' => 'DEP']);
+        $planet->user->forceFill(['alliance_id' => $alliance->id])->save();
+        $this->post(route('planet.buildings.upgrade', $planet), ['building' => 'alliance_depot'])->assertRedirect();
+
+        $this->assertDatabaseHas('planet_building_queues', ['planet_id' => $planet->id, 'building_key' => 'alliance_depot', 'building_code' => 34]);
+    }
+
     public function test_storage_building_can_be_added_through_validated_building_endpoint(): void
     {
         $planet = $this->createPlanet(['metal' => 5000]);

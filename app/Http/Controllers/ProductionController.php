@@ -64,23 +64,50 @@ class ProductionController extends Controller
             $ships[] = ['code' => $code, 'count' => (int) $selectedPlanet->{$column}, 'image' => '/legacy-assets/skins/xnova/gebaeude/'.$code.'.gif'];
         }
 
+        $moonOrbit = $request->integer('moon_orbit') ?: null;
+        $request->validate(['moon_orbit' => ['sometimes', 'integer', 'between:1,10']]);
+        $moonFleet = [];
+        if ($moonOrbit) {
+            $map = app(\App\Services\GalaxyMap::class);
+            $map->ownedMoon($user, $selectedPlanet, $moonOrbit);
+            $moonFleet = app(\App\Services\MoonEconomy::class)->ships($selectedPlanet, $moonOrbit);
+        }
+
         return inertia('Fleet/Index', [
-            'user' => $user->only('id', 'name'), 'universe' => $user->universe?->only('id', 'name'),
-            'planets' => $planets->map(fn (Planet $planet) => [...$planet->only('id', 'name', 'coordinates', 'unit_216', 'unit_217'), ...$economy->snapshot($planet, (int) $user->energy_technology_level, (int) $user->computer_technology_level)])->values(),
+            'user' => $user->only('id', 'name'), 'universe' => $user->universe?->only('id', 'name', 'galaxies', 'systems_per_galaxy'),
+            'planets' => $planets->map(function (Planet $planet) use ($user, $economy): array {
+                $map = app(\App\Services\GalaxyMap::class);
+                $moons = $map->system($planet->universe, $user, (int) $planet->galaxy, (int) $planet->system, (int) $planet->position)['slots'][$planet->position - 2]['naturalMoons'];
+
+                return [...$planet->only('id', 'name', 'coordinates', 'unit_216', 'unit_217', 'alliance_depot_level'), 'moons' => $moons,
+                    ...$economy->snapshot($planet, (int) $user->energy_technology_level, (int) $user->computer_technology_level)];
+            })->values(),
+            'moonFleet' => $moonFleet,
+            'moonOrbit' => $moonOrbit,
+            'missionConfig' => [
+                'missions' => ['transport', 'attack', 'station', 'spy', 'colonize', 'recycle', 'destroy_moon', 'destroy_planet', 'expedition'],
+                'targetTypes' => ['planet', 'moon', 'asteroid', 'debris', 'depot'],
+                'experimentalPlanetaryDestroyerEnabled' => (bool) config('combat.experimental_planetary_destroyer', false),
+                'planetaryDestroyerAvailable' => (bool) config('combat.experimental_planetary_destroyer', false) && (int) $user->officer_emperor_level > 0 && (int) $selectedPlanet->unit_217 > 0,
+                'hasAlliance' => $user->alliance_id !== null,
+                'stationing' => ['requiresSameAlliance' => true, 'requiresRecipientDepotLevel' => 1, 'retainsFleet' => true],
+            ],
             'selectedPlanetId' => $selectedPlanet->id, 'ships' => $ships,
             'fleets' => $user->fleets()->where('universe_id', $user->universe_id)
-                ->whereIn('status', ['outbound', 'returning'])
+                ->whereIn('status', ['outbound', 'returning', 'stationed'])
                 ->with(['originPlanet:id,name,galaxy,system,position', 'targetPlanet:id,name,galaxy,system,position'])
                 ->orderBy('arrives_at')->get()->map(fn ($fleet) => [
                     'id' => $fleet->id, 'mission' => $fleet->mission, 'ships' => $fleet->ships, 'status' => $fleet->status,
-                    'moonOrbit' => $fleet->moon_orbit,
+                    'originOrbit' => $fleet->origin_orbit, 'targetOrbit' => $fleet->target_orbit,
+                    'outcome' => $fleet->outcome, 'report' => $fleet->mission_report, 'moonOrbit' => $fleet->moon_orbit,
+                    'stationed' => $fleet->status === 'stationed',
                     'arrivesAt' => $fleet->arrives_at->toIso8601String(), 'returnsAt' => $fleet->returns_at?->toIso8601String(),
                     'origin' => $fleet->originPlanet?->coordinates, 'originName' => $fleet->originPlanet?->name,
                     'target' => $fleet->target_position ? "{$fleet->target_galaxy}:{$fleet->target_system}:{$fleet->target_position}" : $fleet->targetPlanet?->coordinates, 'targetName' => $fleet->targetPlanet?->name,
                 ])->values(),
             'reports' => $user->fleets()->where('universe_id', $user->universe_id)->where('status', 'completed')
                 ->whereNotNull('target_position')->latest('updated_at')->limit(20)->get()
-                ->map(fn ($fleet) => ['id' => $fleet->id, 'outcome' => $fleet->outcome, 'cargo' => $fleet->cargo, 'ships' => $fleet->ships, 'combat' => $fleet->combat_report, 'moonOrder' => $fleet->moon_order, 'moonOrbit' => $fleet->moon_orbit])->values(),
+                ->map(fn ($fleet) => ['id' => $fleet->id, 'outcome' => $fleet->outcome, 'cargo' => $fleet->cargo, 'ships' => $fleet->ships, 'combat' => $fleet->combat_report, 'report' => $fleet->mission_report, 'moonOrder' => $fleet->moon_order, 'moonOrbit' => $fleet->moon_orbit, 'targetOrbit' => $fleet->target_orbit, 'originOrbit' => $fleet->origin_orbit])->values(),
         ]);
     }
 

@@ -5,7 +5,10 @@
             { "date": "2026-11-18", "type": "CHANGE", "key": "documentation" },
             { "date": "2026-11-18", "type": "NEW", "key": "license" },
             { "date": "2026-11-18", "type": "CHANGE", "key": "semverBadges" },
-            { "date": "2026-11-18", "type": "CHANGE", "key": "versionBump" }
+            { "date": "2026-11-19", "type": "NEW", "key": "moonLogistics" },
+            { "date": "2026-11-19", "type": "CHANGE", "key": "fleetMissions" },
+            { "date": "2026-11-19", "type": "NEW", "key": "commandCenterMoons" },
+            { "date": "2026-11-19", "type": "CHANGE", "key": "versionBump" }
         ]
     },
     {

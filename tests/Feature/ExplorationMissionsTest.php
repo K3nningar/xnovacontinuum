@@ -9,6 +9,7 @@
 
 namespace Tests\Feature;
 
+use App\Models\Alliance;
 use App\Models\Fleet;
 use App\Models\Planet;
 use App\Models\ResearchQueue;
@@ -17,10 +18,12 @@ use App\Models\User;
 use App\Services\CombatSimulatorService;
 use App\Services\ExplorationMissions;
 use App\Services\GalaxyMap;
+use App\Services\MoonEconomy;
 use App\Services\PlanetEconomy;
 use App\Services\ResearchService;
 use App\Services\UnitProductionService;
 use Illuminate\Foundation\Testing\LazilyRefreshDatabase;
+use Illuminate\Support\Facades\DB;
 use Inertia\Testing\AssertableInertia as Assert;
 use PHPUnit\Framework\Attributes\TestWith;
 use Tests\TestCase;
@@ -62,6 +65,7 @@ class ExplorationMissionsTest extends TestCase
         [$other, $otherPlanet] = $this->player();
         $payload = ['mission' => 'expedition', 'galaxy' => 1, 'system' => 1, 'position' => 16, 'ships' => [202 => 1]];
         $this->actingAs($user)->from(route('galaxy.index'))->post(route('planet.missions.store', $otherPlanet), $payload)->assertNotFound();
+        $payload['position'] = 16;
         $this->from(route('galaxy.index'))->post(route('planet.missions.store', $planet), $payload)->assertSessionHasErrors('target');
         $user->forceFill(['expedition_technology_level' => 1])->save();
         $payload['ships'] = [202 => 100];
@@ -260,7 +264,7 @@ class ExplorationMissionsTest extends TestCase
         {
             public function __construct(GalaxyMap $map, PlanetEconomy $economy, UnitProductionService $production, ResearchService $research, CombatSimulatorService $combat, private int $roll)
             {
-                parent::__construct($map, $economy, $production, $research, $combat);
+                parent::__construct($map, $economy, $production, $research, $combat, app(MoonEconomy::class));
             }
 
             protected function random(int $minimum, int $maximum): int
@@ -280,6 +284,241 @@ class ExplorationMissionsTest extends TestCase
             'position' => 8, 'unit_209' => 2, 'unit_202' => 2, 'deuterium' => 100000, 'resources_updated_at' => now()])->save();
 
         return [$user, $planet];
+    }
+
+    public function test_transport_delivers_cargo_and_returns_ships_once(): void
+    {
+        [$user, $origin] = $this->player();
+        $destination = $this->planetAt($user, 7, 'Outpost');
+        $origin->forceFill(['unit_202' => 2, 'metal' => 10000])->save();
+        $destination->forceFill(['metal' => 10000])->save();
+        $this->actingAs($user)->post(route('planet.missions.store', $origin), [
+            'mission' => 'transport', 'galaxy' => 1, 'system' => 1, 'position' => 7,
+            'ships' => [202 => 1], 'cargo' => ['metal' => 5000],
+        ])->assertRedirect();
+        $fleet = Fleet::firstOrFail();
+        $this->assertSame(5000, (int) $origin->fresh()->metal);
+        $this->assertSame(10000, (int) $destination->fresh()->metal);
+        $this->travelTo($fleet->arrives_at->addSecond());
+        app(ExplorationMissions::class)->processDue();
+        $this->assertSame('transport_delivered', $fleet->fresh()->outcome);
+        $this->assertSame(15000, (int) $destination->fresh()->metal);
+        $this->travelTo($fleet->returns_at->addSecond());
+        app(ExplorationMissions::class)->processDue();
+        $ships = (int) $origin->fresh()->unit_202;
+        app(ExplorationMissions::class)->processDue();
+        $this->assertSame($ships, (int) $origin->fresh()->unit_202);
+        $this->assertSame('completed', $fleet->fresh()->status);
+    }
+
+    public function test_transport_rejects_capacity_resources_and_enemy_planets(): void
+    {
+        [$user, $origin] = $this->player();
+        [$enemy, $enemyPlanet] = $this->opponent($user);
+        $this->actingAs($user)->from(route('galaxy.index'))->post(route('planet.missions.store', $origin), [
+            'mission' => 'transport', 'galaxy' => 1, 'system' => 1, 'position' => 7,
+            'ships' => [202 => 1], 'cargo' => ['metal' => 5001],
+        ])->assertSessionHasErrors('cargo');
+        $this->post(route('planet.missions.store', $origin), [
+            'mission' => 'transport', 'galaxy' => 1, 'system' => 1, 'position' => 7,
+            'ships' => [202 => 1], 'cargo' => ['metal' => 600],
+        ])->assertSessionHasErrors('target');
+        $this->post(route('planet.missions.store', $origin), [
+            'mission' => 'transport', 'galaxy' => 1, 'system' => 1, 'position' => 9,
+            'ships' => [202 => 1], 'cargo' => ['metal' => 100],
+        ])->assertSessionHasErrors('target');
+        $this->assertDatabaseCount('fleets', 0);
+    }
+
+    public function test_attack_persists_defender_losses_combat_report_and_debris(): void
+    {
+        [$attacker, $home] = $this->player();
+        [$defender, $target] = $this->opponent($attacker);
+        $home->forceFill(['unit_213' => 10])->save();
+        $target->forceFill(['unit_202' => 2, 'unit_401' => 2])->save();
+        $this->actingAs($attacker)->post(route('planet.missions.store', $home), [
+            'mission' => 'attack', 'galaxy' => 1, 'system' => 1, 'position' => 9, 'ships' => [213 => 2],
+        ])->assertRedirect();
+        $fleet = Fleet::firstOrFail();
+        $this->travelTo($fleet->arrives_at->addSecond());
+        app(ExplorationMissions::class)->processDue();
+        $fleet->refresh();
+        $this->assertNotNull($fleet->combat_report);
+        $this->assertSame('returning', $fleet->status);
+        $this->assertLessThan(4, (int) $target->fresh()->unit_202 + (int) $target->fresh()->unit_401);
+        $this->assertDatabaseHas('orbital_debris', ['universe_id' => $attacker->universe_id, 'galaxy' => 1, 'system' => 1, 'position' => 9]);
+    }
+
+    public function test_stationing_requires_same_alliance_and_active_recipient_depot(): void
+    {
+        [$user, $home] = $this->player();
+        [$ally, $target] = $this->opponent($user);
+        $alliance = Alliance::create(['universe_id' => $user->universe_id, 'name' => 'Guild', 'tag' => 'G'.random_int(100, 999)]);
+        $user->forceFill(['alliance_id' => $alliance->id])->save();
+        $ally->forceFill(['alliance_id' => $alliance->id])->save();
+        $home->forceFill(['unit_202' => 2])->save();
+        $this->actingAs($user)->from(route('galaxy.index'))->post(route('planet.missions.store', $home), [
+            'mission' => 'station', 'galaxy' => 1, 'system' => 1, 'position' => 9, 'ships' => [202 => 1],
+        ])->assertSessionHasErrors('target');
+        $target->forceFill(['alliance_depot_level' => 1])->save();
+        $this->post(route('planet.missions.store', $home), [
+            'mission' => 'station', 'galaxy' => 1, 'system' => 1, 'position' => 9, 'ships' => [202 => 1],
+        ])->assertRedirect();
+        $fleet = Fleet::firstOrFail();
+        $this->travelTo($fleet->arrives_at->addSecond());
+        app(ExplorationMissions::class)->processDue();
+        $this->assertSame('stationed', $fleet->fresh()->status);
+        $this->assertSame(1, (int) $home->fresh()->unit_202);
+    }
+
+    public function test_spy_requires_probes_and_persists_visibility_report_without_leaking_it(): void
+    {
+        [$user, $home] = $this->player();
+        [$enemy, $target] = $this->opponent($user);
+        $home->forceFill(['unit_210' => 3])->save();
+        $target->forceFill(['metal' => 9876, 'unit_204' => 4])->save();
+        $this->actingAs($user)->from(route('galaxy.index'))->post(route('planet.missions.store', $home), [
+            'mission' => 'spy', 'galaxy' => 1, 'system' => 1, 'position' => 9, 'ships' => [210 => 1, 204 => 1],
+        ])->assertSessionHasErrors('ships');
+        $this->post(route('planet.missions.store', $home), [
+            'mission' => 'spy', 'galaxy' => 1, 'system' => 1, 'position' => 9, 'ships' => [210 => 3],
+        ])->assertRedirect();
+        $fleet = Fleet::firstOrFail();
+        $this->travelTo($fleet->arrives_at->addSecond());
+        app(ExplorationMissions::class)->processDue();
+        $report = $fleet->fresh()->mission_report['espionage'];
+        $this->assertSame(9876, $report['intelligence']['resources']['metal']);
+        $this->assertArrayNotHasKey('research', $report['intelligence']);
+        $this->assertSame('spy_success', $fleet->fresh()->outcome);
+    }
+
+    public function test_colonization_consumes_one_colony_ship_and_rejects_occupied_positions(): void
+    {
+        [$user, $home] = $this->player();
+        $home->forceFill(['unit_208' => 2])->save();
+        [$system, $position] = $this->emptyPlanetPosition($user);
+        $payload = ['mission' => 'colonize', 'galaxy' => 1, 'system' => $system, 'position' => $position, 'ships' => [208 => 1], 'moon_orbit' => null];
+        $this->actingAs($user)->post(route('planet.missions.store', $home), $payload)->assertRedirect();
+        $this->assertDatabaseHas('fleets', ['mission' => 'colonize', 'origin_planet_id' => $home->id]);
+        $fleet = Fleet::firstOrFail();
+        $this->travelTo($fleet->arrives_at->addSecond());
+        app(ExplorationMissions::class)->processDue();
+        $this->assertSame(2, $user->planets()->where('universe_id', $user->universe_id)->count());
+        $this->assertSame(0, (int) Planet::where('universe_id', $user->universe_id)->where('galaxy', 1)->where('system', $system)->where('position', $position)->value('unit_208'));
+        $this->assertSame('colonized', $fleet->fresh()->outcome);
+    }
+
+    public function test_recycling_debris_is_depleted_once_and_moon_stock_is_removed_when_destroyed(): void
+    {
+        [$user, $home] = $this->player();
+        $home->forceFill(['unit_209' => 2])->save();
+        DB::table('orbital_debris')->insert(['universe_id' => $user->universe_id, 'galaxy' => 1, 'system' => 1, 'position' => 7, 'metal' => 1000, 'crystal' => 500, 'created_at' => now(), 'updated_at' => now()]);
+        $this->actingAs($user)->post(route('planet.missions.store', $home), [
+            'mission' => 'recycle', 'target_type' => 'debris', 'galaxy' => 1, 'system' => 1, 'position' => 7, 'ships' => [209 => 1],
+        ])->assertRedirect();
+        $fleet = Fleet::query()->where('origin_planet_id', $home->id)->where('mission', 'recycle')->where('target_position', 7)->firstOrFail();
+        $this->travelTo($fleet->arrives_at->addSecond());
+        app(ExplorationMissions::class)->processDue();
+        $this->assertDatabaseHas('orbital_debris', ['universe_id' => $user->universe_id, 'galaxy' => 1, 'system' => 1, 'position' => 7, 'metal' => 0, 'crystal' => 0]);
+        app(ExplorationMissions::class)->processDue();
+        $this->assertSame(1500, array_sum($fleet->fresh()->cargo));
+    }
+
+    public function test_deathstar_destroys_only_an_existing_moon_and_clears_its_stock(): void
+    {
+        $this->forceOutcome(1);
+        [$attacker, $home] = $this->player();
+        [$defender, $target] = $this->opponent($attacker);
+        $orbit = $this->moonOrbit($attacker, $target);
+        $home->forceFill(['unit_214' => 1])->save();
+        $attacker->forceFill(['military_technology_level' => 100, 'spy_technology_level' => 0])->save();
+        $this->travelTo(now()->startOfSecond());
+        DB::table('moon_stocks')->insert(['planet_id' => $target->id, 'orbit' => $orbit, 'metal' => 900, 'crystal' => 800, 'deuterium' => 700, 'created_at' => now(), 'updated_at' => now()]);
+        $this->actingAs($attacker)->post(route('planet.missions.store', $home), [
+            'mission' => 'destroy_moon', 'galaxy' => 1, 'system' => $target->system, 'position' => $target->position,
+            'moon_orbit' => $orbit, 'ships' => [214 => 1],
+        ])->assertRedirect()->assertSessionHasNoErrors();
+        $fleet = Fleet::where('origin_planet_id', $home->id)->where('mission', 'destroy_moon')->firstOrFail();
+        $this->assertSame($orbit, (int) $fleet->target_orbit);
+        $this->travelTo($fleet->arrives_at->addSecond());
+        app(ExplorationMissions::class)->processDue();
+        $this->assertSame('moon_destroyed', $fleet->fresh()->outcome);
+        $this->assertDatabaseMissing('moon_stocks', ['planet_id' => $target->id, 'orbit' => $orbit]);
+        $slot = app(GalaxyMap::class)->system($attacker->universe, $attacker, 1, $target->system, $home->position)['slots'][7];
+        $this->assertFalse(collect($slot['naturalMoons'] ?? [])->contains(fn (array $moon): bool => $moon['orbit'] === $orbit));
+        $this->from(route('galaxy.index'))->post(route('planet.missions.store', $home), [
+            'mission' => 'destroy_moon', 'galaxy' => 1, 'system' => $target->system, 'position' => $target->position,
+            'moon_orbit' => $orbit, 'ships' => [214 => 1],
+        ])->assertSessionHasErrors('moon_orbit');
+    }
+
+    public function test_experimental_destroyer_is_disabled_by_default_and_requires_feature_flag(): void
+    {
+        [$attacker, $home] = $this->player();
+        [$defender, $target] = $this->opponent($attacker);
+        $attacker->forceFill(['officer_emperor_level' => 1])->save();
+        $home->forceFill(['unit_217' => 1])->save();
+        $payload = ['mission' => 'destroy_planet', 'galaxy' => 1, 'system' => 1, 'position' => 9, 'ships' => [217 => 1]];
+        config(['combat.experimental_planetary_destroyer' => false]);
+        $this->actingAs($attacker)->from(route('galaxy.index'))->post(route('planet.missions.store', $home), $payload)->assertSessionHasErrors('mission');
+        config(['combat.experimental_planetary_destroyer' => true]);
+        $this->post(route('planet.missions.store', $home), $payload)->assertRedirect();
+        $fleet = Fleet::firstOrFail();
+        $this->travelTo($fleet->arrives_at->addSecond());
+        app(ExplorationMissions::class)->processDue();
+        $this->assertNotNull($target->fresh()->destroyed_at);
+        $this->assertSame(0, (int) $target->fresh()->metal);
+        $this->assertSame(0, (int) $target->fresh()->unit_204);
+        $slot = app(GalaxyMap::class)->system($attacker->universe, $attacker, 1, $target->system, $home->position)['slots'][7];
+        $this->assertArrayNotHasKey('planet', $slot);
+        $this->assertArrayNotHasKey('moons', $slot);
+    }
+
+    private function moonOrbit(User $viewer, Planet $planet): int
+    {
+        for ($system = 1; $system <= 499; $system++) {
+            $planet->forceFill(['system' => $system])->save();
+            $systemData = app(GalaxyMap::class)->system($viewer->universe, $viewer, 1, $system, $planet->position);
+            $slot = $systemData['slots'][$planet->position - 2];
+            if (($slot['kind'] ?? null) === 'planet' && ($slot['naturalMoons'] ?? []) !== []) {
+                $planet->forceFill(['system' => $system])->save();
+
+                return (int) $slot['naturalMoons'][0]['orbit'];
+            }
+        }
+        $this->fail('Target planet has no natural moon.');
+    }
+
+    private function planetAt(User $user, int $position, string $name): Planet
+    {
+        $planet = new Planet(['name' => $name]);
+        $planet->forceFill(['universe_id' => $user->universe_id, 'user_id' => $user->id, 'galaxy' => 1, 'system' => 1,
+            'position' => $position, 'resources_updated_at' => now()])->save();
+
+        return $planet;
+    }
+
+    private function emptyPlanetPosition(User $user): array
+    {
+        for ($system = 2; $system <= 100; $system++) {
+            for ($position = 2; $position <= 15; $position++) {
+                $slot = app(GalaxyMap::class)->system($user->universe, $user, 1, $system, 8)['slots'][$position - 2];
+                if (($slot['kind'] ?? null) === 'planet' && $slot['planet'] === null) {
+                    return [$system, $position];
+                }
+            }
+        }
+        $this->fail('No colonizable position found.');
+    }
+
+    private function opponent(User $user): array
+    {
+        $enemy = User::factory()->create(['universe_id' => $user->universe_id]);
+        $planet = new Planet(['name' => 'Enemy']);
+        $planet->forceFill(['universe_id' => $user->universe_id, 'user_id' => $enemy->id, 'galaxy' => 1, 'system' => 1,
+            'position' => 9, 'resources_updated_at' => now()])->save();
+
+        return [$enemy, $planet];
     }
 
     private function asteroidSystemAt(User $user, int $position): int

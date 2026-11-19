@@ -30,6 +30,7 @@ export default {
     "language": "Idioma",
     "close": "Cerrar",
     "cancel": "Cancelar",
+    "select": "Seleccionar",
     "level": "Nivel",
     "levelShort": "Niv.",
     "resources": "Recursos",

@@ -42,7 +42,9 @@ export default {
     "noFleetEvents": "Keine Flotten unterwegs.",
     "outbound": "Hinflug",
     "returning": "Rückflug",
-    "fleetLimit": "Die nächsten 25 Bewegungen werden angezeigt."
+    "fleetLimit": "Die nächsten 25 Bewegungen werden angezeigt.",
+    "moons": "Monde",
+    "noMoons": "Keine Monde."
   },
   "dashboard": {
     "title": "Kommando",

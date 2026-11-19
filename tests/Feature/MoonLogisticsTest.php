@@ -13,7 +13,9 @@ use App\Models\Fleet;
 use App\Models\Planet;
 use App\Models\Universe;
 use App\Models\User;
+use App\Services\ExplorationMissions;
 use App\Services\GalaxyMap;
+use App\Services\MoonEconomy;
 use Illuminate\Foundation\Testing\LazilyRefreshDatabase;
 use Illuminate\Support\Facades\DB;
 use Inertia\Testing\AssertableInertia as Assert;
@@ -81,6 +83,29 @@ class MoonLogisticsTest extends TestCase
         $this->assertDatabaseCount('fleets', 0);
     }
 
+    public function test_lunar_buildings_restore_base_fields_and_enforce_phalanx_requirements(): void
+    {
+        [$user, $planet] = $this->playerWithMoons();
+        $stock = app(MoonEconomy::class)->stock($planet, ['orbit' => 1]);
+        DB::table('moon_stocks')->where('id', $stock->id)->update(['metal' => 100000, 'crystal' => 100000, 'deuterium' => 100000]);
+        $url = route('moon.buildings.upgrade', ['planet' => $planet->id, 'orbit' => 1]);
+
+        $this->actingAs($user)->post($url, ['building' => 'phalanx'])->assertSessionHasErrors('building');
+        $response = $this->post($url, ['building' => 'moon_base']);
+        $response->assertRedirect();
+        $this->assertDatabaseHas('fleets', ['origin_planet_id' => $planet->id, 'mission' => 'moon_building']);
+
+        $order = Fleet::where('origin_planet_id', $planet->id)->where('mission', 'moon_building')->firstOrFail();
+        DB::table('moon_stocks')->where('planet_id', $planet->id)->where('orbit', 1)->update(['metal' => 100000, 'crystal' => 100000, 'deuterium' => 100000]);
+        $this->travelTo($order->arrives_at->addSecond());
+        app(ExplorationMissions::class)->processDue();
+        $this->get(route('moon.show', ['planet' => $planet->id, 'orbit' => 1]))->assertInertia(fn (Assert $page) => $page
+            ->where('moonEconomy.buildings.0.level', 1)->where('moonEconomy.fields.max', 5));
+
+        $this->post($url, ['building' => 'phalanx'])->assertRedirect();
+        $this->assertDatabaseHas('fleets', ['origin_planet_id' => $planet->id, 'mission' => 'moon_building', 'status' => 'outbound']);
+    }
+
     public function test_moon_resources_cannot_be_reserved_twice_or_by_another_player(): void
     {
         [$user, $planet] = $this->playerWithMoons();
@@ -96,6 +121,7 @@ class MoonLogisticsTest extends TestCase
         $this->assertDatabaseCount('fleets', 1);
         $this->assertSame(1, (int) $planet->fresh()->unit_202);
     }
+
 
     private function playerWithMoons(): array
     {

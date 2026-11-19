@@ -13,7 +13,7 @@ use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
-#[Fillable(['universe_id', 'user_id', 'origin_planet_id', 'target_planet_id', 'mission', 'ships', 'status', 'arrives_at', 'returns_at'])]
+#[Fillable(['universe_id', 'user_id', 'origin_planet_id', 'target_planet_id', 'target_type', 'target_orbit', 'origin_orbit', 'moon_orbit', 'moon_order', 'mission_report', 'mission', 'ships', 'status', 'arrives_at', 'returns_at'])]
 class Fleet extends Model
 {
     /**
@@ -27,6 +27,7 @@ class Fleet extends Model
             'ships' => 'array',
             'cargo' => 'array',
             'combat_report' => 'array',
+            'mission_report' => 'array',
             'moon_order' => 'array',
             'arrives_at' => 'immutable_datetime',
             'returns_at' => 'immutable_datetime',

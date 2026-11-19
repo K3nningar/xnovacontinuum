@@ -37,10 +37,11 @@ class GalaxyMap
     public function system(Universe $universe, User $viewer, int $galaxy, int $system, int $originPosition): array
     {
         $planets = Planet::query()
+            ->whereNull('destroyed_at')
             ->where('universe_id', $universe->id)
             ->where('galaxy', $galaxy)
             ->where('system', $system)
-            ->with('user:id,name')
+            ->with('user:id,name,alliance_id')
             ->get()
             ->keyBy('position');
 
@@ -49,6 +50,9 @@ class GalaxyMap
         $asteroidFields = DB::table('asteroid_fields')
             ->where('universe_id', $universe->id)->where('galaxy', $galaxy)->where('system', $system)
             ->get()->keyBy('position');
+        $destroyedMoons = DB::table('destroyed_moons')
+            ->where('universe_id', $universe->id)->where('galaxy', $galaxy)->where('system', $system)
+            ->get()->keyBy(fn ($moon): string => $moon->position.':'.$moon->orbit);
 
         $starRoll = $this->roll($universe, $galaxy, $system, 1, 'star', 100);
         $star = match (true) {
@@ -95,14 +99,18 @@ class GalaxyMap
 
             $type = $this->planetType($universe, $galaxy, $system, $position);
             $maximumMoons = $type === 'gaseous' ? 4 : ($position <= 4 ? 1 : 2);
-            $moonCount = $this->roll($universe, $galaxy, $system, $position, 'moons', $maximumMoons + 1);
+            $generatedMoonCount = $this->roll($universe, $galaxy, $system, $position, 'moons', $maximumMoons + 1);
             $moons = [];
-            for ($orbit = 1; $orbit <= $moonCount; $orbit++) {
+            for ($orbit = 1; $orbit <= $generatedMoonCount; $orbit++) {
+                if ($destroyedMoons->has($position.':'.$orbit)) {
+                    continue;
+                }
                 $moons[] = [
                     'orbit' => $orbit,
                     'diameter' => 900 + $this->roll($universe, $galaxy, $system, $position, 'moon-diameter-'.$orbit, 5101),
                 ];
             }
+            $moonCount = count($moons);
             $slots[] = [
                 'position' => $position,
                 'visible' => true,
@@ -119,6 +127,7 @@ class GalaxyMap
                     'name' => $planet->name,
                     'owner' => $planet->user->name,
                     'owned' => (int) $planet->user_id === (int) $viewer->id,
+                    'alliedDepot' => (int) $planet->user_id !== (int) $viewer->id && $viewer->alliance_id !== null && (int) $planet->user->alliance_id === (int) $viewer->alliance_id && (int) $planet->alliance_depot_level > 0,
                     ...((int) $planet->user_id === (int) $viewer->id ? ['id' => $planet->id] : []),
                 ] : null,
             ];

@@ -17,6 +17,7 @@ export default {
     "noShips": "Nessuna nave stazionata.",
     "produceShips": "Costruisci le prime navi nel cantiere spaziale.",
     "openShipyard": "Apri il cantiere",
+    "openGalaxy": "Apri galassia",
     "missions": "MISSIONI REGISTRATE",
     "inFlight": "Flotte in volo",
     "origin": "Origine",

@@ -10,6 +10,12 @@
 return [
     'max_units_per_side' => 500,
     'max_rounds' => 6,
+    'experimental_planetary_destroyer' => env('COMBAT_EXPERIMENTAL_PLANETARY_DESTROYER', false),
+    'special_profiles' => [
+        216 => ['attack' => 1000, 'shield' => 0, 'hull' => 15000],
+        217 => ['attack' => 300000, 'shield' => 100000, 'hull' => 200000],
+        409 => ['attack' => 1000, 'shield' => 0, 'hull' => 35000],
+    ],
     'units' => [
         202 => ['key' => 'small_cargo', 'type' => 'ships', 'attack' => 5, 'shield' => 10, 'hull' => 400, 'rapid_fire' => [210 => 5, 212 => 5]],
         203 => ['key' => 'large_cargo', 'type' => 'ships', 'attack' => 5, 'shield' => 25, 'hull' => 1200, 'rapid_fire' => [210 => 5, 212 => 5]],

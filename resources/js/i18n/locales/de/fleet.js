@@ -17,6 +17,7 @@ export default {
     "noShips": "Keine Schiffe stationiert.",
     "produceShips": "Baue deine ersten Schiffe in der Werft.",
     "openShipyard": "Zur Werft",
+    "openGalaxy": "Galaxie anzeigen",
     "missions": "GESPEICHERTE MISSIONEN",
     "inFlight": "Flotten unterwegs",
     "origin": "Start",

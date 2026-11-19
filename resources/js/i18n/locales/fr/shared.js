@@ -29,6 +29,7 @@ export default {
     "language": "Langue",
     "close": "Fermer",
     "cancel": "Annuler",
+    "select": "Sélectionner",
     "level": "Niveau",
     "levelShort": "Niv.",
     "resources": "Ressources",

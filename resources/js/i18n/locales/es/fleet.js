@@ -17,6 +17,7 @@ export default {
     "noShips": "No hay naves estacionadas.",
     "produceShips": "Construye tus primeras naves en el astillero.",
     "openShipyard": "Ir al astillero",
+    "openGalaxy": "Ver galaxia",
     "missions": "MISIONES REGISTRADAS",
     "inFlight": "Flotas en vuelo",
     "origin": "Origen",

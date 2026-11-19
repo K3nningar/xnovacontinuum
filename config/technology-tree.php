@@ -22,6 +22,7 @@ return [
         24 => 'remarkable',
         31 => 'exceptional',
         33 => 'epic',
+        34 => 'exceptional',
         44 => 'exceptional',
     ],
     'buildings' => [
@@ -32,6 +33,7 @@ return [
         ['hangar', 21, 'hangar_level', [14 => 2]],
         ['metal_storage', 22, 'metal_storage_level'], ['crystal_storage', 23, 'crystal_storage_level'],
         ['deuterium_storage', 24, 'deuterium_storage_level'], ['laboratory', 31, 'laboratory_level'],
-        ['terraformer', 33, 'terraformer_level', [15 => 1, 113 => 12]], ['missile_silo', 44, 'missile_silo_level'],
+        ['terraformer', 33, 'terraformer_level', [15 => 1, 113 => 12]], ['alliance_depot', 34, 'alliance_depot_level'],
+        ['missile_silo', 44, 'missile_silo_level'],
     ],
 ];

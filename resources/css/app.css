@@ -849,6 +849,46 @@ body { background: transparent; }
 .fleet-inventory-row { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; padding: 12px; border-top: 1px solid var(--line); }
 .fleet-inventory-row img { width: 200px; height: 200px; object-fit: cover; }
 .fleet-inventory-row > span { display: grid; flex: 1 1 120px; gap: 4px; }
+.fleet-dispatch { min-height: 0; margin-top: 15px; overflow: hidden; }
+.fleet-dispatch-heading { min-height: 58px; }
+.fleet-dispatch-body { display: grid; gap: 18px; padding: 16px; }
+.fleet-dispatch-target { display: grid; grid-template-columns: minmax(180px, 1.4fr) repeat(3, minmax(100px, .7fr)) minmax(140px, .9fr); gap: 10px; align-items: end; }
+.fleet-dispatch-field { display: grid; min-width: 0; gap: 5px; color: #aebdca; font-size: 11px; }
+.fleet-dispatch-field input, .fleet-dispatch-field select, .fleet-dispatch-ship input { width: 100%; min-width: 0; min-height: 36px; border: 1px solid var(--line); border-radius: 3px; background: rgba(5, 13, 19, .88); padding: 7px 9px; color: #edf5f7; font: inherit; }
+.fleet-dispatch-section-heading { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 9px; }
+.fleet-dispatch-section-heading h3 { margin: 0; color: #dce8eb; font-size: 12px; font-weight: 600; letter-spacing: .04em; }
+.fleet-dispatch-section-heading > span { color: #91a2ae; font-size: 10px; text-align: right; }
+.fleet-dispatch-ships { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 230px), 1fr)); gap: 8px; }
+.fleet-dispatch-ship { display: grid; grid-template-columns: 38px minmax(0, 1fr) 68px; min-width: 0; align-items: center; gap: 9px; border: 1px solid rgba(151, 177, 207, .13); background: rgba(6, 15, 21, .46); padding: 7px; }
+.fleet-dispatch-ship img { width: 38px; height: 38px; object-fit: contain; }
+.fleet-dispatch-ship-info { display: grid; min-width: 0; gap: 3px; }
+.fleet-dispatch-ship-info strong { overflow: hidden; color: #dbe6ea; font-size: 11px; font-weight: 550; text-overflow: ellipsis; white-space: nowrap; }
+.fleet-dispatch-ship-info small { color: #8799a6; font-size: 9px; }
+.fleet-dispatch-ship input { min-height: 32px; padding: 5px 6px; text-align: right; }
+.fleet-dispatch-cargo { border-top: 1px solid rgba(151, 177, 207, .13); padding-top: 14px; }
+.fleet-dispatch-cargo-fields { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; }
+.fleet-dispatch-footer { display: flex; align-items: center; justify-content: space-between; gap: 16px; border-top: 1px solid rgba(151, 177, 207, .13); padding-top: 14px; }
+.fleet-dispatch-origin { margin: 0; color: #8496a3; font-size: 10px; }
+.fleet-dispatch-error { margin: 0 0 4px; color: #fca5a5; font-size: 11px; }
+.fleet-panels { margin-top: 15px; }
+.fleet-panels .fleet-inventory-row img { width: 50px; height: 50px; object-fit: contain; }
+.fleet-panels .fleet-inventory-row { padding: 9px 13px; }
+.fleet-panels .fleet-inventory-row > span strong { color: #dce8eb; font-size: 12px; }
+.fleet-panels .fleet-inventory-row > span small { color: #8799a6; font-size: 10px; }
+@media (max-width: 900px) {
+    .fleet-dispatch-target { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+    .fleet-dispatch-mission { grid-column: span 3; }
+}
+@media (max-width: 560px) {
+    .fleet-dispatch-body { gap: 14px; padding: 12px; }
+    .fleet-dispatch-target { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+    .fleet-dispatch-mission { grid-column: span 2; }
+    .fleet-dispatch-cargo-fields { grid-template-columns: minmax(0, 1fr); }
+    .fleet-dispatch-section-heading { align-items: flex-start; flex-direction: column; gap: 4px; }
+    .fleet-dispatch-section-heading > span { text-align: left; }
+    .fleet-dispatch-footer { align-items: stretch; flex-direction: column; }
+    .fleet-dispatch-footer > button { width: 100%; }
+}
 
 .technology-node-foreign { position: absolute; z-index: 2; }
 .technology-graph-node { width: 100%; height: 100%; }
@@ -874,6 +914,9 @@ body { background: transparent; }
 .overview-page .planet-details small, .overview-page .planet-stock small { font-size: 12px; }
 .overview-page .planet-links .button, .overview-page .button { font-size: 13px; }
 .overview-page .planet-links .button { min-height: 36px; }
+.overview-page .planet-moons { display: flex; flex-wrap: wrap; align-items: center; gap: 5px 9px; }
+.overview-page .planet-moon-link { color: #86d8ce; font-size: 12px; text-decoration: underline; text-decoration-color: rgba(134, 216, 206, .4); text-underline-offset: 2px; }
+.overview-page .planet-moon-link:hover { color: #c0fff2; }
 .overview-page .empty-state strong, .overview-page .alliance-state strong { font-size: 14px; }
 .overview-page .empty-state p, .overview-page .alliance-state p, .overview-page .notice-bar p, .overview-page .intel-discover { font-size: 13px; }
 @media (max-width: 700px) {

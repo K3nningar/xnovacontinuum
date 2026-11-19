@@ -17,20 +17,42 @@ const props = defineProps({
     moon: { type: Object, required: true },
     ships: { type: Array, required: true },
     fleetSpeed: { type: Number, required: true },
+    moonEconomy: { type: Object, required: true },
+    moonFleet: { type: Object, required: true },
+    jumpGateDestinations: { type: Array, default: () => [] },
 });
 const page = usePage();
 const { t, n } = useI18n();
 const route = (name, params) => ziggyRoute(name, params, true, page.props.ziggy);
 const form = useForm({ direction: 'deposit', resource: 'metal', amount: 1, ships: { 202: 0, 203: 0, 209: 0 } });
+const buildingForm = useForm({ building: 'moon_base' });
+const jumpForm = useForm({ destination: '', ships: Object.fromEntries(Object.entries(props.moonFleet).map(([code]) => [code, 0])) });
 const capacities = { 202: 5000, 203: 25000, 209: 20000 };
 // Transfer capacity is the combined cargo volume of the three supported transport ship classes.
 const capacity = computed(() => Object.entries(form.ships).reduce((sum, [code, count]) => sum + Number(count || 0) * capacities[code], 0));
 const fuel = computed(() => Object.values(form.ships).reduce((sum, count) => sum + Number(count || 0), 0));
 const flight = computed(() => props.fleetSpeed > 0 ? Math.max(60, Math.ceil(300 / props.fleetSpeed)) : '—');
 const format = (amount) => n(Number(amount), 'game');
+const moonBuildingNames = {
+    moon_base: t('moonLogistics.buildingNames.moon_base'),
+    phalanx: t('moonLogistics.buildingNames.phalanx'),
+    jump_gate: t('moonLogistics.buildingNames.jump_gate'),
+};
+const unitNames = { 202: 'small_cargo', 203: 'large_cargo', 204: 'light_fighter', 205: 'heavy_fighter', 206: 'cruiser', 207: 'battleship', 208: 'colony_ship', 209: 'recycler', 210: 'espionage_probe', 211: 'bomber', 212: 'solar_satellite', 213: 'destroyer', 214: 'deathstar', 215: 'battlecruiser', 216: 'supernova', 217: 'planetary_destroyer' };
+const moonShipNames = computed(() => Object.fromEntries(Object.keys(props.moonFleet).map((code) => [code, t(`unitNames.${unitNames[code]}`)])));
 
 function submit() {
     form.post(route('moon.transfer', { planet: props.planet.id, orbit: props.moon.orbit }));
+}
+function upgradeMoon(building) {
+    buildingForm.building = building;
+    buildingForm.post(route('moon.buildings.upgrade', { planet: props.planet.id, orbit: props.moon.orbit }));
+}
+function jump() {
+    jumpForm.transform((data) => ({
+        ...data,
+        ships: Object.fromEntries(Object.entries(data.ships).map(([code, count]) => [code, Number(count || 0)])),
+    })).post(route('moon.jump', { planet: props.planet.id, orbit: props.moon.orbit }));
 }
 </script>
 
@@ -53,13 +75,36 @@ function submit() {
                         <div class="flex flex-wrap gap-6 p-4 text-sm">
                             <span>{{ t('common.metal') }} : {{ format(moon.metal) }}</span>
                             <span>{{ t('common.crystal') }} : {{ format(moon.crystal) }}</span>
-                            <span>{{ t('common.deuterium') }} : {{ format(moon.deuterium) }}</span>
+                            <span>{{ t('common.deuterium') }} : {{ format(moon.deuterium) }}</span><span>{{ t('moonLogistics.fields', { used: moonEconomy.fields.used, max: moonEconomy.fields.max }) }}</span><span>{{ t('common.energy') }} : {{ format(moonEconomy.energy) }}</span>
                         </div>
                     </section>
+                    <section class="data-panel moon-panel mt-4">
+                        <div class="panel-heading"><div><span class="panel-kicker">{{ t('moonLogistics.buildings') }}</span><h2>{{ t('moonLogistics.buildings') }}</h2></div></div>
+                        <div class="moon-building-grid p-4">
+                            <form v-for="building in moonEconomy.buildings" :key="building.key" class="moon-building-card" @submit.prevent="upgradeMoon(building.key)">
+                                <div><strong>{{ moonBuildingNames[building.key] }}</strong><small>{{ t('moonLogistics.level', { level: building.level }) }}<template v-if="building.queued"> · {{ t('moonLogistics.queued', { count: building.queued }) }}</template></small></div>
+                                <p class="moon-building-cost">{{ t('common.metal') }} {{ format(building.cost.metal) }} · {{ t('common.crystal') }} {{ format(building.cost.crystal) }} · {{ t('common.deuterium') }} {{ format(building.cost.deuterium) }}</p>
+                                <button class="button button-outline" type="submit" :disabled="!building.canBuild || buildingForm.processing" @click="buildingForm.building = building.key">{{ t('moonLogistics.build') }}</button>
+                            </form>
+                        </div>
+                        <p class="px-4 pb-3 text-sm text-slate-400">{{ t('moonLogistics.fields', { used: moonEconomy.fields.used, max: moonEconomy.fields.max }) }}</p>
+                        <article v-for="item in moonEconomy.queue" :key="item.id" class="moon-queue-row"><strong>{{ moonBuildingNames[item.key] ?? item.key }} {{ t('moonLogistics.level', { level: item.targetLevel }) }}</strong><span>{{ t('units.endsAt', { date: item.completesAt }) }}</span></article>
+                    </section>
+                    <section v-if="moonEconomy.buildings.find((building) => building.key === 'phalanx')?.level > 0" class="data-panel moon-panel mt-4 p-4">
+                        <h2 class="text-lg font-semibold">{{ t('moonLogistics.phalanx') }}</h2>
+                        <Link class="button button-outline mt-3" :href="route('moon.phalanx', { planet: planet.id, orbit: moon.orbit })">{{ t('moonLogistics.scan') }}</Link>
+                    </section>
+                    <form v-if="moonEconomy.buildings.find((building) => building.key === 'jump_gate')?.level > 0" class="data-panel moon-panel mt-4 p-4" @submit.prevent="jump">
+                        <h2 class="text-lg font-semibold">{{ t('moonLogistics.jumpGate') }}</h2>
+                        <label class="mt-3 flex max-w-lg flex-col gap-1 text-sm">{{ t('moonLogistics.destination') }}<select v-model="jumpForm.destination" required class="rounded border border-slate-600 bg-slate-950 px-3 py-2 text-white"><option v-for="destination in jumpGateDestinations" :key="destination.destination" :value="destination.destination">{{ destination.planetName }} [{{ destination.coordinates }}] · {{ t('galaxyMoon', { orbit: destination.orbit, diameter: format(destination.diameter) }) }}</option></select></label>
+                        <div class="mt-3 flex flex-wrap gap-3"><label v-for="ship in Object.keys(moonFleet).map((code) => ({ code: Number(code) }))" :key="ship.code" class="flex flex-col gap-1 text-sm">{{ moonShipNames[ship.code] ?? t('fleet.ship', { code: ship.code }) }} · {{ t('galaxyMissions.available', { count: format(moonFleet[ship.code]) }) }}<input v-model.number="jumpForm.ships[ship.code]" type="number" min="0" :max="moonFleet[ship.code] ?? 0" step="1" class="w-32 rounded border border-slate-600 bg-slate-950 px-3 py-2 text-white"></label></div>
+                        <p v-for="(error, key) in jumpForm.errors" :key="key" role="alert" class="mt-2 text-sm text-red-300">{{ error }}</p>
+                        <button class="button button-primary mt-4" type="submit" :disabled="jumpForm.processing || !jumpGateDestinations.length">{{ t('moonLogistics.jump') }}</button>
+                    </form>
                     <form class="data-panel moon-panel mt-4 p-4" @submit.prevent="submit">
                         <h2 class="text-lg font-semibold">{{ t('moonLogistics.transfer') }}</h2>
                         <p class="mt-2 text-sm text-slate-400">{{ t('moonLogistics.reserved') }}</p>
-                        <Link class="text-sm text-cyan-300 underline" :href="route('fleet.index', { planet: planet.id })">{{ t('fleet.inFlight') }}</Link>
+                        <Link class="text-sm text-cyan-300 underline" :href="route('fleet.index', { planet: planet.id, moon_orbit: moon.orbit })">{{ t('fleet.inFlight') }}</Link>
                         <div class="mt-4 flex flex-wrap items-end gap-3">
                             <label class="flex flex-col gap-1 text-sm">
                                 {{ t('moonLogistics.transfer') }}
