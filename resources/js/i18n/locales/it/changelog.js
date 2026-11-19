@@ -17,6 +17,7 @@ export default {
       "moonLogistics": "Aggiunta la gestione lunare con edifici, risorse, flotte stanziate, scansioni falange e portali di salto.",
       "fleetMissions": "Ampliate le missioni di flotta con trasporto, attacco, spionaggio, colonizzazione, riciclaggio e operazioni lunari.",
       "commandCenterMoons": "Le lune di ogni pianeta sono mostrate nel centro di comando con collegamenti diretti alla loro gestione.",
+      "versionBumpAlpha5": "La pre-release avanza a 0.1.0-alpha.5 per questa nuova distribuzione di funzionalità compatibili.",
       "newGameContent": "Aggiunti un laboratorio di ricerca, antimateria, artefatti, nuove tecnologie e nuovi edifici, navi, difese e ufficiali.",
       "groundCombat": "Aggiunto il combattimento terrestre, con round dedicati e personale militare.",
       "newPlayerProtection": "La protezione per i nuovi giocatori è stata rielaborata in un sistema basato sui punti con i rami Pacifista e Guerrafondaio.",

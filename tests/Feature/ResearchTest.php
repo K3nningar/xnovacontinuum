@@ -2,7 +2,7 @@
 
 /*
  * Author / Contributor : K3nningar
- * Code Version : 0.1.0-alpha.4
+ * Code Version : 0.1.0-alpha.5
  * Revision : 34ddc84
  * Description : Tests the application's ResearchTest behavior.
  */
@@ -37,6 +37,7 @@ class ResearchTest extends TestCase
                 ->where('planets.0.deuterium', 500)
                 ->has('researches', 16)
                 ->where('researches.5.key', 'energy')->where('researches.5.cost.crystal', 800)
+                ->where('researches.5.duration', 720)
                 ->where('researches.0.rarity', 'remarkable')->where('researches.3.rarity', 'exceptional')
                 ->where('researches.4.rarity', 'remarkable')->where('researches.15.rarity', 'mythic')
                 ->where('researches.5.canResearch', true)->where('researches.0.canResearch', false)

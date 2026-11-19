@@ -2,7 +2,7 @@
 
 /*
  * Author / Contributor : K3nningar
- * Code Version : 0.1.0-alpha.4
+ * Code Version : 0.1.0-alpha.5
  * Revision : 34ddc84
  * Description : Implements the ExplorationMissions application service.
  */
@@ -11,6 +11,7 @@ namespace App\Services;
 
 use App\Models\Fleet;
 use App\Models\Planet;
+use App\Models\Universe;
 use App\Models\User;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
@@ -172,14 +173,23 @@ class ExplorationMissions
         }, 3);
     }
 
-    private function inferRecycleType($universe, User $user, int $galaxy, int $system, int $position, int $originPosition): string
+    /**
+     * Determines whether a coordinate resolves to an asteroid or an orbital-debris field.
+     */
+    private function inferRecycleType(Universe $universe, User $user, int $galaxy, int $system, int $position, int $originPosition): string
     {
         $slot = $this->map->system($universe, $user, $galaxy, $system, $originPosition)['slots'][$position - 2];
 
         return ($slot['kind'] ?? null) === 'asteroid' ? 'asteroid' : 'debris';
     }
 
-    private function validateDestination(User $user, Planet $origin, $universe, int $galaxy, int $system, int $position, string $mission, array $ships, array $options): ?Planet
+    /**
+     * Validates mission-specific target rules and returns the matching destination planet when applicable.
+     *
+     * @param  array<int|string, int>  $ships
+     * @param  array<string, mixed>  $options
+     */
+    private function validateDestination(User $user, Planet $origin, Universe $universe, int $galaxy, int $system, int $position, string $mission, array $ships, array $options): ?Planet
     {
         $targetType = $options['target_type'] ?? match ($mission) {
             'destroy_moon' => 'moon',
@@ -282,7 +292,7 @@ class ExplorationMissions
         }
         if ($mission === 'colonize') {
             $slot = $this->map->system($universe, $user, $galaxy, $system, $position)['slots'][$position - 2];
-            if (in_array($position, [2, 15], true) && $galaxy === (int) $planet->galaxy && $system === (int) $planet->system) {
+            if (in_array($position, [2, 15], true) && $galaxy === (int) $origin->galaxy && $system === (int) $origin->system) {
                 throw ValidationException::withMessages(['target' => 'Le système ne peut pas recevoir de colonie sur ce poste réservé.']);
             }
             if ($target || $slot['kind'] !== 'planet' || $user->planets()->where('universe_id', $universe->id)->count() >= 21) {
@@ -773,7 +783,7 @@ class ExplorationMissions
         $fleet->outcome = $detected ? 'spy_detected' : 'spy_success';
         $fleet->cargo = ['metal' => 0, 'crystal' => 0, 'deuterium' => 0];
         if ($detected) {
-            $fleet->returns_at = now()->addSeconds(max(60, (int) $fleet->arrives_at->diffInSeconds($fleet->returns_at)));
+            $fleet->returns_at = Carbon::parse(now()->addSeconds(max(60, (int) $fleet->arrives_at->diffInSeconds($fleet->returns_at)))->toDateTimeString());
         }
         if ($fleet->origin_orbit) {
             $fleet->mission_report['originOrbit'] = (int) $fleet->origin_orbit;
@@ -936,14 +946,37 @@ class ExplorationMissions
 
     private function limitFleet(array $fleet, int $limit): array
     {
-        $limited = [];
-        foreach ($fleet as $code => $count) {
-            $take = min($limit - array_sum($limited), $count);
-            if ($take > 0) {
-                $limited[$code] = $take;
-            }
-            if (array_sum($limited) >= $limit) {
+        $fleet = array_filter($fleet, fn (int $count): bool => $count > 0);
+        $total = array_sum($fleet);
+        if ($total <= $limit) {
+            return $fleet;
+        }
+
+        $limited = array_fill_keys(array_keys($fleet), 1);
+        $remainingFleet = array_map(fn (int $count): int => $count - 1, $fleet);
+        $remainingFleet = array_filter($remainingFleet, fn (int $count): bool => $count > 0);
+        $remainingSlots = $limit - count($limited);
+        $remainingTotal = array_sum($remainingFleet);
+        $remainders = [];
+        $allocated = 0;
+
+        foreach ($remainingFleet as $code => $count) {
+            $scaled = $count * $remainingSlots;
+            $additional = intdiv($scaled, $remainingTotal);
+            $limited[$code] += $additional;
+            $remainders[$code] = $scaled % $remainingTotal;
+            $allocated += $additional;
+        }
+
+        uksort($remainders, fn (int|string $left, int|string $right) => ($remainders[$right] <=> $remainders[$left]) ?: ((int) $left <=> (int) $right));
+
+        foreach (array_keys($remainders) as $code) {
+            if ($allocated >= $remainingSlots) {
                 break;
+            }
+            if ($limited[$code] < $fleet[$code]) {
+                $limited[$code]++;
+                $allocated++;
             }
         }
 

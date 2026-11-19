@@ -2,7 +2,7 @@
 
 /*
  * Author / Contributor : K3nningar
- * Code Version : 0.1.0-alpha.4
+ * Code Version : 0.1.0-alpha.5
  * Revision : 34ddc84
  * Description : Handles HTTP requests for DashboardController operations.
  */
@@ -91,7 +91,7 @@ class DashboardController extends Controller
             })
             ->with(['originPlanet:id,name,galaxy,system,position', 'targetPlanet:id,name,galaxy,system,position'])
             ->orderByRaw('case when status = ? then coalesce(returns_at, arrives_at) else arrives_at end', ['returning'])
-            ->limit(25)->get()->map(fn (Fleet $fleet) => [
+            ->limit(25)->get()->map(fn ($fleet) => [
                 'id' => $fleet->id,
                 'mission' => $fleet->mission,
                 'status' => $fleet->status,

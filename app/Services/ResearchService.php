@@ -2,7 +2,7 @@
 
 /*
  * Author / Contributor : K3nningar
- * Code Version : 0.1.0-alpha.4
+ * Code Version : 0.1.0-alpha.5
  * Revision : 34ddc84
  * Description : Implements the ResearchService application service.
  */
@@ -234,6 +234,6 @@ class ResearchService
      */
     private function duration(array $cost, Planet $planet): int
     {
-        return max(1, (int) floor(($cost['metal'] + $cost['crystal']) / (((int) $planet->laboratory_level + 1) * 2) * 3600));
+        return max(1, (int) floor((($cost['metal'] + $cost['crystal']) / 1000) / (((int) $planet->laboratory_level + 1) * 2) * 3600));
     }
 }

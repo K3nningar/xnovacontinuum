@@ -2,7 +2,7 @@
 
 /*
  * Author / Contributor : K3nningar
- * Code Version : 0.1.0-alpha.4
+ * Code Version : 0.1.0-alpha.5
  * Revision : 34ddc84
  * Description : Tests the application's ExplorationMissionsTest behavior.
  */
@@ -347,6 +347,32 @@ class ExplorationMissionsTest extends TestCase
         $this->assertSame('returning', $fleet->status);
         $this->assertLessThan(4, (int) $target->fresh()->unit_202 + (int) $target->fresh()->unit_401);
         $this->assertDatabaseHas('orbital_debris', ['universe_id' => $attacker->universe_id, 'galaxy' => 1, 'system' => 1, 'position' => 9]);
+    }
+
+    public function test_attack_preserves_each_defender_unit_type_when_garrison_exceeds_combat_limit(): void
+    {
+        [$attacker, $home] = $this->player();
+        [, $target] = $this->opponent($attacker);
+        $home->forceFill(['unit_204' => 1])->save();
+        $target->forceFill(['unit_202' => 600, 'unit_401' => 600, 'unit_409' => 1])->save();
+
+        $this->actingAs($attacker)->post(route('planet.missions.store', $home), [
+            'mission' => 'attack', 'galaxy' => 1, 'system' => 1, 'position' => 9, 'ships' => [204 => 1],
+        ])->assertRedirect();
+        $fleet = Fleet::firstOrFail();
+        $this->travelTo($fleet->arrives_at->addSecond());
+        app(ExplorationMissions::class)->processDue();
+        $fleet->refresh();
+
+        $this->assertNotNull($fleet->combat_report);
+        $this->assertSame(500, $fleet->combat_report['defender']['totalInitial']);
+        $this->assertSame([202, 401, 409], array_column($fleet->combat_report['defender']['units'], 'code'));
+        $this->assertSame([true, true, true], array_map(
+            fn (array $unit): bool => $unit['initial'] > 0,
+            $fleet->combat_report['defender']['units'],
+        ));
+        $this->assertSame(1201 - $fleet->combat_report['defender']['totalLosses'], (int) $target->fresh()->unit_202
+            + (int) $target->fresh()->unit_401 + (int) $target->fresh()->unit_409);
     }
 
     public function test_stationing_requires_same_alliance_and_active_recipient_depot(): void

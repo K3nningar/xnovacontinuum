@@ -17,6 +17,7 @@ export default {
       "moonLogistics": "Ajout de la gestion des lunes : bâtiments, ressources, flottes stationnées, phalange et porte de saut.",
       "fleetMissions": "Extension des missions de flotte avec transport, attaque, espionnage, colonisation, recyclage et actions sur les lunes.",
       "commandCenterMoons": "Affichage des lunes de chaque planète dans le centre de commandement, avec accès direct à leur gestion.",
+      "versionBumpAlpha5": "Passage à la préversion 0.1.0-alpha.5 pour cette nouvelle livraison de fonctionnalités rétrocompatibles.",
       "newGameContent": "Ajout d’un laboratoire de recherche, de l’antimatière, d’artéfacts, de nouvelles technologies, ainsi que de nouveaux bâtiments, vaisseaux, défenses et officiers.",
       "groundCombat": "Ajout du combat au sol, avec des rounds dédiés et du personnel militaire.",
       "newPlayerProtection": "Refonte de la protection des débutants en un système fondé sur les points, avec des voies Pacifiste et Belliciste.",

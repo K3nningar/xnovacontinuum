@@ -17,6 +17,7 @@ export default {
       "moonLogistics": "Added moon management with buildings, resources, stationed fleets, phalanx scans, and jump gates.",
       "fleetMissions": "Expanded fleet missions with transport, attack, espionage, colonization, recycling, and moon operations.",
       "commandCenterMoons": "Listed each planet's moons in the command center with direct links to moon management.",
+      "versionBumpAlpha5": "Advanced the pre-release version to 0.1.0-alpha.5 for the next backward-compatible feature release.",
       "newGameContent": "Added a research laboratory, Antimatter, Artefacts, new technologies, and new buildings, ships, defenses and officers.",
       "groundCombat": "Added ground combat with dedicated combat rounds and military personnel.",
       "newPlayerProtection": "Reworked new-player protection into a points-based system with Pacifist and Warmonger branches.",

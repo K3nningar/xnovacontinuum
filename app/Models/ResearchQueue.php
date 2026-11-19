@@ -2,7 +2,7 @@
 
 /*
  * Author / Contributor : K3nningar
- * Code Version : 0.1.0-alpha.4
+ * Code Version : 0.1.0-alpha.5
  * Revision : 34ddc84
  * Description : Defines the ResearchQueue Eloquent model.
  */
@@ -13,7 +13,25 @@ use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Support\Carbon;
 
+/**
+ * @property int $id
+ * @property int $universe_id
+ * @property int $user_id
+ * @property int $planet_id
+ * @property string $technology_key
+ * @property int $technology_code
+ * @property int $target_level
+ * @property int $cost_metal
+ * @property int $cost_crystal
+ * @property int $cost_deuterium
+ * @property Carbon $completes_at
+ * @property-read int $remaining_seconds
+ * @property-read User $user
+ * @property-read Planet $planet
+ * @property-read Universe $universe
+ */
 #[Fillable(['universe_id', 'user_id', 'planet_id', 'technology_key', 'technology_code', 'target_level', 'cost_metal', 'cost_crystal', 'cost_deuterium', 'completes_at'])]
 class ResearchQueue extends Model
 {

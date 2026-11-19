@@ -2,7 +2,7 @@
 
 /*
  * Author / Contributor : K3nningar
- * Code Version : 0.1.0-alpha.4
+ * Code Version : 0.1.0-alpha.5
  * Revision : 34ddc84
  * Description : Defines the PlanetUnitQueue Eloquent model.
  */
@@ -13,8 +13,28 @@ use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Support\Carbon;
 
+/**
+ * @property int $id
+ * @property int|null $universe_id
+ * @property int|null $planet_id
+ * @property int $unit_code
+ * @property string $unit_type
+ * @property int $quantity
+ * @property int $quantity_completed
+ * @property int $position
+ * @property int $cost_metal
+ * @property int $cost_crystal
+ * @property int $cost_deuterium
+ * @property Carbon|null $starts_at
+ * @property Carbon|null $completes_at
+ * @property-read int $remaining_seconds
+ * @property-read Planet|null $planet
+ * @property-read Universe|null $universe
+ */
 #[Fillable(['universe_id', 'planet_id', 'unit_code', 'unit_type', 'quantity', 'quantity_completed', 'position', 'cost_metal', 'cost_crystal', 'cost_deuterium', 'starts_at', 'completes_at'])]
+
 class PlanetUnitQueue extends Model
 {
     /**

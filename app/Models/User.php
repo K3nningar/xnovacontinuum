@@ -2,7 +2,7 @@
 
 /*
  * Author / Contributor : K3nningar
- * Code Version : 0.1.0-alpha.4
+ * Code Version : 0.1.0-alpha.5
  * Revision : 34ddc84
  * Description : Defines the User Eloquent model.
  */
@@ -13,14 +13,67 @@ namespace App\Models;
 use Database\Factories\UserFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Attributes\Hidden;
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
+use Illuminate\Support\Carbon;
 
+/**
+ * @property int $id
+ * @property string $name
+ * @property string $email
+ * @property Carbon|null $email_verified_at
+ * @property int|null $universe_id
+ * @property int|null $alliance_id
+ * @property int $energy_technology_level
+ * @property int $spy_technology_level
+ * @property int $computer_technology_level
+ * @property int $military_technology_level
+ * @property int $defence_technology_level
+ * @property int $shield_technology_level
+ * @property int $hyperspace_technology_level
+ * @property int $combustion_technology_level
+ * @property int $impulse_technology_level
+ * @property int $hyperspace_drive_level
+ * @property int $laser_technology_level
+ * @property int $ion_technology_level
+ * @property int $plasma_technology_level
+ * @property int $intergalactic_research_level
+ * @property int $expedition_technology_level
+ * @property int $graviton_technology_level
+ * @property int $officer_points
+ * @property int $officer_geologist_level
+ * @property int $officer_admiral_level
+ * @property int $officer_engineer_level
+ * @property int $officer_technocrat_level
+ * @property int $officer_constructor_level
+ * @property int $officer_scientist_level
+ * @property int $officer_stockman_level
+ * @property int $officer_defender_level
+ * @property int $officer_bunker_level
+ * @property int $officer_spy_level
+ * @property int $officer_commander_level
+ * @property int $officer_destroyer_level
+ * @property int $officer_general_level
+ * @property int $officer_raider_level
+ * @property int $officer_emperor_level
+ * @property int $planetary_destroyer_losses
+ * @property int $admin_level
+ * @property Carbon|null $suspended_until
+ * @property string|null $suspension_reason
+ * @property int $sensor_technology_level
+ * @property-read Universe|null $universe
+ * @property-read Alliance|null $alliance
+ * @property-read Collection<int, Planet> $planets
+ * @property-read Collection<int, Fleet> $fleets
+ * @property-read Collection<int, ResearchQueue> $researchQueues
+ */
 #[Fillable(['name', 'email', 'password', 'officer_points', 'officer_geologist_level', 'officer_admiral_level', 'officer_engineer_level', 'officer_technocrat_level', 'officer_constructor_level', 'officer_scientist_level', 'officer_stockman_level', 'officer_defender_level', 'officer_bunker_level', 'officer_spy_level', 'officer_commander_level', 'officer_destroyer_level', 'officer_general_level', 'officer_raider_level', 'officer_emperor_level', 'planetary_destroyer_losses'])]
 #[Hidden(['password', 'remember_token'])]
+
 class User extends Authenticatable
 {
     /** @use HasFactory<UserFactory> */
@@ -51,6 +104,8 @@ class User extends Authenticatable
 
     /**
      * The player's selected universe, which scopes owned planets and fleets.
+     *
+     * @return BelongsTo<Universe, $this>
      */
     public function universe(): BelongsTo
     {
@@ -59,6 +114,8 @@ class User extends Authenticatable
 
     /**
      * The player's alliance, when they belong to one.
+     *
+     * @return BelongsTo<Alliance, $this>
      */
     public function alliance(): BelongsTo
     {
@@ -67,6 +124,8 @@ class User extends Authenticatable
 
     /**
      * All planets owned by this player across their universe records.
+     *
+     * @return HasMany<Planet, $this>
      */
     public function planets(): HasMany
     {
@@ -75,6 +134,8 @@ class User extends Authenticatable
 
     /**
      * Fleets dispatched by this player, including missions in transit and completed history.
+     *
+     * @return HasMany<Fleet, $this>
      */
     public function fleets(): HasMany
     {
@@ -83,6 +144,8 @@ class User extends Authenticatable
 
     /**
      * The player's research queue; services enforce the single active entry across the empire.
+     *
+     * @return HasMany<ResearchQueue, $this>
      */
     public function researchQueues(): HasMany
     {
