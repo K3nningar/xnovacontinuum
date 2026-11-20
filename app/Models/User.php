@@ -20,9 +20,11 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Str;
 
 /**
  * @property int $id
+ * @property string $commander_id
  * @property string $name
  * @property string $email
  * @property Carbon|null $email_verified_at
@@ -79,6 +81,13 @@ class User extends Authenticatable
     /** @use HasFactory<UserFactory> */
     use HasFactory, Notifiable;
 
+    protected static function booted(): void
+    {
+        static::creating(function (User $user): void {
+            $user->commander_id ??= (string) Str::uuid();
+        });
+    }
+
     /**
      * Hashes assigned passwords and casts verification, administrator, and suspension state for safe comparisons.
      *
@@ -91,15 +100,33 @@ class User extends Authenticatable
             'password' => 'hashed',
             'admin_level' => 'integer',
             'suspended_until' => 'datetime',
+            'two_factor_secret' => 'encrypted',
+            'two_factor_enabled_at' => 'datetime',
         ];
     }
 
     /**
-     * Determines whether the suspension deadline is still in the future; null or expired deadlines are inactive.
+     * Determines whether any profile belonging to this account has an active suspension.
      */
     public function isSuspended(): bool
     {
-        return $this->suspended_until !== null && $this->suspended_until->isFuture();
+        return User::query()->where('commander_id', $this->commander_id)
+            ->where('suspended_until', '>', now())->exists();
+    }
+
+    /**
+     * Profiles owned by the same account, one for each universe.
+     *
+     * @return HasMany<User, $this>
+     */
+    public function commanderProfiles(): HasMany
+    {
+        return $this->hasMany(self::class, 'commander_id', 'commander_id')->whereNotNull('universe_id');
+    }
+
+    public function account(): BelongsTo
+    {
+        return $this->belongsTo(self::class, 'commander_id', 'commander_id')->whereNull('universe_id');
     }
 
     /**

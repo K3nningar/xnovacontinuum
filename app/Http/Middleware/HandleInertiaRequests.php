@@ -10,6 +10,7 @@
 namespace App\Http\Middleware;
 
 use App\Services\Changelog;
+use App\Services\PublicAvatarUrl;
 use Closure;
 use Illuminate\Http\Request;
 use Inertia\Middleware;
@@ -68,10 +69,19 @@ class HandleInertiaRequests extends Middleware
      */
     public function share(Request $request): array
     {
+        $authenticatedUser = $request->user();
+        $commanderAccount = $authenticatedUser?->universe_id !== null
+            ? $authenticatedUser->account
+            : $authenticatedUser;
+
         return [
             ...parent::share($request),
             'auth' => [
-                'user' => $request->user()?->only('id', 'name', 'email', 'universe_id', 'alliance_id', 'admin_level'),
+                'twoFactorChallenge' => (bool) $request->session()->get('auth.two_factor_challenge', false),
+                'user' => $request->user() ? [
+                    ...$request->user()->only('id', 'name', 'email', 'universe_id', 'alliance_id', 'admin_level', 'avatar_path'),
+                    'avatar_url' => $commanderAccount?->avatar_path ? app(PublicAvatarUrl::class)->for($request, $commanderAccount->avatar_path) : null,
+                ] : null,
             ],
             'locale' => app()->getLocale(),
             'gameVersion' => fn () => $request->user() ? $this->changelog->currentVersion() : null,

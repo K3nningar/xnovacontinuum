@@ -11,10 +11,13 @@ namespace App\Http\Controllers;
 
 use App\Models\Planet;
 use App\Models\Universe;
+use App\Models\User;
 use App\Services\GalaxyMap;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
 
@@ -33,20 +36,23 @@ class UniverseController extends Controller
             'name' => ['required', 'string', 'min:2', 'max:80', 'regex:/^[\pL\pN][\pL\pN .\-\']*$/u'],
         ]);
 
-        $user = $request->user();
+        $account = User::query()->where('commander_id', $request->user()->commander_id)
+            ->whereNull('universe_id')->first();
+        if (! $account) {
+            throw ValidationException::withMessages(['universe' => 'Compte commandant introuvable.']);
+        }
+        $universeId = (int) ($request->session()->get('onboardingUniverseId') ?? $attributes['universe_id']);
+        if ($universeId !== (int) $attributes['universe_id']) {
+            throw ValidationException::withMessages(['universe_id' => 'L’univers sélectionné a changé. Recommencez la sélection.']);
+        }
+        $profile = null;
 
-        DB::transaction(function () use ($user, $attributes, $map): void {
-            $user = $user->newQuery()->whereKey($user->getKey())->lockForUpdate()->firstOrFail();
-
-            if ($user->universe_id !== null) {
-                throw ValidationException::withMessages([
-                    'universe' => 'Vous avez déjà rejoint un univers.',
-                ]);
-            }
+        DB::transaction(function () use ($account, $attributes, $map, $universeId, &$profile): void {
+            $account = $account->newQuery()->whereKey($account->getKey())->lockForUpdate()->firstOrFail();
 
             $universe = Universe::query()
                 ->where('status', 'active')
-                ->whereKey($attributes['universe_id'])
+                ->whereKey($universeId)
                 ->lockForUpdate()
                 ->first();
 
@@ -95,8 +101,25 @@ class UniverseController extends Controller
                 ]);
             }
 
-            $user->universe()->associate($universe);
-            $user->save();
+            if (DB::table('commander_profiles')->where('commander_id', $account->commander_id)->where('universe_id', $universe->id)->exists()) {
+                throw ValidationException::withMessages(['universe' => 'Vous possédez déjà un empire dans cet univers.']);
+            }
+
+            $profile = new User;
+            $profile->name = $account->name;
+            $profile->email = null;
+            $profile->password = Str::random(64);
+            $profile->forceFill([
+                'commander_id' => $account->commander_id,
+                'universe_id' => $universe->id,
+            ])->save();
+            DB::table('commander_profiles')->insert([
+                'commander_id' => $account->commander_id,
+                'profile_user_id' => $profile->id,
+                'universe_id' => $universe->id,
+                'created_at' => now(),
+                'updated_at' => now(),
+            ]);
 
             $planet = new Planet(['name' => $attributes['name']]);
             $planet->galaxy = $galaxy;
@@ -111,10 +134,14 @@ class UniverseController extends Controller
             $planet->deuterium = 500;
             $planet->fields = 163;
             $planet->max_temperature = 40;
-            $planet->user()->associate($user);
+            $planet->user()->associate($profile);
             $planet->universe()->associate($universe);
             $planet->save();
         });
+
+        Auth::login($profile, $request->session()->pull('auth.remember', false));
+        $request->session()->regenerate();
+        $request->session()->forget(['onboardingUniverseId', 'onboardingCommanderId', 'onboardingCommanderUserId']);
 
         return to_route('dashboard')->with('success', 'Votre planète a été fondée. Bienvenue dans la galaxie.');
     }

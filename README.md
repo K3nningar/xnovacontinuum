@@ -155,9 +155,9 @@ The web panel cannot create or remove a level-4 founder. A founder can grant rol
 | 1 | Operator | Administration overview, player lookup, temporary suspensions, announcements, changelog publication, and multi-account declaration review. |
 | 2 | Moderator | Operator access, lifting suspensions, resource adjustments, and manual changelog entries. |
 | 3 | Administrator | Moderator access, item adjustments, and announcement revocation. |
-| 4 | Founder | Administrator access, role management, and audit-log access. Level 4 is bootstrapped from the console. |
+| 4 | Founder | Administrator access, role management, universe creation/reopening, and audit-log access. Level 4 is bootstrapped from the console. |
 
-Sensitive administration actions are recorded in the audit log. Resource grants respect storage capacity; item grants check relevant queues, requirements, and limits. The panel does not provide arbitrary SQL execution, account deletion, or universe resets.
+Sensitive administration actions are recorded in the audit log. Founders can create active universes with bounded galaxy, system, and speed settings, or reopen a closed universe for new players; existing player assignments are unchanged. Resource grants respect storage capacity; item grants check relevant queues, requirements, and limits. The panel does not provide arbitrary SQL execution, account deletion, or universe resets.
 
 ### Announcements and multi-account declarations
 

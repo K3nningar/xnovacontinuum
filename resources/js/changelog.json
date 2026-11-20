@@ -2,6 +2,14 @@
     {
         "version": "0.1.0-alpha.5",
         "entries": [
+            { "date": "2026-11-20", "type": "NEW", "key": "multiUniverseAccounts" },
+            { "date": "2026-11-20", "type": "NEW", "key": "playerProfileSecurity" },
+            { "date": "2026-11-20", "type": "NEW", "key": "commanderAvatar" },
+            { "date": "2026-11-20", "type": "NEW", "key": "adminUniverseManagement" },
+            { "date": "2026-11-20", "type": "CHANGE", "key": "welcomeGamePreview" },
+            { "date": "2026-11-20", "type": "HOTFIX", "key": "totpLoginChallenge" },
+            { "date": "2026-11-20", "type": "HOTFIX", "key": "avatarPublicUrls" },
+            { "date": "2026-11-20", "type": "HOTFIX", "key": "universeSelectionRateLimit" },
             { "date": "2026-11-19", "type": "NEW", "key": "moonLogistics" },
             { "date": "2026-11-19", "type": "CHANGE", "key": "fleetMissions" },
             { "date": "2026-11-19", "type": "NEW", "key": "commandCenterMoons" },

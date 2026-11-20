@@ -32,10 +32,11 @@ const unitCatalogProductionPaths = [
 
 export const pageTranslationPaths = {
     welcome: ['welcome'],
-    auth: ['auth'],
+    auth: ['auth', 'accountUniverses', 'dashboard.noUniverses', 'dashboard.returnSoon', 'dashboard.galaxiesSystems'],
+    profile: ['profile'],
     changelog: ['changelog', 'admin.previous', 'admin.next'],
     dashboard: ['dashboard', 'overviewClock', 'overviewIncoming', 'overviewView', 'overviewDefences', 'overview', 'galaxyMoon'],
-    admin: ['admin', 'adminFlights', 'adminStats', 'adminLevels', 'adminAudit', 'adminModeration', 'changelogManual', 'changelogPublication'],
+    admin: ['admin', 'adminFlights', 'adminStats', 'adminLevels', 'adminAudit', 'adminModeration', 'adminUniverses', 'changelogManual', 'changelogPublication'],
     announcements: ['announcements', 'admin.previous', 'admin.next'],
     declarations: ['multiAccounts', 'admin.previous', 'admin.next'],
     galaxy: ['galaxyLegacySensors', 'galaxyMap', 'galaxyCombatLimit', 'galaxyEncounter', 'galaxyEarlyReturn', 'galaxyMoon', 'galaxyShipsFound', 'galaxyMissions', 'galaxyConcentrationNote', 'galaxy', 'unitNames', 'fleet.ship', 'common.select'],

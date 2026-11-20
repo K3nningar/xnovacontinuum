@@ -60,6 +60,25 @@ export default {
     "unsuspend": "Lever la suspension",
     "storageLimit": "Les ajouts ne peuvent pas dépasser la capacité de stockage."
   },
+  "adminUniverses": {
+    "title": "Ouvrir un nouvel univers",
+    "hint": "Créez un univers actif. Il sera proposé aux nouveaux joueurs lors de la création de leur empire.",
+    "name": "Nom de l’univers",
+    "slug": "Identifiant unique",
+    "galaxies": "Galaxies (1 à 9)",
+    "systems": "Systèmes par galaxie (1 à 499)",
+    "economySpeed": "Vitesse économique (0,1 à 100)",
+    "fleetSpeed": "Vitesse des flottes (0,1 à 100)",
+    "create": "Créer et ouvrir l’univers",
+    "created": "Univers créé et ouvert.",
+    "list": "Univers existants",
+    "empty": "Aucun univers.",
+    "open": "Ouvrir",
+    "galaxiesShort": "galaxies",
+    "systemsShort": "systèmes",
+    "speeds": "Économie ×{economy} · flottes ×{fleet}",
+    "status": { "active": "Ouvert", "closed": "Fermé" }
+  },
   "admin": {
     "previous": "Précédent",
     "next": "Suivant",
@@ -70,6 +89,7 @@ export default {
     "elements": "Éléments",
     "resources": "Ressources",
     "roles": "Rôles",
+    "universes": "Univers",
     "players": "Joueurs",
     "search": "Rechercher un joueur",
     "searchButton": "Rechercher",

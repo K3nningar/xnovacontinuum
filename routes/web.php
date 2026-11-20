@@ -7,6 +7,7 @@
  * Description : Registers the application's web routes.
  */
 
+use App\Http\Controllers\AccountUniverseController;
 use App\Http\Controllers\AdminController;
 use App\Http\Controllers\AnnouncementController;
 use App\Http\Controllers\Auth\AuthenticatedSessionController;
@@ -22,6 +23,7 @@ use App\Http\Controllers\MultiAccountDeclarationController;
 use App\Http\Controllers\OfficerController;
 use App\Http\Controllers\PlanetBuildingController;
 use App\Http\Controllers\ProductionController;
+use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\ResearchController;
 use App\Http\Controllers\UnitProductionController;
 use App\Http\Controllers\UniverseController;
@@ -54,6 +56,10 @@ Route::middleware(['auth', EnsureAccountIsActive::class, ProcessExplorationMissi
         Route::post('/elements', [AdminController::class, 'storeElement'])->middleware(['admin:3', 'throttle:game-action'])->name('elements.store');
         Route::get('/resources', [AdminController::class, 'resources'])->middleware('admin:2')->name('resources');
         Route::post('/resources', [AdminController::class, 'storeResources'])->middleware(['admin:2', 'throttle:game-action'])->name('resources.store');
+        Route::get('/universes', [AdminController::class, 'universes'])->middleware('admin:4')->name('universes');
+        Route::post('/universes', [AdminController::class, 'storeUniverse'])->middleware(['admin:4', 'throttle:game-action'])->name('universes.store');
+        Route::post('/universes/{universe}/open', [AdminController::class, 'openUniverse'])->whereNumber('universe')
+            ->middleware(['admin:4', 'throttle:game-action'])->name('universes.open');
         Route::get('/roles', [AdminController::class, 'roles'])->middleware('admin:4')->name('roles');
         Route::post('/roles', [AdminController::class, 'updateRole'])->middleware(['admin:4', 'throttle:game-action'])->name('roles.update');
         Route::post('/suspensions', [AdminController::class, 'suspend'])->middleware('throttle:game-action')->name('suspend');
@@ -102,6 +108,15 @@ Route::middleware(['auth', EnsureAccountIsActive::class, ProcessExplorationMissi
     Route::get('/officers', [OfficerController::class, 'index'])->name('officers.index');
     Route::post('/officers/recruit', [OfficerController::class, 'store'])
         ->middleware('throttle:game-action')->name('officers.store');
+    Route::get('/profile', [ProfileController::class, 'show'])->name('profile.show');
+    Route::patch('/profile/password', [ProfileController::class, 'updatePassword'])->middleware('throttle:game-action')->name('profile.password');
+    Route::post('/profile/avatar', [ProfileController::class, 'updateAvatar'])->middleware('throttle:game-action')->name('profile.avatar');
+    Route::delete('/profile/avatar', [ProfileController::class, 'deleteAvatar'])->middleware('throttle:game-action')->name('profile.avatar.destroy');
+    Route::post('/profile/two-factor/setup', [ProfileController::class, 'beginTwoFactorSetup'])->middleware('throttle:game-action')->name('profile.two-factor.setup');
+    Route::post('/profile/two-factor', [ProfileController::class, 'enableTwoFactor'])->middleware('throttle:game-action')->name('profile.two-factor.enable');
+    Route::delete('/profile/two-factor', [ProfileController::class, 'disableTwoFactor'])->middleware('throttle:game-action')->name('profile.two-factor');
+    Route::get('/account/universes', [AccountUniverseController::class, 'index'])->name('account.universes');
+    Route::post('/account/universes', [AccountUniverseController::class, 'select'])->middleware('throttle:account-universe-select')->name('account.universes.select');
     Route::post('/universe/join', [UniverseController::class, 'join'])->middleware('throttle:universe-join')->name('universe.join');
     Route::post('/planets/{planet}/buildings', [PlanetBuildingController::class, 'upgrade'])->middleware('throttle:game-action')->name('planet.buildings.upgrade');
     Route::post('/logout', [AuthenticatedSessionController::class, 'destroy'])->name('logout');

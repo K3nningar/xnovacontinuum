@@ -36,7 +36,7 @@ class AdminPanelTest extends TestCase
             'password' => 'a-strong-password',
             'password_confirmation' => 'a-strong-password',
             'admin_level' => 4,
-        ])->assertRedirect(route('dashboard'));
+        ])->assertRedirect(route('account.universes'));
 
         $this->assertSame(0, User::query()->where('email', 'commander@example.test')->firstOrFail()->admin_level);
     }
@@ -58,6 +58,7 @@ class AdminPanelTest extends TestCase
             'operator elements' => [1, 'admin.elements'],
             'moderator elements' => [2, 'admin.elements'],
             'administrator roles' => [3, 'admin.roles'],
+            'administrator universes' => [3, 'admin.universes'],
             'invalid level' => [5, 'admin.index'],
         ];
     }
@@ -83,6 +84,7 @@ class AdminPanelTest extends TestCase
             'founder resources' => [4, 'admin.resources', 'resources'],
             'administrator elements' => [3, 'admin.elements', 'elements'],
             'founder roles' => [4, 'admin.roles', 'roles'],
+            'founder universes' => [4, 'admin.universes', 'universes'],
         ];
     }
 
@@ -91,6 +93,7 @@ class AdminPanelTest extends TestCase
         $operator = User::factory()->create();
         $operator->forceFill(['admin_level' => 1])->save();
         $planet = $this->createPlanet();
+        $playerAccount = User::query()->where('commander_id', $planet->user->commander_id)->whereNull('universe_id')->firstOrFail();
         DB::table('fleets')->insert([
             'universe_id' => $planet->universe_id, 'user_id' => $planet->user_id,
             'origin_planet_id' => $planet->id, 'mission' => 'transport', 'ships' => '{}',
@@ -98,7 +101,7 @@ class AdminPanelTest extends TestCase
             'created_at' => now(), 'updated_at' => now(),
         ]);
 
-        $this->actingAs($operator)->get(route('admin.index', ['player' => $planet->user_id, 'planet' => $planet->id]))
+        $this->actingAs($operator)->get(route('admin.index', ['player' => $playerAccount->id, 'planet' => $planet->id]))
             ->assertOk()->assertInertia(fn (Assert $page) => $page
             ->where('overview.players', 2)
             ->where('overview.planets', 1)
@@ -106,7 +109,7 @@ class AdminPanelTest extends TestCase
             ->where('overview.fleets', 1)
             ->where('activeFleets.0.player', $planet->user->name)
             ->where('activeFleets.0.mission', 'transport')
-            ->where('selectedPlayer.id', $planet->user_id)
+            ->where('selectedPlayer.id', $playerAccount->id)
             ->where('selectedPlanetId', $planet->id));
     }
 
@@ -127,7 +130,108 @@ class AdminPanelTest extends TestCase
             'operator resources' => [1, 'admin.resources.store'],
             'moderator elements' => [2, 'admin.elements.store'],
             'administrator roles' => [3, 'admin.roles.update'],
+            'administrator universe creation' => [3, 'admin.universes.store'],
         ];
+    }
+
+    public function test_founder_can_create_an_active_universe_with_custom_settings_and_it_is_audited(): void
+    {
+        $founder = User::factory()->create();
+        $founder->forceFill(['admin_level' => 4])->save();
+
+        $this->actingAs($founder)->post(route('admin.universes.store'), [
+            'name' => 'Pegasus',
+            'slug' => 'pegasus',
+            'galaxies' => 5,
+            'systems_per_galaxy' => 300,
+            'economy_speed' => 2.5,
+            'fleet_speed' => 3,
+        ])->assertRedirect(route('admin.universes'));
+
+        $universe = Universe::query()->where('slug', 'pegasus')->firstOrFail();
+        $this->assertSame('active', $universe->status);
+        $this->assertSame(5, $universe->galaxies);
+        $this->assertSame(300, $universe->systems_per_galaxy);
+        $this->assertSame(2.5, (float) $universe->economy_speed);
+        $this->assertSame(3.0, (float) $universe->fleet_speed);
+        $this->assertDatabaseHas('admin_audit_logs', [
+            'actor_id' => $founder->id,
+            'action' => 'universe_created',
+        ]);
+
+        $newPlayer = User::factory()->create();
+        $this->actingAs($newPlayer)->get(route('dashboard'))->assertInertia(fn (Assert $page) => $page
+            ->where('availableUniverses.0.id', $universe->id)
+            ->where('availableUniverses.0.name', 'Pegasus'));
+    }
+
+    public function test_founder_can_open_a_closed_universe_without_changing_its_existing_players(): void
+    {
+        $founder = User::factory()->create();
+        $founder->forceFill(['admin_level' => 4])->save();
+        $universe = Universe::query()->create(['name' => 'Pegasus', 'slug' => 'pegasus', 'status' => 'closed']);
+        $player = User::factory()->create(['universe_id' => $universe->id]);
+
+        $this->actingAs($founder)->post(route('admin.universes.open', $universe))
+            ->assertRedirect(route('admin.universes'));
+
+        $this->assertSame('active', $universe->fresh()->status);
+        $this->assertSame($universe->id, $player->fresh()->universe_id);
+        $this->assertDatabaseHas('admin_audit_logs', [
+            'actor_id' => $founder->id,
+            'action' => 'universe_opened',
+        ]);
+
+        $newPlayer = User::factory()->create();
+        $this->actingAs($newPlayer)->get(route('dashboard'))->assertInertia(fn (Assert $page) => $page
+            ->where('availableUniverses.0.id', $universe->id)
+            ->where('availableUniverses.0.name', 'Pegasus'));
+    }
+
+    public function test_administrator_cannot_open_a_closed_universe(): void
+    {
+        $administrator = User::factory()->create();
+        $administrator->forceFill(['admin_level' => 3])->save();
+        $universe = Universe::query()->create(['name' => 'Pegasus', 'slug' => 'pegasus', 'status' => 'closed']);
+
+        $this->actingAs($administrator)->post(route('admin.universes.open', $universe))->assertForbidden();
+
+        $this->assertSame('closed', $universe->fresh()->status);
+        $this->assertDatabaseCount('admin_audit_logs', 0);
+    }
+
+    public function test_founder_cannot_create_a_universe_with_a_duplicate_slug_or_out_of_range_settings(): void
+    {
+        $founder = User::factory()->create();
+        $founder->forceFill(['admin_level' => 4])->save();
+        Universe::query()->create(['name' => 'Pegasus', 'slug' => 'pegasus']);
+
+        $this->actingAs($founder)->from(route('admin.universes'))->post(route('admin.universes.store'), [
+            'name' => 'New Pegasus',
+            'slug' => 'pegasus',
+            'galaxies' => 10,
+            'systems_per_galaxy' => 500,
+            'economy_speed' => 0,
+            'fleet_speed' => 101,
+        ])->assertRedirect(route('admin.universes'))
+            ->assertSessionHasErrors(['slug', 'galaxies', 'systems_per_galaxy', 'economy_speed', 'fleet_speed']);
+
+        $this->assertDatabaseCount('universes', 1);
+        $this->assertDatabaseCount('admin_audit_logs', 0);
+    }
+
+    public function test_opening_an_already_active_universe_is_rejected_without_an_audit_entry(): void
+    {
+        $founder = User::factory()->create();
+        $founder->forceFill(['admin_level' => 4])->save();
+        $universe = Universe::query()->create(['name' => 'Pegasus', 'slug' => 'pegasus']);
+
+        $this->actingAs($founder)->from(route('admin.universes'))->post(route('admin.universes.open', $universe))
+            ->assertRedirect(route('admin.universes'))
+            ->assertSessionHasErrors('universe');
+
+        $this->assertSame('active', $universe->fresh()->status);
+        $this->assertDatabaseCount('admin_audit_logs', 0);
     }
 
     public function test_founder_can_assign_a_role_and_it_is_audited(): void
@@ -662,13 +766,23 @@ class AdminPanelTest extends TestCase
     private function createPlanet(): Planet
     {
         $universe = new Universe;
-        $universe->forceFill(['name' => 'Test', 'slug' => 'test'])->save();
-        $user = User::factory()->create();
-        $user->universe()->associate($universe);
-        $user->save();
+        $universe->forceFill(['name' => 'Test', 'slug' => fake()->unique()->slug()])->save();
+        $commander = User::factory()->create();
+        $profile = new User;
+        $profile->name = $commander->name;
+        $profile->email = 'profile-'.fake()->unique()->uuid().'@profiles.xnova.invalid';
+        $profile->password = 'random-profile-password';
+        $profile->forceFill(['commander_id' => $commander->commander_id, 'universe_id' => $universe->id])->save();
+        DB::table('commander_profiles')->insert([
+            'commander_id' => $commander->commander_id,
+            'profile_user_id' => $profile->id,
+            'universe_id' => $universe->id,
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
         $planet = new Planet;
         $planet->forceFill([
-            'universe_id' => $universe->id, 'user_id' => $user->id, 'name' => 'Prime',
+            'universe_id' => $universe->id, 'user_id' => $profile->id, 'name' => 'Prime',
             'galaxy' => 1, 'system' => 1, 'position' => 1, 'resources_updated_at' => now(),
         ])->save();
 

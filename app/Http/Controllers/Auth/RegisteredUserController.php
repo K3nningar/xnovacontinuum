@@ -15,6 +15,8 @@ use Illuminate\Auth\Events\Registered;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Str;
+use Illuminate\Validation\Rule;
 
 class RegisteredUserController extends Controller
 {
@@ -35,16 +37,18 @@ class RegisteredUserController extends Controller
     {
         $attributes = $request->validate([
             'name' => ['required', 'string', 'max:80'],
-            'email' => ['required', 'string', 'lowercase', 'email', 'max:255', 'unique:users,email'],
+            'email' => ['required', 'string', 'lowercase', 'email', 'max:255', Rule::unique('users', 'email')->whereNull('universe_id')],
             'password' => ['required', 'string', 'confirmed', 'min:12', 'max:255'],
         ]);
 
-        $user = User::create($attributes);
+        $accountId = (string) Str::uuid();
+        $user = User::create([...$attributes, 'commander_id' => $accountId]);
 
         event(new Registered($user));
         Auth::login($user);
         $request->session()->regenerate();
+        $request->session()->put('activeCommanderUserId', $user->id);
 
-        return redirect()->route('dashboard');
+        return redirect()->route('account.universes');
     }
 }

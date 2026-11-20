@@ -12,6 +12,7 @@ namespace App\Http\Controllers;
 use App\Models\Fleet;
 use App\Models\Planet;
 use App\Models\Universe;
+use App\Models\User;
 use App\Services\GalaxyMap;
 use App\Services\PlanetEconomy;
 use App\Services\ResearchService;
@@ -33,7 +34,13 @@ class DashboardController extends Controller
     {
         $user = $request->user();
         $research->complete($user);
-        $universe = $user->universe;
+        $onboardingUniverseId = (int) $request->session()->get('onboardingUniverseId', 0);
+        $activeAccount = User::query()->find($request->session()->get('activeCommanderUserId'));
+        $onboardingForAccount = $onboardingUniverseId > 0
+            && (int) $request->session()->get('onboardingCommanderUserId') === (int) $activeAccount?->id;
+        $universe = $onboardingForAccount && $onboardingUniverseId !== (int) $user->universe_id
+            ? null
+            : $user->universe;
         $planets = $universe
             ? $user->planets()->where('universe_id', $user->universe_id)->orderBy('galaxy')->orderBy('system')->orderBy('position')->get()
                 ->map(function ($planet) use ($economy, $production) {
@@ -114,6 +121,10 @@ class DashboardController extends Controller
                 ->orderBy('id')
                 ->get(['id', 'name', 'galaxies', 'systems_per_galaxy'])
                 ->toArray(),
+            'onboardingUniverseId' => $onboardingForAccount && $onboardingUniverseId > 0
+                && Universe::query()->where('status', 'active')->whereKey($onboardingUniverseId)->exists()
+                ? $onboardingUniverseId
+                : null,
             'planets' => $planets->map(fn ($planet) => [
                 ...$planet->only('id', 'name', 'galaxy', 'system', 'position', 'coordinates', 'fields', 'max_temperature'),
                 'moons' => $moonsByPlanet[$planet->id] ?? [],

@@ -9,6 +9,7 @@
 
 use App\Models\User;
 use App\Services\ExplorationMissions;
+use App\Services\ResearchService;
 use Illuminate\Foundation\Inspiring;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\DB;
@@ -27,6 +28,12 @@ Artisan::command('fleets:process', function (ExplorationMissions $missions): voi
 })->purpose('Traiter les missions de flotte arrivées à échéance');
 
 Schedule::command('fleets:process')->everyMinute()->withoutOverlapping();
+
+Artisan::command('research:process', function (ResearchService $research): void {
+    $research->completeDue();
+})->purpose('Terminer les recherches échues dans tous les univers');
+
+Schedule::command('research:process')->everyMinute()->withoutOverlapping();
 
 /*
  * Bootstraps the one founder role only when none exists. The broad ordered-row lock serializes competing
@@ -55,8 +62,8 @@ Artisan::command('admin:founder {userId}', function (string $userId): int {
         }
 
         $previousLevel = $user->admin_level;
-        $user->admin_level = 4;
-        $user->save();
+        User::query()->where('commander_id', $user->commander_id)->update(['admin_level' => 4]);
+        $user->refresh();
         DB::table('admin_audit_logs')->insert([
             'actor_id' => $user->id,
             'actor_level' => 4,

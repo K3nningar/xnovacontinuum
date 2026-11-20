@@ -17,6 +17,9 @@ export default {
     "password": "Passwort",
     "remember": "Angemeldet bleiben",
     "secureLogin": "Sicher anmelden",
+    "twoFactorPrompt": "Dein Passwort wurde bestätigt. Gib den aktuellen Code aus deiner Authenticator-App ein.",
+    "verifyTwoFactor": "Code bestätigen",
+    "restartLogin": "Anmeldung neu starten",
     "loggingIn": "Anmeldung…",
     "newGalaxy": "Neu in der Galaxis?",
     "createAccount": "Konto erstellen",
@@ -33,5 +36,24 @@ export default {
     "alreadyCommander": "Schon Kommandant?",
     "loginLink": "Anmelden",
     "authFooter": "XNova Continuum · EIN NEUES UNIVERSUM ZUM ERKUNDEN"
+  },
+  "accountUniverses": {
+    "title": "Wähle dein Universum",
+    "eyebrow": "DEIN IMPERIUM",
+    "hint": "Setze ein bestehendes Imperium fort oder beginne in einem neuen Universum.",
+    "existing": "BESTEHENDES IMPERIUM",
+    "new": "NEUES IMPERIUM",
+    "empire": "Imperium: {name}",
+    "resume": "Dieses Imperium fortsetzen",
+    "start": "Hier ein Imperium gründen",
+    "loading": "Wird geladen…",
+    "logout": "Abmelden"
+  },
+  "profile": {
+    "title": "Kommandantenprofil", "commanderProfile": "KOMMANDANTENPROFIL", "activeCommander": "Aktiver Kommandant", "myUniverses": "Meine Universen",
+    "account": "KONTO", "security": "SICHERHEIT", "progress": "FORTSCHRITT", "avatarTitle": "Dein Avatar", "avatarDescription": "Wähle ein Bild, um deine HUD-Identität anzupassen.", "avatarAlt": "Avatar von {name}", "chooseAvatar": "Bild auswählen", "avatarFormats": "JPG, PNG oder WebP · max. 2 MB · quadratisch empfohlen", "saveAvatar": "Avatar speichern", "removeAvatar": "Avatar entfernen", "saving": "Wird gespeichert…",
+    "passwordTitle": "Passwort", "passwordDescription": "Verwende ein langes, einzigartiges und schwer zu erratendes Passwort.", "currentPassword": "Aktuelles Passwort", "newPassword": "Neues Passwort", "confirmPassword": "Neues Passwort bestätigen", "updatePassword": "Passwort ändern",
+    "twoFactorTitle": "Zwei-Faktor-Authentifizierung", "twoFactorDescription": "Fordere bei jeder Anmeldung einen temporären Code aus einer Authenticator-App an.", "twoFactorEnabled": "Zwei-Faktor-Authentifizierung aktiviert", "twoFactorDisabled": "Zwei-Faktor-Authentifizierung deaktiviert", "setupTwoFactor": "2FA einrichten", "setupKey": "Einrichtungsschlüssel", "openAuthenticator": "In einer kompatiblen App öffnen", "setupInstruction": "Gib diesen Schlüssel in deiner Authenticator-App ein und bestätige mit dem 6-stelligen Code.", "authenticatorCode": "Authenticator-Code", "enableTwoFactor": "2FA aktivieren", "disableTwoFactor": "2FA deaktivieren",
+    "achievementsTitle": "Erfolge", "achievementsComing": "Deine Erfolge erscheinen hier", "achievementsDescription": "Erfolge und Belohnungen sind für ein zukünftiges Update geplant.", "inDevelopment": "IN ENTWICKLUNG", "accountDetails": "Kontodetails", "email": "E-Mail-Adresse", "commanderId": "Kommandanten-ID", "emailStatus": "E-Mail-Status", "verified": "Bestätigt", "unverified": "Nicht bestätigt"
   }
 };

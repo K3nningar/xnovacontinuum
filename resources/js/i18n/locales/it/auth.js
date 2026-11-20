@@ -17,6 +17,9 @@ export default {
     "password": "Password",
     "remember": "Resta connesso",
     "secureLogin": "Accesso sicuro",
+    "twoFactorPrompt": "La password è verificata. Inserisci il codice temporaneo della tua app di autenticazione.",
+    "verifyTwoFactor": "Verifica codice",
+    "restartLogin": "Ricomincia l’accesso",
     "loggingIn": "Accesso…",
     "newGalaxy": "Nuovo nella galassia?",
     "createAccount": "Crea un account",
@@ -33,5 +36,24 @@ export default {
     "alreadyCommander": "Sei già comandante?",
     "loginLink": "Accedi",
     "authFooter": "XNova Continuum · UN NUOVO UNIVERSO DA ESPLORARE"
+  },
+  "accountUniverses": {
+    "title": "Scegli il tuo universo",
+    "eyebrow": "IL TUO IMPERO",
+    "hint": "Riprendi un impero esistente o inizia in un nuovo universo.",
+    "existing": "IMPERO ESISTENTE",
+    "new": "NUOVO IMPERO",
+    "empire": "Impero: {name}",
+    "resume": "Riprendi questo impero",
+    "start": "Fonda un impero qui",
+    "loading": "Caricamento…",
+    "logout": "Esci"
+  },
+  "profile": {
+    "title": "Profilo del comandante", "commanderProfile": "PROFILO DEL COMANDANTE", "activeCommander": "Comandante attivo", "myUniverses": "I miei universi",
+    "account": "ACCOUNT", "security": "SICUREZZA", "progress": "PROGRESSI", "avatarTitle": "Il tuo avatar", "avatarDescription": "Scegli un'immagine per personalizzare la tua identità nell'HUD.", "avatarAlt": "Avatar di {name}", "chooseAvatar": "Scegli un'immagine", "avatarFormats": "JPG, PNG o WebP · max 2 MB · consigliata immagine quadrata", "saveAvatar": "Salva avatar", "removeAvatar": "Rimuovi avatar", "saving": "Salvataggio…",
+    "passwordTitle": "Password", "passwordDescription": "Usa una password lunga, unica e difficile da indovinare.", "currentPassword": "Password attuale", "newPassword": "Nuova password", "confirmPassword": "Conferma nuova password", "updatePassword": "Aggiorna password",
+    "twoFactorTitle": "Autenticazione a due fattori", "twoFactorDescription": "Richiedi un codice temporaneo da un'app di autenticazione a ogni accesso.", "twoFactorEnabled": "Autenticazione a due fattori attiva", "twoFactorDisabled": "Autenticazione a due fattori disattiva", "setupTwoFactor": "Configura 2FA", "setupKey": "Chiave di configurazione", "openAuthenticator": "Apri in un'app compatibile", "setupInstruction": "Inserisci la chiave nell'app e conferma con il codice a 6 cifre.", "authenticatorCode": "Codice di autenticazione", "enableTwoFactor": "Attiva 2FA", "disableTwoFactor": "Disattiva 2FA",
+    "achievementsTitle": "Obiettivi", "achievementsComing": "I tuoi obiettivi appariranno qui", "achievementsDescription": "Obiettivi e ricompense saranno disponibili in un aggiornamento futuro.", "inDevelopment": "IN SVILUPPO", "accountDetails": "Dettagli account", "email": "Indirizzo email", "commanderId": "ID comandante", "emailStatus": "Stato email", "verified": "Verificata", "unverified": "Non verificata"
   }
 };

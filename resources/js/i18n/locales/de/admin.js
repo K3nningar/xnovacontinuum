@@ -60,6 +60,25 @@ export default {
     "unsuspend": "Sperre aufheben",
     "storageLimit": "Zugaben dürfen die Lagerkapazität nicht überschreiten."
   },
+  "adminUniverses": {
+    "title": "Neues Universum öffnen",
+    "hint": "Erstelle ein aktives Universum. Neue Spieler können es bei der Gründung ihres Imperiums auswählen.",
+    "name": "Name des Universums",
+    "slug": "Eindeutige Kennung",
+    "galaxies": "Galaxien (1 bis 9)",
+    "systems": "Systeme pro Galaxie (1 bis 499)",
+    "economySpeed": "Wirtschaftsgeschwindigkeit (0,1 bis 100)",
+    "fleetSpeed": "Flottengeschwindigkeit (0,1 bis 100)",
+    "create": "Universum erstellen und öffnen",
+    "created": "Universum erstellt und geöffnet.",
+    "list": "Bestehende Universen",
+    "empty": "Keine Universen.",
+    "open": "Öffnen",
+    "galaxiesShort": "Galaxien",
+    "systemsShort": "Systeme",
+    "speeds": "Wirtschaft ×{economy} · Flotten ×{fleet}",
+    "status": { "active": "Offen", "closed": "Geschlossen" }
+  },
   "admin": {
     "previous": "Zurück",
     "next": "Weiter",
@@ -70,6 +89,7 @@ export default {
     "elements": "Elemente",
     "resources": "Ressourcen",
     "roles": "Rollen",
+    "universes": "Universen",
     "players": "Spieler",
     "search": "Spieler suchen",
     "searchButton": "Suchen",

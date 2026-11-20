@@ -68,7 +68,7 @@ function formatResource(value) {
             </button>
             <Link class="hud-brand" :href="route('dashboard')"><span class="hud-brand-mark" aria-hidden="true">X</span><span>XNOVA</span></Link>
             <div class="server-status"><span class="status-dot"></span> {{ t('nav.online') }}</div>
-            <div class="user-menu"><LocaleSwitcher /><span class="commander-label">{{ t('nav.commander') }}</span><strong>{{ page.props.auth.user.name }}</strong><Link class="text-link" :href="route('logout')" method="post" as="button">{{ t('nav.logout') }}</Link></div>
+            <div class="user-menu"><LocaleSwitcher /><span class="commander-label">{{ t('nav.commander') }}</span><Link class="hud-profile-link" :href="route('profile.show')"><img v-if="page.props.auth.user.avatar_url" class="hud-profile-avatar" :src="page.props.auth.user.avatar_url" alt=""><span v-else class="hud-profile-avatar hud-profile-avatar-fallback" aria-hidden="true">{{ page.props.auth.user.name.slice(0, 1).toUpperCase() }}</span><strong>{{ page.props.auth.user.name }}</strong></Link><Link class="text-link" :href="route('logout')" method="post" as="button">{{ t('nav.logout') }}</Link></div>
         </header>
         <aside id="game-navigation" class="app-sidebar hud-sidebar">
             <div class="app-sidebar-content">

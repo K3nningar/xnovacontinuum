@@ -183,6 +183,15 @@ class ResearchService
     }
 
     /**
+     * Completes every due research queue across all universe profiles, independent of the active login profile.
+     */
+    public function completeDue(): void
+    {
+        User::query()->whereIn('id', ResearchQueue::query()->where('completes_at', '<=', now())->select('user_id'))
+            ->orderBy('id')->each(fn (User $user) => $this->complete($user));
+    }
+
+    /**
      * Applies a research queue entry whose completion time has passed and removes that entry.
      *
      * The due check is repeated after locking the user to avoid applying stale queue state; a missing or

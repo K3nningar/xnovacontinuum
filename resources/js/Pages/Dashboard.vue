@@ -21,6 +21,7 @@ const props = defineProps({
     universe: { type: Object, default: () => ({}) },
     hasUniverse: { type: Boolean, default: false },
     availableUniverses: { type: Array, default: () => [] },
+    onboardingUniverseId: { type: Number, default: null },
     planets: { type: Array, default: () => [] },
     alliance: { type: Object, default: null },
     fleetCount: { type: Number, default: 0 },
@@ -32,7 +33,7 @@ const props = defineProps({
     serverTimezone: { type: String, required: true },
 });
 
-const form = useForm({ universe_id: props.availableUniverses[0]?.id ?? '', name: `${props.user.name} Prime` });
+const form = useForm({ universe_id: props.onboardingUniverseId ?? props.availableUniverses[0]?.id ?? '', name: `${props.user.name} Prime` });
 const renameForm = useForm({ name: '' });
 const isRenaming = ref(false);
 const clock = ref(Date.now());
@@ -155,7 +156,8 @@ function researchName(key) {
             <section class="command-content">
                 <div class="overview-commander data-panel">
                     <div class="overview-commander-identity">
-                        <span class="overview-commander-icon" aria-hidden="true"><i class="bi bi-person-circle"></i></span>
+                        <img v-if="page.props.auth.user.avatar_url" class="overview-commander-icon overview-commander-avatar" :src="page.props.auth.user.avatar_url" :alt="t('profile.avatarAlt', { name: user.name })">
+                        <span v-else class="overview-commander-icon" aria-hidden="true"><i class="bi bi-person-circle"></i></span>
                         <div><p class="eyebrow">{{ t('dashboard.eyebrow') }}</p><h1>{{ user.name }}</h1><p class="command-subtitle">{{ hasUniverse ? universe.name : t('dashboard.subtitle') }}</p></div>
                     </div>
                     <div class="overview-commander-status">

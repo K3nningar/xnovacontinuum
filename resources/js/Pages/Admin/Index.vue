@@ -21,6 +21,7 @@ const props = defineProps({
     overview: { type: Object, default: null },
     activeFleets: { type: Array, default: () => [] },
     adminAnnouncements: { type: Object, default: null },
+    universes: { type: Array, default: () => [] },
     mode: { type: String, required: true },
 });
 
@@ -35,12 +36,14 @@ const sections = computed(() => [
     { mode: 'elements', route: 'admin.elements', allowed: adminLevel.value >= 3 },
     { mode: 'resources', route: 'admin.resources', allowed: adminLevel.value >= 2 },
     { mode: 'roles', route: 'admin.roles', allowed: adminLevel.value === 4 },
+    { mode: 'universes', route: 'admin.universes', allowed: adminLevel.value === 4 },
 ].filter((section) => section.allowed));
 const currentRoute = computed(() => ({
     overview: 'admin.index',
     elements: 'admin.elements',
     resources: 'admin.resources',
     roles: 'admin.roles',
+    universes: 'admin.universes',
 })[props.mode]);
 const query = computed(() => ({
     ...(props.selectedPlayer ? { player: props.selectedPlayer.id } : {}),
@@ -55,6 +58,8 @@ const suspensionForm = useForm({ player_id: null, days: 1, reason: '' });
 const unsuspendForm = useForm({ player_id: null });
 const announcementForm = useForm({ body: '' });
 const revokeAnnouncementForm = useForm({});
+const universeForm = useForm({ name: '', slug: '', galaxies: 9, systems_per_galaxy: 499, economy_speed: 1, fleet_speed: 1 });
+const openUniverseForm = useForm({});
 const canManagePlayer = computed(() => props.selectedPlayer
     && props.selectedPlayer.id !== page.props.auth?.user?.id
     && props.selectedPlayer.admin_level < adminLevel.value);
@@ -113,6 +118,10 @@ function revokeAnnouncement(id) {
     revokeAnnouncementForm.delete(route('admin.announcements.revoke', { announcement: id }), { preserveScroll: true });
 }
 
+function openUniverse(id) {
+    openUniverseForm.post(route('admin.universes.open', { universe: id }), { preserveScroll: true });
+}
+
 function paginationUrl(url) {
     const target = new URL(url, 'http://localhost');
     ['player', 'planet', 'search'].forEach((key) => target.searchParams.delete(key));
@@ -167,6 +176,37 @@ function categoryLabel(category) {
                     <Link class="button button-outline" :href="route('admin.changelog')">{{ t('changelog.title') }}</Link>
                 </nav>
 
+                <section v-if="mode === 'universes' && adminLevel === 4" class="rounded border border-slate-700 bg-slate-900/70 p-4 sm:p-6">
+                    <h2 class="mb-4 text-lg font-semibold text-white">{{ t('adminUniverses.title') }}</h2>
+                    <p class="mb-4 text-sm text-slate-400">{{ t('adminUniverses.hint') }}</p>
+                    <form class="grid max-w-3xl gap-4 sm:grid-cols-2" @submit.prevent="universeForm.post(route('admin.universes.store'), { preserveScroll: true })">
+                        <div v-if="Object.keys(universeForm.errors).length" class="form-alert sm:col-span-2" role="alert"><p v-for="(error, field) in universeForm.errors" :key="field">{{ error }}</p></div>
+                        <p v-if="universeForm.recentlySuccessful && !page.props.flash?.success" class="flash-message sm:col-span-2" role="status">{{ t('adminUniverses.created') }}</p>
+                        <label class="flex flex-col gap-1 text-sm" for="universe-name">{{ t('adminUniverses.name') }}<input id="universe-name" v-model="universeForm.name" class="rounded border border-slate-600 bg-slate-950 px-3 py-2 text-white" type="text" minlength="2" maxlength="80" required></label>
+                        <label class="flex flex-col gap-1 text-sm" for="universe-slug">{{ t('adminUniverses.slug') }}<input id="universe-slug" v-model="universeForm.slug" class="rounded border border-slate-600 bg-slate-950 px-3 py-2 text-white" type="text" minlength="2" maxlength="80" pattern="[A-Za-z0-9_-]+" required></label>
+                        <label class="flex flex-col gap-1 text-sm" for="universe-galaxies">{{ t('adminUniverses.galaxies') }}<input id="universe-galaxies" v-model.number="universeForm.galaxies" class="rounded border border-slate-600 bg-slate-950 px-3 py-2 text-white" type="number" min="1" max="9" step="1" required></label>
+                        <label class="flex flex-col gap-1 text-sm" for="universe-systems">{{ t('adminUniverses.systems') }}<input id="universe-systems" v-model.number="universeForm.systems_per_galaxy" class="rounded border border-slate-600 bg-slate-950 px-3 py-2 text-white" type="number" min="1" max="499" step="1" required></label>
+                        <label class="flex flex-col gap-1 text-sm" for="universe-economy-speed">{{ t('adminUniverses.economySpeed') }}<input id="universe-economy-speed" v-model.number="universeForm.economy_speed" class="rounded border border-slate-600 bg-slate-950 px-3 py-2 text-white" type="number" min="0.1" max="100" step="0.1" required></label>
+                        <label class="flex flex-col gap-1 text-sm" for="universe-fleet-speed">{{ t('adminUniverses.fleetSpeed') }}<input id="universe-fleet-speed" v-model.number="universeForm.fleet_speed" class="rounded border border-slate-600 bg-slate-950 px-3 py-2 text-white" type="number" min="0.1" max="100" step="0.1" required></label>
+                        <button class="button button-primary self-start sm:col-span-2" type="submit" :disabled="universeForm.processing">{{ universeForm.processing ? t('admin.saving') : t('adminUniverses.create') }}</button>
+                    </form>
+                </section>
+
+                <section v-if="mode === 'universes' && adminLevel === 4" class="rounded border border-slate-700 bg-slate-900/70 p-4 sm:p-6">
+                    <h2 class="mb-4 text-lg font-semibold text-white">{{ t('adminUniverses.list') }}</h2>
+                    <p v-if="openUniverseForm.errors.universe" class="field-error mb-3" role="alert">{{ openUniverseForm.errors.universe }}</p>
+                    <p v-if="!universes.length" class="text-slate-400">{{ t('adminUniverses.empty') }}</p>
+                    <ul v-else class="flex flex-col gap-3">
+                        <li v-for="universe in universes" :key="universe.id" class="flex flex-col gap-3 rounded border border-slate-700 p-3 sm:flex-row sm:items-center sm:justify-between">
+                            <div class="min-w-0">
+                                <p class="font-semibold text-white">{{ universe.name }} <span class="text-sm font-normal text-slate-400">({{ universe.slug }})</span></p>
+                                <p class="text-sm text-slate-400">{{ t(`adminUniverses.status.${universe.status}`) }} · {{ universe.galaxies }} {{ t('adminUniverses.galaxiesShort') }} × {{ universe.systems_per_galaxy }} {{ t('adminUniverses.systemsShort') }} · {{ t('adminUniverses.speeds', { economy: universe.economy_speed, fleet: universe.fleet_speed }) }}</p>
+                            </div>
+                            <button v-if="universe.status === 'closed'" class="button button-primary shrink-0 self-start" type="button" :disabled="openUniverseForm.processing" @click="openUniverse(universe.id)">{{ t('adminUniverses.open') }}</button>
+                        </li>
+                    </ul>
+                </section>
+
                 <section v-if="overview" class="grid gap-3 sm:grid-cols-2 xl:grid-cols-4" :aria-label="t('adminStats.title')">
                     <article v-for="name in ['players', 'planets', 'universes', 'fleets']" :key="name" class="rounded border border-slate-700 bg-slate-900/70 p-4">
                         <p class="text-sm text-slate-400">{{ t(`adminStats.${name}`) }}</p>
@@ -209,7 +249,7 @@ function categoryLabel(category) {
                     </nav>
                 </section>
 
-                <section class="rounded border border-slate-700 bg-slate-900/70 p-4 sm:p-6">
+                <section v-if="mode !== 'universes'" class="rounded border border-slate-700 bg-slate-900/70 p-4 sm:p-6">
                     <h2 class="mb-4 text-lg font-semibold text-white">{{ t('admin.players') }}</h2>
                     <form class="flex flex-wrap items-end gap-3" @submit.prevent="visit({ ...query, search: search.trim() || undefined })">
                         <label class="flex min-w-48 flex-1 flex-col gap-1 text-sm" for="admin-search">
@@ -234,7 +274,7 @@ function categoryLabel(category) {
                     </nav>
                 </section>
 
-                <section class="rounded border border-slate-700 bg-slate-900/70 p-4 sm:p-6">
+                <section v-if="mode !== 'universes'" class="rounded border border-slate-700 bg-slate-900/70 p-4 sm:p-6">
                     <h2 class="mb-4 text-lg font-semibold text-white">{{ t('admin.selection') }}</h2>
                     <p v-if="!selectedPlayer" class="text-slate-400">{{ t('admin.selectPlayer') }}</p>
                     <template v-else>
@@ -268,7 +308,7 @@ function categoryLabel(category) {
                     </template>
                 </section>
 
-                <section v-if="mode !== 'overview' && selectedPlayer" class="rounded border border-slate-700 bg-slate-900/70 p-4 sm:p-6">
+                <section v-if="mode !== 'overview' && mode !== 'universes' && selectedPlayer" class="rounded border border-slate-700 bg-slate-900/70 p-4 sm:p-6">
                     <h2 class="mb-4 text-lg font-semibold text-white">{{ t(`admin.${mode}`) }}</h2>
                     <p v-if="mode !== 'roles' && selectedPlanetId === null" class="mb-4 text-slate-400">{{ t('admin.selectPlanetFirst') }}</p>
 

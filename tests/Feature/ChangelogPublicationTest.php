@@ -31,6 +31,28 @@ class ChangelogPublicationTest extends TestCase
         $this->get(route('changelog'))->assertInertia(fn (Assert $page) => $page->has('releases', 0));
     }
 
+    public function test_alpha_five_changelog_covers_recent_game_features_and_fixes(): void
+    {
+        DB::table('changelog_release_states')->insert([
+            'version' => '0.1.0-alpha.5',
+            'published' => true,
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
+        $operator = User::factory()->create(['admin_level' => 1]);
+
+        $this->actingAs($operator)->get(route('admin.changelog'))->assertOk()->assertInertia(fn (Assert $page) => $page
+            ->where('releases.0.version', '0.1.0-alpha.5')
+            ->where('releases.0.entries.0.key', 'multiUniverseAccounts')
+            ->where('releases.0.entries.1.key', 'playerProfileSecurity')
+            ->where('releases.0.entries.2.key', 'commanderAvatar')
+            ->where('releases.0.entries.3.key', 'adminUniverseManagement')
+            ->where('releases.0.entries.4.key', 'welcomeGamePreview')
+            ->where('releases.0.entries.5.key', 'totpLoginChallenge')
+            ->where('releases.0.entries.6.key', 'avatarPublicUrls')
+            ->where('releases.0.entries.7.key', 'universeSelectionRateLimit'));
+    }
+
     public function test_unpublished_versions_are_hidden_from_public_pages_but_visible_to_operators(): void
     {
         $operator = User::factory()->create(['admin_level' => 1]);

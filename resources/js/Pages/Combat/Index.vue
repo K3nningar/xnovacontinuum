@@ -74,6 +74,18 @@ function unitName(code) {
     return unit ? t(`unitNames.${unit.key}`) : t('combat.unknownUnit', { code });
 }
 
+function unitImage(code) {
+    const unit = unitByCode.value[code];
+
+    if (!unit) {
+        return '';
+    }
+
+    return unit.type === 'ships'
+        ? `/images/ships/${unit.code}.png`
+        : `/legacy-assets/skins/xnova/gebaeude/${unit.code}.gif`;
+}
+
 function format(value) {
     return n(Number(value ?? 0), 'game');
 }
@@ -150,7 +162,7 @@ function submit() {
                                     <legend>{{ groupIndex === 0 ? t('combat.ships') : t('combat.defences') }}</legend>
                                     <div class="combat-unit-grid">
                                         <label v-for="unit in group" :key="unit.code" class="combat-unit-row" :for="`${side.key}-unit-${unit.code}`">
-                                            <img :src="unit.image" alt="" loading="lazy">
+                                            <img :src="unitImage(unit.code)" alt="" loading="lazy" @error="$event.currentTarget.hidden = true">
                                             <span class="combat-unit-name">
                                                 <strong>{{ unitName(unit.code) }}</strong>
                                                 <small v-if="unit.customProfile">{{ t('combatProfiles.custom') }}</small>
@@ -234,7 +246,7 @@ function submit() {
                             </div>
                             <p class="combat-loss-total">{{ t('combat.losses') }} · {{ format(result[side.key].totalLosses) }}</p>
                             <div v-for="unit in result[side.key].units" :key="unit.code" class="combat-result-unit">
-                                <span>{{ unitName(unit.code) }}</span>
+                                <span class="combat-unit-label"><img :src="unitImage(unit.code)" alt="" @error="$event.currentTarget.hidden = true"><span>{{ unitName(unit.code) }}</span></span>
                                 <span>{{ format(unit.initial) }} → {{ format(unit.remaining) }}</span>
                                 <strong>-{{ format(unit.losses) }}</strong>
                             </div>
@@ -256,7 +268,7 @@ function submit() {
                                     <strong>{{ t(side.title) }}</strong>
                                     <span>{{ t('combat.lossCount', { count: format(round[side.key].losses) }) }}</span>
                                     <ul>
-                                        <li v-for="unit in round[side.key].units" :key="unit.code">{{ unitName(unit.code) }} × {{ format(unit.count) }}</li>
+                                        <li v-for="unit in round[side.key].units" :key="unit.code"><span class="combat-unit-label"><img :src="unitImage(unit.code)" alt="" @error="$event.currentTarget.hidden = true"><span>{{ unitName(unit.code) }} × {{ format(unit.count) }}</span></span></li>
                                         <li v-if="!unitTotal(round[side.key].units)">{{ t('combat.noSurvivors') }}</li>
                                     </ul>
                                 </div>

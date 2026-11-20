@@ -13,8 +13,10 @@ use App\Models\Planet;
 use App\Models\ResearchQueue;
 use App\Models\Universe;
 use App\Models\User;
+use App\Services\ResearchService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\DB;
 use Inertia\Testing\AssertableInertia as Assert;
 use Tests\TestCase;
 
@@ -93,6 +95,56 @@ class ResearchTest extends TestCase
         $this->delete(route('researches.destroy'))->assertRedirect(route('research.index'));
         $this->assertDatabaseCount('research_queues', 0);
         $this->assertSame(1200, $planet->fresh()->metal);
+    }
+
+    public function test_due_research_completes_for_a_commander_even_when_another_universe_profile_is_active(): void
+    {
+        $first = $this->createPlanet();
+        $account = User::factory()->create([
+            'email' => 'research-account@example.test',
+            'commander_id' => $first->user->commander_id,
+        ]);
+        $secondUniverse = Universe::create(['name' => 'Second universe', 'slug' => 'second-universe']);
+        $secondProfile = new User;
+        $secondProfile->name = 'Second profile';
+        $secondProfile->email = null;
+        $secondProfile->password = 'password';
+        $secondProfile->forceFill([
+            'commander_id' => $first->user->commander_id,
+            'universe_id' => $secondUniverse->id,
+        ])->save();
+        $secondProfile->forceFill(['energy_technology_level' => 2])->save();
+        DB::table('commander_profiles')->insert([
+            ['commander_id' => $account->commander_id, 'profile_user_id' => $first->user_id, 'universe_id' => $first->universe_id, 'created_at' => now(), 'updated_at' => now()],
+            ['commander_id' => $account->commander_id, 'profile_user_id' => $secondProfile->id, 'universe_id' => $secondUniverse->id, 'created_at' => now(), 'updated_at' => now()],
+        ]);
+        $secondPlanet = new Planet(['name' => 'Second Prime']);
+        $secondPlanet->forceFill([
+            'universe_id' => $secondUniverse->id,
+            'user_id' => $secondProfile->id,
+            'galaxy' => 1,
+            'system' => 1,
+            'position' => 8,
+            'resources_updated_at' => now(),
+        ])->save();
+        $queue = ResearchQueue::create([
+            'universe_id' => $secondUniverse->id,
+            'user_id' => $secondProfile->id,
+            'planet_id' => $secondPlanet->id,
+            'technology_key' => 'energy',
+            'technology_code' => 113,
+            'target_level' => 3,
+            'cost_metal' => 0,
+            'cost_crystal' => 800,
+            'cost_deuterium' => 400,
+            'completes_at' => now()->subSecond(),
+        ]);
+
+        app(ResearchService::class)->completeDue();
+
+        $this->assertSame(3, $secondProfile->fresh()->energy_technology_level);
+        $this->assertSame(0, $first->user->fresh()->energy_technology_level);
+        $this->assertDatabaseMissing('research_queues', ['id' => $queue->id]);
     }
 
     public function test_existing_sensor_research_can_complete_without_changing_spy_level(): void
