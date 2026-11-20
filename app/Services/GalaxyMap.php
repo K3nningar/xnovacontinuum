@@ -2,7 +2,7 @@
 
 /*
  * Author / Contributor : K3nningar
- * Code Version : 0.1.0-alpha.5
+ * Code Version : 0.1.1-alpha
  * Revision : 34ddc84
  * Description : Implements the GalaxyMap application service.
  */
@@ -16,6 +16,8 @@ use Illuminate\Support\Facades\DB;
 
 class GalaxyMap
 {
+    public function __construct(private CelestialNames $names) {}
+
     private const PLANET_RESOURCES = [
         'silicate' => ['metal' => 100, 'crystal' => 100, 'deuterium' => 100],
         'carbon' => ['metal' => 90, 'crystal' => 120, 'deuterium' => 100],
@@ -32,7 +34,7 @@ class GalaxyMap
      * Planet and asteroid depletion records override generated asteroid stock; otherwise the same coordinates
      * always yield the same star, body types, concentrations, and natural moons. Positions 1 and 16 are reserved.
      *
-     * @return array{star: string, slots: array<int, array<string, mixed>>}
+     * @return array{star: string, starName: string, slots: array<int, array<string, mixed>>}
      */
     public function system(Universe $universe, User $viewer, int $galaxy, int $system, int $originPosition): array
     {
@@ -53,6 +55,9 @@ class GalaxyMap
         $destroyedMoons = DB::table('destroyed_moons')
             ->where('universe_id', $universe->id)->where('galaxy', $galaxy)->where('system', $system)
             ->get()->keyBy(fn ($moon): string => $moon->position.':'.$moon->orbit);
+        $moonStocks = DB::table('moon_stocks')->whereIn('planet_id', $planets->pluck('id'))
+            ->get()->keyBy(fn ($moon): string => "{$moon->planet_id}:{$moon->orbit}");
+        $systemNames = $this->names->forSystem($universe, $galaxy, $system);
 
         $starRoll = $this->roll($universe, $galaxy, $system, 1, 'star', 100);
         $star = match (true) {
@@ -105,9 +110,14 @@ class GalaxyMap
                 if ($destroyedMoons->has($position.':'.$orbit)) {
                     continue;
                 }
+                $moonStock = $planet ? $moonStocks->get("{$planet->id}:{$orbit}") : null;
+                $generatedMoonName = $systemNames['moonNames'][$position][$orbit];
                 $moons[] = [
                     'orbit' => $orbit,
                     'diameter' => 900 + $this->roll($universe, $galaxy, $system, $position, 'moon-diameter-'.$orbit, 5101),
+                    'generatedName' => $generatedMoonName,
+                    'planetGeneratedName' => $systemNames['planetNames'][$position],
+                    'name' => $moonStock?->name ?? $generatedMoonName,
                 ];
             }
             $moonCount = count($moons);
@@ -116,6 +126,7 @@ class GalaxyMap
                 'visible' => true,
                 'kind' => 'planet',
                 'type' => $type,
+                'generatedName' => $systemNames['planetNames'][$position],
                 'resources' => $planet ? [
                     'metal' => (int) $planet->metal_concentration,
                     'crystal' => (int) $planet->crystal_concentration,
@@ -133,7 +144,7 @@ class GalaxyMap
             ];
         }
 
-        return ['star' => $star, 'slots' => $slots];
+        return ['star' => $star, 'starName' => $systemNames['starName'], 'slots' => $slots];
     }
 
     /**

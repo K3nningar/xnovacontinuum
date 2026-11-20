@@ -1,6 +1,6 @@
 /*
  * Author / Contributor : K3nningar
- * Code Version : 0.1.0-alpha.5
+ * Code Version : 0.1.1-alpha
  * Revision : 34ddc84
  * Description : Provides translated messages for the it galaxy interface.
  */
@@ -89,7 +89,9 @@ export default {
     "sensors": "Tecnologia dei sensori",
     "sensorsDesc": "Ogni livello di spionaggio rivela una posizione in più su entrambi i lati della posizione del pianeta di origine. I tuoi pianeti restano visibili.",
     "sensorLevel": "Spionaggio: livello {level}",
-    "star": "Stella centrale",
+    "starName": "Nome della stella",
+    "generatedPlanet": "Pianeta generato",
+    "moonNames": "Nomi delle lune",
     "position": "Posizione {position}",
     "hidden": "Fuori dalla portata dello spionaggio",
     "required": "Richiede spionaggio di livello {level}",

@@ -1,6 +1,6 @@
 /*
  * Author / Contributor : K3nningar
- * Code Version : 0.1.0-alpha.5
+ * Code Version : 0.1.1-alpha
  * Revision : 34ddc84
  * Description : Provides translated messages for the fr moon interface.
  */
@@ -10,6 +10,38 @@ export default {
     "title": "Lune naturelle",
     "back": "Retour à la galaxie",
     "buildings": "Bâtiments lunaires",
+    "openBuildings": "Gérer les bâtiments lunaires",
+    "selectMoon": "Lune sélectionnée",
+    "building": "Construction…",
+    "moonDetails": "Détails de la lune",
+    "rename": "Renommer la lune",
+    "save": "Enregistrer",
+    "saving": "Enregistrement…",
+    "cancel": "Annuler",
+    "defaultName": "Lune {orbit}",
+    "resources": "Ressources lunaires",
+    "availableBuildings": "Installations disponibles",
+    "nextLevel": "PROCHAIN NIVEAU",
+    "requirementsMissing": "Prérequis manquants",
+    "queueFull": "File de construction pleine",
+    "fieldsFull": "Aucune case lunaire disponible",
+    "constructionCount": "{count} construction(s) en file",
+    "noConstruction": "Aucune construction en cours.",
+    "constructionWillAppear": "Les prochaines constructions apparaîtront ici.",
+    "openQueue": "Voir la file",
+    "closeQueue": "Fermer la file",
+    "constructionQueue": "File de construction lunaire",
+    "queuesUsed": "{count} construction(s) en attente",
+    "inConstruction": "En construction",
+    "waiting": "En attente",
+    "ends": "Fin prévue :",
+    "remaining": "Temps restant",
+    "categories": { "label": "Catégories", "all": "Toutes", "infrastructure": "Infrastructure", "surveillance": "Surveillance", "transport": "Transport" },
+    "buildingDescriptions": {
+      "moon_base": "Étend les installations et augmente le nombre de cases disponibles sur la lune.",
+      "phalanx": "Permet de scanner les systèmes proches à la recherche de flottes.",
+      "jump_gate": "Transfère instantanément des flottes entre des portes de saut lunaires."
+    },
     "fields": "Cases occupées : {used} / {max}",
     "level": "Niveau {level}",
     "queued": "{count} en file",

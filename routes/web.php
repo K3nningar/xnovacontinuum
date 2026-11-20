@@ -2,7 +2,7 @@
 
 /*
  * Author / Contributor : K3nningar
- * Code Version : 0.1.0-alpha.5
+ * Code Version : 0.1.1-alpha
  * Revision : 34ddc84
  * Description : Registers the application's web routes.
  */
@@ -75,9 +75,12 @@ Route::middleware(['auth', EnsureAccountIsActive::class, ProcessExplorationMissi
         ->middleware('throttle:multi-account-declaration')->name('multi-accounts.store');
     Route::get('/commandcenter', DashboardController::class)->name('dashboard');
     Route::get('/galaxy', GalaxyController::class)->name('galaxy.index');
+    Route::get('/moon-buildings', [MoonController::class, 'buildings'])->name('moon.buildings');
     Route::get('/planets/{planet}/moons/{orbit}', [MoonController::class, 'show'])->whereNumber('orbit')->name('moon.show');
     Route::post('/planets/{planet}/moons/{orbit}/transfer', [MoonController::class, 'store'])
         ->whereNumber('orbit')->middleware('throttle:game-action')->name('moon.transfer');
+    Route::patch('/planets/{planet}/moons/{orbit}/name', [MoonController::class, 'rename'])
+        ->whereNumber('orbit')->middleware('throttle:game-action')->name('moon.rename');
     Route::post('/planets/{planet}/moons/{orbit}/buildings', [MoonController::class, 'upgrade'])
         ->whereNumber('orbit')->middleware('throttle:game-action')->name('moon.buildings.upgrade');
     Route::get('/planets/{planet}/moons/{orbit}/phalanx', [MoonController::class, 'phalanx'])

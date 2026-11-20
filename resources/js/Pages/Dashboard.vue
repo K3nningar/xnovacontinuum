@@ -1,6 +1,6 @@
 <!--
 Author / Contributor : K3nningar
-Code Version : 0.1.0-alpha.5
+Code Version : 0.1.1-alpha
 Revision : 34ddc84
 Description : Renders the Dashboard Inertia page.
 -->
@@ -42,7 +42,9 @@ const refreshInFlight = ref(false);
 const refreshedChanges = new Set();
 let timer;
 const activePlanet = computed(() => props.planets.find((planet) => planet.id === props.activePlanetId));
+const ownedMoons = computed(() => props.planets.flatMap((planet) => planet.moons.map((moon) => ({ ...moon, planet }))));
 const livePlanets = computed(() => props.planets.map((planet) => projectPlanetResources(planet, clock.value + serverOffset.value)));
+const planetResource = (planet, resource) => livePlanets.value.find((item) => item.id === planet.id)?.[resource] ?? planet[resource] ?? 0;
 const empireResources = computed(() => livePlanets.value.reduce((sum, planet) => ({
     metal: sum.metal + planet.metal,
     crystal: sum.crystal + planet.crystal,
@@ -264,19 +266,11 @@ function researchName(key) {
                             <article v-for="planet in planets" :key="planet.id" class="planet-row">
                                 <span class="planet-orb"></span>
                                 <span class="planet-details">
-                                    <strong>{{ planet.name }}</strong><small>{{ planet.coordinates }}</small>
+                                    <strong>{{ planet.name }}</strong><small v-if="planet.generatedName && planet.generatedName !== planet.name">{{ planet.generatedName }}</small><small>{{ planet.coordinates }}</small>
                                     <small v-if="planet.queue.length">{{ buildingName(planet.queue[0].building_key) }} · {{ t('common.level') }} {{ planet.queue[0].target_level }} · {{ remaining(planet.queue[0].completes_at) }}</small>
                                     <small v-else>{{ t('overview.noConstruction') }}</small>
-                                    <span class="planet-moons">
-                                        <small>{{ t('overview.moons') }}</small>
-                                        <template v-if="planet.moons.length">
-                                            <Link v-for="moon in planet.moons" :key="moon.orbit" class="planet-moon-link" :href="route('moon.show', { planet: planet.id, orbit: moon.orbit })">
-                                                {{ t('galaxyMoon', { orbit: moon.orbit, diameter: formatResource(moon.diameter) }) }}
-                                            </Link>
-                                        </template>
-                                        <small v-else>{{ t('overview.noMoons') }}</small>
-                                    </span>
                                 </span>
+                                <span class="overview-planet-resources"><small>{{ t('dashboard.metal') }} <strong class="metal-symbol">{{ formatResource(planetResource(planet, 'metal')) }}</strong></small><small>{{ t('dashboard.crystal') }} <strong class="crystal-symbol">{{ formatResource(planetResource(planet, 'crystal')) }}</strong></small><small>{{ t('dashboard.deuterium') }} <strong class="deut-symbol">{{ formatResource(planetResource(planet, 'deuterium')) }}</strong></small></span>
                                 <span class="planet-stock"><small>{{ t('dashboard.fields') }}</small><strong>{{ planet.usedFields }} / {{ planet.fields }}</strong></span>
                                 <div class="planet-links">
                                     <Link class="button button-quiet" :href="route('dashboard', { planet: planet.id })" :aria-current="planet.id === activePlanetId ? 'page' : undefined">{{ t('overviewView') }}</Link>
@@ -287,6 +281,16 @@ function researchName(key) {
                         </section>
                         <section id="alliance" class="data-panel"><div class="panel-heading"><div><span class="panel-kicker">{{ t('dashboard.community') }}</span><h2>{{ t('dashboard.alliance') }}</h2></div><span class="panel-count">⌖</span></div><div v-if="alliance" class="alliance-state"><span class="alliance-emblem">{{ alliance.tag }}</span><strong>{{ alliance.name }}</strong><p>{{ alliance.description || t('dashboard.allianceDefault') }}</p></div><div v-else class="empty-state compact"><span class="empty-orb">◈</span><strong>{{ t('dashboard.ownStrategy') }}</strong><p>{{ t('dashboard.allianceSoon') }}</p></div></section>
                     </div>
+                    <section class="data-panel overview-moons">
+                        <div class="panel-heading"><div><span class="panel-kicker">{{ t('dashboard.yourEmpire') }}</span><h2>{{ t('overview.moons') }}</h2></div><span class="panel-count">{{ ownedMoons.length }}</span></div>
+                        <article v-for="moon in ownedMoons" :key="`${moon.planet.id}:${moon.orbit}`" class="planet-row overview-moon-row">
+                            <span class="planet-orb moon-orb"></span>
+                            <span class="planet-details"><strong>{{ moon.name }}</strong><small v-if="moon.name !== moon.generatedName">{{ moon.generatedName }}</small><small>{{ moon.planet.generatedName ?? moon.planet.name }} · {{ moon.planet.coordinates }}</small></span>
+                            <span class="overview-moon-resources"><small>{{ t('dashboard.metal') }} <strong class="metal-symbol">{{ formatResource(moon.metal) }}</strong></small><small>{{ t('dashboard.crystal') }} <strong class="crystal-symbol">{{ formatResource(moon.crystal) }}</strong></small><small>{{ t('dashboard.deuterium') }} <strong class="deut-symbol">{{ formatResource(moon.deuterium) }}</strong></small></span>
+                            <div class="planet-links"><Link class="button button-quiet" :href="route('moon.show', { planet: moon.planet.id, orbit: moon.orbit })">{{ t('overviewView') }}</Link><Link class="button button-outline" :href="route('moon.buildings', { planet: moon.planet.id, orbit: moon.orbit })">{{ t('nav.moonBuildings') }}</Link></div>
+                        </article>
+                        <div v-if="!ownedMoons.length" class="overview-panel-body text-sm text-slate-400">{{ t('overview.noMoons') }}</div>
+                    </section>
                     <div class="notice-bar"><span>✦</span><p>{{ t('dashboard.established', { name: universe.name }) }}</p><Link class="intel-discover" :href="route('buildings.index')">{{ t('dashboard.developBuildings') }} →</Link></div>
                 </template>
 

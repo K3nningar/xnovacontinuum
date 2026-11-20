@@ -2,7 +2,7 @@
 
 /*
  * Author / Contributor : K3nningar
- * Code Version : 0.1.0-alpha.5
+ * Code Version : 0.1.1-alpha
  * Revision : 34ddc84
  * Description : Tests the application's CommandOverviewTest behavior.
  */
@@ -17,6 +17,7 @@ use App\Models\Universe;
 use App\Models\User;
 use App\Services\GalaxyMap;
 use Illuminate\Foundation\Testing\LazilyRefreshDatabase;
+use Illuminate\Support\Facades\DB;
 use Inertia\Testing\AssertableInertia as Assert;
 use Tests\TestCase;
 
@@ -68,6 +69,42 @@ class CommandOverviewTest extends TestCase
             ->has('planets.0.moons', count($moons))
             ->where('planets.0.moons.0.orbit', $moons[0]['orbit'])
             ->where('planets.0.moons.0.diameter', $moons[0]['diameter']));
+    }
+
+    public function test_overview_lists_moons_in_a_separate_collection_with_each_moons_own_resources(): void
+    {
+        $universe = Universe::create(['name' => 'Test', 'slug' => 'test']);
+        $user = User::factory()->create(['universe_id' => $universe->id, 'spy_technology_level' => 13]);
+        $moons = [];
+        $position = null;
+
+        for ($candidate = 2; $candidate <= 15; $candidate++) {
+            $moons = app(GalaxyMap::class)->system($universe, $user, 1, 2, $candidate)['slots'][$candidate - 2]['naturalMoons'];
+            if (count($moons) >= 2) {
+                $position = $candidate;
+                break;
+            }
+        }
+
+        $this->assertNotNull($position);
+        $planet = new Planet(['name' => 'Lunar home']);
+        $planet->forceFill(['universe_id' => $universe->id, 'user_id' => $user->id, 'galaxy' => 1, 'system' => 2,
+            'position' => $position, 'metal' => 9000, 'crystal' => 8000, 'deuterium' => 7000, 'resources_updated_at' => now()])->save();
+        DB::table('moon_stocks')->insert([
+            ['planet_id' => $planet->id, 'orbit' => $moons[0]['orbit'], 'name' => 'Asteria', 'metal' => 100, 'crystal' => 200, 'deuterium' => 300, 'created_at' => now(), 'updated_at' => now()],
+            ['planet_id' => $planet->id, 'orbit' => $moons[1]['orbit'], 'name' => null, 'metal' => 400, 'crystal' => 500, 'deuterium' => 600, 'created_at' => now(), 'updated_at' => now()],
+        ]);
+
+        $this->actingAs($user)->get(route('dashboard'))->assertInertia(fn (Assert $page) => $page
+            ->where('planets.0.metal', 9000)
+            ->where('planets.0.moons.0.name', 'Asteria')
+            ->where('planets.0.moons.1.name', null)
+            ->where('planets.0.crystal', 8000)
+            ->where('planets.0.deuterium', 7000)
+            ->where('planets.0.moons.0.metal', 100)
+            ->where('planets.0.moons.0.crystal', 200)
+            ->where('planets.0.moons.1.metal', 400)
+            ->where('planets.0.moons.1.deuterium', 600));
     }
 
     public function test_overview_shows_installed_and_completed_shields_for_each_planet(): void

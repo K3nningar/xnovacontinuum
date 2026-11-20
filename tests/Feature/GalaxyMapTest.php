@@ -2,7 +2,7 @@
 
 /*
  * Author / Contributor : K3nningar
- * Code Version : 0.1.0-alpha.5
+ * Code Version : 0.1.1-alpha
  * Revision : 34ddc84
  * Description : Tests the application's GalaxyMapTest behavior.
  */
@@ -13,9 +13,11 @@ use App\Models\Planet;
 use App\Models\ResearchQueue;
 use App\Models\Universe;
 use App\Models\User;
+use App\Services\CelestialNames;
 use App\Services\GalaxyMap;
 use App\Services\PlanetEconomy;
 use Illuminate\Foundation\Testing\LazilyRefreshDatabase;
+use Illuminate\Support\Facades\DB;
 use Inertia\Testing\AssertableInertia as Assert;
 use PHPUnit\Framework\Attributes\TestWith;
 use Tests\TestCase;
@@ -129,6 +131,61 @@ class GalaxyMapTest extends TestCase
         $this->assertGreaterThan(1, count(array_unique($stars)));
         $this->assertTrue($hasMultipleMoons);
         $this->assertTrue($hasAsteroids);
+    }
+
+    public function test_system_catalog_provides_stable_related_names_for_stars_planets_and_moons(): void
+    {
+        $universe = Universe::create(['name' => 'Names', 'slug' => 'celestial-names', 'galaxies' => 2, 'systems_per_galaxy' => 3]);
+        $names = app(CelestialNames::class);
+        $catalog = $names->forSystem($universe, 1, 3);
+
+        $this->assertDatabaseMissing('universe_system_names', ['universe_id' => $universe->id, 'galaxy' => 1, 'system' => 3]);
+        $this->assertSame($catalog, $names->forSystem($universe, 1, 3));
+        $this->assertNotSame('', $catalog['starName']);
+        $this->assertSame($catalog['starName'].' XIV', $catalog['planetNames'][14]);
+        $this->assertSame($catalog['planetNames'][14].'-a', $catalog['moonNames'][14][1]);
+        $this->assertSame($catalog['planetNames'][14].'-d', $catalog['moonNames'][14][4]);
+
+        $this->assertSame(6, $names->backfillMissing());
+        $this->assertDatabaseCount('universe_system_names', 6);
+        $this->assertSame($catalog, $names->forSystem($universe, 1, 3));
+        $this->assertSame(0, $names->preGenerate($universe));
+        $this->assertSame(0, $names->backfillMissing());
+    }
+
+    public function test_galaxy_map_exposes_generated_names_while_preserving_custom_planet_names(): void
+    {
+        $universe = Universe::create(['name' => 'Names', 'slug' => 'galaxy-names']);
+        $user = User::factory()->create(['universe_id' => $universe->id, 'spy_technology_level' => 13]);
+        $map = app(GalaxyMap::class);
+        $systemNumber = null;
+        $system = [];
+
+        for ($candidateSystem = 1; $candidateSystem <= 499; $candidateSystem++) {
+            $candidate = $map->system($universe, $user, 1, $candidateSystem, 8);
+            if ($candidate['slots'][6]['naturalMoons'] !== []) {
+                $systemNumber = $candidateSystem;
+                $system = $candidate;
+                break;
+            }
+        }
+
+        $this->assertNotNull($systemNumber);
+        $planet = new Planet(['name' => 'My custom world']);
+        $planet->forceFill(['universe_id' => $universe->id, 'user_id' => $user->id, 'galaxy' => 1, 'system' => $systemNumber,
+            'position' => 8, 'resources_updated_at' => now()])->save();
+        $names = app(CelestialNames::class)->forSystem($universe, 1, $systemNumber);
+
+        $system = $map->system($universe, $user, 1, $systemNumber, 8);
+        $this->assertSame($names['starName'], $system['starName']);
+        $this->assertSame($names['planetNames'][8], $system['slots'][6]['generatedName']);
+        $this->assertSame('My custom world', $system['slots'][6]['planet']['name']);
+        $this->assertSame($names['moonNames'][8][1], $system['slots'][6]['naturalMoons'][0]['name']);
+
+        DB::table('moon_stocks')->insert(['planet_id' => $planet->id, 'orbit' => 1, 'name' => 'My named moon']);
+        $system = $map->system($universe, $user, 1, $systemNumber, 8);
+        $this->assertSame('My named moon', $system['slots'][6]['naturalMoons'][0]['name']);
+        $this->assertSame($names['moonNames'][8][1], $system['slots'][6]['naturalMoons'][0]['generatedName']);
     }
 
     public function test_completed_spy_research_reveals_the_next_position(): void

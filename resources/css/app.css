@@ -1,6 +1,6 @@
 /*
  * Author / Contributor : K3nningar
- * Code Version : 0.1.0-alpha.5
+ * Code Version : 0.1.1-alpha
  * Revision : 34ddc84
  * Description : Defines custom application styles.
  */
@@ -1061,11 +1061,20 @@ body { background: transparent; }
 .overview-page .planet-select-label, .overview-page .planet-select-label select { font-size: 13px; }
 .overview-page .planet-details strong, .overview-page .planet-stock strong { font-size: 14px; }
 .overview-page .planet-details small, .overview-page .planet-stock small { font-size: 12px; }
+.overview-planet-resources { display: flex; flex-wrap: wrap; gap: 5px 10px; color: #9caebc; font-size: 10px; }
+.overview-planet-resources small { display: flex; gap: 4px; align-items: center; }
+.overview-planet-resources strong { font-size: 11px; font-variant-numeric: tabular-nums; }
 .overview-page .planet-links .button, .overview-page .button { font-size: 13px; }
 .overview-page .planet-links .button { min-height: 36px; }
 .overview-page .planet-moons { display: flex; flex-wrap: wrap; align-items: center; gap: 5px 9px; }
 .overview-page .planet-moon-link { color: #86d8ce; font-size: 12px; text-decoration: underline; text-decoration-color: rgba(134, 216, 206, .4); text-underline-offset: 2px; }
 .overview-page .planet-moon-link:hover { color: #c0fff2; }
+.overview-page .overview-moon-row { flex-wrap: wrap; }
+.overview-moon-row .planet-details { flex: 1 1 150px; }
+.overview-moon-row .moon-orb { border-color: rgba(163, 216, 231, .65); background: radial-gradient(circle at 35% 30%, #d8e9ec, #647e88 58%, #263942 100%); box-shadow: 0 0 14px rgba(139, 205, 222, .22); }
+.overview-moon-resources { display: flex; flex-wrap: wrap; gap: 6px 14px; color: #9caebc; font-size: 11px; }
+.overview-moon-resources small { display: flex; gap: 5px; align-items: center; }
+.overview-moon-resources strong { font-variant-numeric: tabular-nums; }
 .overview-page .empty-state strong, .overview-page .alliance-state strong { font-size: 14px; }
 .overview-page .empty-state p, .overview-page .alliance-state p, .overview-page .notice-bar p, .overview-page .intel-discover { font-size: 13px; }
 @media (max-width: 700px) {
@@ -1255,4 +1264,19 @@ body { background: transparent; }
     .building-filters > .panel-kicker { flex-basis: 100%; }
     .building-filter { width: auto; flex: 1 1 130px; }
     .building-pos .pos-content { width: 100%; }
+}
+
+.moon-rename-panel { display: flex; justify-content: flex-end; margin: -8px 0 14px; }
+.moon-rename-form { display: flex; flex-wrap: wrap; align-items: end; gap: 10px; }
+.moon-rename-form label { display: grid; gap: 6px; color: #8291a2; font-size: 10px; }
+.moon-rename-form input { min-width: 210px; min-height: 40px; padding: 0 12px; border: 1px solid var(--line); outline: none; color: var(--text); background: #0b121b; font-size: 13px; }
+.moon-rename-form input:focus-visible { border-color: var(--accent); }
+.moon-rename-form .field-error { flex-basis: 100%; margin: 0; }
+.moon-resource-strip { min-height: 0; margin-bottom: 16px; }
+.moon-resource-strip .research-resource-strip { margin: 0; }
+.moon-building-icon-jump_gate { color: #bf9bf8; }
+.moon-building-icon-phalanx { color: #74c9e7; }
+@media (max-width: 767px) {
+    .moon-rename-form { width: 100%; }
+    .moon-rename-form label, .moon-rename-form input { width: 100%; }
 }

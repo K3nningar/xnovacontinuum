@@ -1,6 +1,6 @@
 <!--
 Author / Contributor : K3nningar
-Code Version : 0.1.0-alpha.5
+Code Version : 0.1.1-alpha
 Revision : 34ddc84
 Description : Renders the Index Inertia page.
 -->
@@ -200,7 +200,7 @@ function categoryLabel(category) {
                         <li v-for="universe in universes" :key="universe.id" class="flex flex-col gap-3 rounded border border-slate-700 p-3 sm:flex-row sm:items-center sm:justify-between">
                             <div class="min-w-0">
                                 <p class="font-semibold text-white">{{ universe.name }} <span class="text-sm font-normal text-slate-400">({{ universe.slug }})</span></p>
-                                <p class="text-sm text-slate-400">{{ t(`adminUniverses.status.${universe.status}`) }} · {{ universe.galaxies }} {{ t('adminUniverses.galaxiesShort') }} × {{ universe.systems_per_galaxy }} {{ t('adminUniverses.systemsShort') }} · {{ t('adminUniverses.speeds', { economy: universe.economy_speed, fleet: universe.fleet_speed }) }}</p>
+                                <p class="text-sm text-slate-400">{{ t(`adminUniverses.status.${universe.status}`) }} · {{ universe.galaxies }} {{ t('adminUniverses.galaxiesShort') }} × {{ universe.systems_per_galaxy }} {{ t('adminUniverses.systemsShort') }} · {{ t('adminUniverses.namedSystems', { count: universe.named_systems ?? 0 }) }} · {{ t('adminUniverses.speeds', { economy: universe.economy_speed, fleet: universe.fleet_speed }) }}</p>
                             </div>
                             <button v-if="universe.status === 'closed'" class="button button-primary shrink-0 self-start" type="button" :disabled="openUniverseForm.processing" @click="openUniverse(universe.id)">{{ t('adminUniverses.open') }}</button>
                         </li>

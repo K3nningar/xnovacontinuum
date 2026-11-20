@@ -1,7 +1,17 @@
 [
     {
-        "version": "0.1.0-alpha.5",
+        "version": "0.1.1-alpha",
         "entries": [
+            { "date": "2026-11-23", "type": "CHANGE", "key": "versionBumpAlpha6" },
+            { "date": "2026-11-23", "type": "NEW", "key": "celestialNameCatalog" },
+            { "date": "2026-11-23", "type": "CHANGE", "key": "planetMoonResourceIsolation" },
+            { "date": "2026-11-23", "type": "NEW", "key": "lunarBuildingManagement" },
+            { "date": "2026-11-23", "type": "NEW", "key": "moonRenaming" },
+            { "date": "2026-11-23", "type": "CHANGE", "key": "colonizationNames" },
+            { "date": "2026-11-23", "type": "HOTFIX", "key": "lunarConstructionQueue" },
+            { "date": "2026-11-23", "type": "HOTFIX", "key": "legacyUniverseNameCatalog" },
+            { "date": "2026-11-23", "type": "HOTFIX", "key": "moonStockReads" },
+            { "date": "2026-11-23", "type": "KNOWN ISSUE", "key": "serverMessages" },
             { "date": "2026-11-20", "type": "NEW", "key": "multiUniverseAccounts" },
             { "date": "2026-11-20", "type": "NEW", "key": "playerProfileSecurity" },
             { "date": "2026-11-20", "type": "NEW", "key": "commanderAvatar" },
@@ -9,7 +19,12 @@
             { "date": "2026-11-20", "type": "CHANGE", "key": "welcomeGamePreview" },
             { "date": "2026-11-20", "type": "HOTFIX", "key": "totpLoginChallenge" },
             { "date": "2026-11-20", "type": "HOTFIX", "key": "avatarPublicUrls" },
-            { "date": "2026-11-20", "type": "HOTFIX", "key": "universeSelectionRateLimit" },
+            { "date": "2026-11-20", "type": "HOTFIX", "key": "universeSelectionRateLimit" }
+        ]
+    },
+    {
+        "version": "0.1.0-alpha.5",
+        "entries": [
             { "date": "2026-11-19", "type": "NEW", "key": "moonLogistics" },
             { "date": "2026-11-19", "type": "CHANGE", "key": "fleetMissions" },
             { "date": "2026-11-19", "type": "NEW", "key": "commandCenterMoons" },

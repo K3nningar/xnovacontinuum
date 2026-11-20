@@ -1,6 +1,6 @@
 /*
  * Author / Contributor : K3nningar
- * Code Version : 0.1.0-alpha.5
+ * Code Version : 0.1.1-alpha
  * Revision : 34ddc84
  * Description : Provides translated messages for the es admin interface.
  */
@@ -76,6 +76,8 @@ export default {
     "open": "Abrir",
     "galaxiesShort": "galaxias",
     "systemsShort": "sistemas",
+    "namedSystems": "{count} sistemas con nombre",
+    "generatingNames": "Generando nombres celestes…",
     "speeds": "Economía ×{economy} · flotas ×{fleet}",
     "status": { "active": "Abierto", "closed": "Cerrado" }
   },

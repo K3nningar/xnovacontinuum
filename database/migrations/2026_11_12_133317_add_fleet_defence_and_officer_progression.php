@@ -2,7 +2,7 @@
 
 /*
  * Author / Contributor : K3nningar
- * Code Version : 0.1.0-alpha.5
+ * Code Version : 0.1.1-alpha
  * Revision : 34ddc84
  * Description : Defines database schema changes for 2026_11_12_133317_add_fleet_defence_and_officer_progression.
  */

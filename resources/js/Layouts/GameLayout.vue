@@ -1,6 +1,6 @@
 <!--
 Author / Contributor : K3nningar
-Code Version : 0.1.0-alpha.5
+Code Version : 0.1.1-alpha
 Revision : 34ddc84
 Description : Defines the shared GameLayout Vue layout.
 -->
@@ -13,7 +13,7 @@ import LocaleSwitcher from '../Components/LocaleSwitcher.vue';
 import { route as ziggyRoute } from 'ziggy-js';
 
 const page = usePage();
-const props = defineProps({ livePlanets: { type: Array, default: null } });
+const props = defineProps({ livePlanets: { type: Array, default: null }, liveMoon: { type: Object, default: null } });
 const { t, n } = useI18n();
 const route = (name, params) => ziggyRoute(name, params, true, page.props.ziggy);
 const menuOpen = ref(false);
@@ -22,6 +22,7 @@ const navigation = computed(() => [
     { route: 'dashboard', component: 'Dashboard', label: 'nav.command', icon: 'bi-cpu' },
     { route: 'galaxy.index', component: 'Galaxy/Index', label: 'galaxy.title', icon: 'bi-stars' },
     { route: 'buildings.index', component: 'Buildings/Index', label: 'nav.buildings', icon: 'bi-buildings' },
+    { route: 'moon.buildings', component: 'Moon/Buildings', label: 'nav.moonBuildings', icon: 'bi-moon-stars' },
     { route: 'research.index', component: 'Research/Index', label: 'nav.research', icon: 'bi-lightbulb' },
     { route: 'shipyard.index', component: 'Shipyard/Index', label: 'nav.shipyard', icon: 'bi-tools' },
     { route: 'defences.index', component: 'Defences/Index', label: 'nav.defences', icon: 'bi-shield-check' },
@@ -42,7 +43,8 @@ const resources = computed(() => {
     const selectedPlanet = selectedPlanetId
         ? planets.find((planet) => Number(planet.id) === Number(selectedPlanetId))
         : null;
-    const totals = selectedPlanet ?? planets.reduce((sum, planet) => ({
+    const moon = props.liveMoon ?? (['Moon/Show', 'Moon/Buildings'].includes(page.component) ? page.props.moon : null);
+    const totals = moon ?? selectedPlanet ?? planets.reduce((sum, planet) => ({
         metal: sum.metal + Number(planet.metal ?? 0),
         crystal: sum.crystal + Number(planet.crystal ?? 0),
         deuterium: sum.deuterium + Number(planet.deuterium ?? 0),
@@ -50,7 +52,7 @@ const resources = computed(() => {
 
     return {
         ...totals,
-        scope: selectedPlanet ? selectedPlanet.name : (planets.length ? t('nav.empire') : null),
+        scope: moon ? (moon.name || moon.generatedName || t('galaxyMoon', { orbit: moon.orbit, diameter: n(Number(moon.diameter ?? 0), 'game') })) : (selectedPlanet ? selectedPlanet.name : (planets.length ? t('nav.empire') : null)),
     };
 });
 
@@ -75,7 +77,7 @@ function formatResource(value) {
                 <nav class="menu" :aria-label="t('hud.navigation')">
                     <div class="menu-header">{{ t('hud.navigation') }}</div>
                     <div v-for="item in navigation" :key="item.route" class="menu-item" :class="{ active: page.component === item.component }">
-                        <Link class="menu-link" :href="route(item.route)" :aria-current="page.component === item.component ? 'page' : undefined" @click="menuOpen = false">
+                        <Link class="menu-link" :href="route(item.route, item.route === 'moon.buildings' && page.props.planet && page.props.moon ? { planet: page.props.planet.id, orbit: page.props.moon.orbit } : undefined)" :aria-current="page.component === item.component ? 'page' : undefined" @click="menuOpen = false">
                             <span class="menu-icon"><i class="bi" :class="item.icon" aria-hidden="true"></i></span>
                             <span class="menu-text">{{ t(item.label) }}</span>
                         </Link>

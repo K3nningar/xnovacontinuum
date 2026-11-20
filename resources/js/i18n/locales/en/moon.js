@@ -1,6 +1,6 @@
 /*
  * Author / Contributor : K3nningar
- * Code Version : 0.1.0-alpha.5
+ * Code Version : 0.1.1-alpha
  * Revision : 34ddc84
  * Description : Provides translated messages for the en moon interface.
  */
@@ -10,6 +10,38 @@ export default {
     "title": "Natural moon",
     "back": "Back to galaxy",
     "buildings": "Lunar buildings",
+    "openBuildings": "Manage lunar buildings",
+    "selectMoon": "Selected moon",
+    "building": "Building…",
+    "moonDetails": "Moon details",
+    "rename": "Rename moon",
+    "save": "Save",
+    "saving": "Saving…",
+    "cancel": "Cancel",
+    "defaultName": "Moon {orbit}",
+    "resources": "Lunar resources",
+    "availableBuildings": "Available facilities",
+    "nextLevel": "NEXT LEVEL",
+    "requirementsMissing": "Requirements not met",
+    "queueFull": "Construction queue is full",
+    "fieldsFull": "No moon fields available",
+    "constructionCount": "{count} construction(s) queued",
+    "noConstruction": "No construction in progress.",
+    "constructionWillAppear": "Upcoming construction will appear here.",
+    "openQueue": "View queue",
+    "closeQueue": "Close queue",
+    "constructionQueue": "Lunar construction queue",
+    "queuesUsed": "{count} construction(s) queued",
+    "inConstruction": "Under construction",
+    "waiting": "Waiting",
+    "ends": "Ends:",
+    "remaining": "Time remaining",
+    "categories": { "label": "Categories", "all": "All", "infrastructure": "Infrastructure", "surveillance": "Surveillance", "transport": "Transport" },
+    "buildingDescriptions": {
+      "moon_base": "Expands lunar facilities and increases the number of available moon fields.",
+      "phalanx": "Scans nearby systems for fleets.",
+      "jump_gate": "Instantly transfers fleets between lunar jump gates."
+    },
     "fields": "Used fields: {used} / {max}",
     "level": "Level {level}",
     "queued": "{count} queued",

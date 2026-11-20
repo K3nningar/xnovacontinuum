@@ -2,7 +2,7 @@
 
 /*
  * Author / Contributor : K3nningar
- * Code Version : 0.1.0-alpha.5
+ * Code Version : 0.1.1-alpha
  * Revision : 34ddc84
  * Description : Handles HTTP requests for AdminController operations.
  */
@@ -13,6 +13,7 @@ use App\Models\Fleet;
 use App\Models\Planet;
 use App\Models\Universe;
 use App\Models\User;
+use App\Services\CelestialNames;
 use App\Services\PlanetEconomy;
 use App\Services\ResearchService;
 use App\Services\UnitProductionService;
@@ -77,7 +78,7 @@ class AdminController extends Controller
     /**
      * Creates a new active universe using bounded game-world settings and records the operation in the admin audit log.
      */
-    public function storeUniverse(Request $request): RedirectResponse
+    public function storeUniverse(Request $request, CelestialNames $celestialNames): RedirectResponse
     {
         $data = $request->validate([
             'name' => ['required', 'string', 'min:2', 'max:80'],
@@ -88,17 +89,19 @@ class AdminController extends Controller
             'fleet_speed' => ['required', 'numeric', 'between:0.1,100'],
         ]);
 
-        DB::transaction(function () use ($request, $data): void {
+        DB::transaction(function () use ($request, $data, $celestialNames): void {
             $universe = Universe::query()->create([
                 ...$data,
                 'status' => 'active',
             ]);
+            $celestialNames->preGenerate($universe);
             $this->audit($request, 'universe_created', null, null, [
                 'universe_id' => $universe->id,
                 'name' => $universe->name,
                 'slug' => $universe->slug,
                 'galaxies' => $universe->galaxies,
                 'systems_per_galaxy' => $universe->systems_per_galaxy,
+                'named_systems' => DB::table('universe_system_names')->where('universe_id', $universe->id)->count(),
                 'economy_speed' => $universe->economy_speed,
                 'fleet_speed' => $universe->fleet_speed,
             ]);
@@ -110,9 +113,9 @@ class AdminController extends Controller
     /**
      * Opens a closed universe so new players can join it; existing players and worlds remain unchanged.
      */
-    public function openUniverse(Request $request, Universe $universe): RedirectResponse
+    public function openUniverse(Request $request, Universe $universe, CelestialNames $celestialNames): RedirectResponse
     {
-        DB::transaction(function () use ($request, $universe): void {
+        DB::transaction(function () use ($request, $universe, $celestialNames): void {
             $universe = Universe::query()->lockForUpdate()->findOrFail($universe->id);
             if ($universe->status !== 'closed') {
                 throw ValidationException::withMessages(['universe' => 'Cet univers est déjà ouvert.']);
@@ -120,6 +123,7 @@ class AdminController extends Controller
 
             $universe->status = 'active';
             $universe->save();
+            $celestialNames->preGenerate($universe);
             $this->audit($request, 'universe_opened', null, null, [
                 'universe_id' => $universe->id,
                 'name' => $universe->name,
@@ -528,7 +532,14 @@ class AdminController extends Controller
                 ->get(['id', 'actor_id', 'actor_level', 'target_user_id', 'planet_id', 'action', 'details', 'created_at']) : [],
             'universes' => $mode === 'universes' ? Universe::query()->orderBy('id')->get([
                 'id', 'name', 'slug', 'status', 'galaxies', 'systems_per_galaxy', 'economy_speed', 'fleet_speed',
-            ]) : [],
+            ])->map(function (Universe $universe): array {
+                $universe->named_systems = min(
+                    (int) $universe->galaxies * (int) $universe->systems_per_galaxy,
+                    DB::table('universe_system_names')->where('universe_id', $universe->id)->count(),
+                );
+
+                return $universe->toArray();
+            })->values() : [],
             'catalog' => $mode === 'elements' ? collect($this->elementDefinitions())
                 ->flatMap(fn ($items, $category) => collect($items)->map(fn ($item, $key) => [
                     'category' => $category, 'key' => (string) $key, 'label' => $item['label'],

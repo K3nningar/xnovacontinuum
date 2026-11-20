@@ -1,6 +1,6 @@
 /*
  * Author / Contributor : K3nningar
- * Code Version : 0.1.0-alpha.5
+ * Code Version : 0.1.1-alpha
  * Revision : 34ddc84
  * Description : Provides shared Spanish interface translations.
  */
@@ -56,6 +56,7 @@ export default {
   "nav": {
     "command": "Centro de mando",
     "buildings": "Instalaciones",
+    "moonBuildings": "Edificios lunares",
     "research": "Laboratorio",
     "fleet": "Cubierta de vuelo",
     "combatSimulator": "Simulador de combate",

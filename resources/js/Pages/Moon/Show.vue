@@ -1,6 +1,6 @@
 <!--
 Author / Contributor : K3nningar
-Code Version : 0.1.0-alpha.5
+Code Version : 0.1.1-alpha
 Revision : 34ddc84
 Description : Renders the Show Inertia page.
 -->
@@ -25,7 +25,6 @@ const page = usePage();
 const { t, n } = useI18n();
 const route = (name, params) => ziggyRoute(name, params, true, page.props.ziggy);
 const form = useForm({ direction: 'deposit', resource: 'metal', amount: 1, ships: { 202: 0, 203: 0, 209: 0 } });
-const buildingForm = useForm({ building: 'moon_base' });
 const jumpForm = useForm({ destination: '', ships: Object.fromEntries(Object.entries(props.moonFleet).map(([code]) => [code, 0])) });
 const capacities = { 202: 5000, 203: 25000, 209: 20000 };
 // Transfer capacity is the combined cargo volume of the three supported transport ship classes.
@@ -33,20 +32,11 @@ const capacity = computed(() => Object.entries(form.ships).reduce((sum, [code, c
 const fuel = computed(() => Object.values(form.ships).reduce((sum, count) => sum + Number(count || 0), 0));
 const flight = computed(() => props.fleetSpeed > 0 ? Math.max(60, Math.ceil(300 / props.fleetSpeed)) : '—');
 const format = (amount) => n(Number(amount), 'game');
-const moonBuildingNames = {
-    moon_base: t('moonLogistics.buildingNames.moon_base'),
-    phalanx: t('moonLogistics.buildingNames.phalanx'),
-    jump_gate: t('moonLogistics.buildingNames.jump_gate'),
-};
 const unitNames = { 202: 'small_cargo', 203: 'large_cargo', 204: 'light_fighter', 205: 'heavy_fighter', 206: 'cruiser', 207: 'battleship', 208: 'colony_ship', 209: 'recycler', 210: 'espionage_probe', 211: 'bomber', 212: 'solar_satellite', 213: 'destroyer', 214: 'deathstar', 215: 'battlecruiser', 216: 'supernova', 217: 'planetary_destroyer' };
 const moonShipNames = computed(() => Object.fromEntries(Object.keys(props.moonFleet).map((code) => [code, t(`unitNames.${unitNames[code]}`)])));
 
 function submit() {
     form.post(route('moon.transfer', { planet: props.planet.id, orbit: props.moon.orbit }));
-}
-function upgradeMoon(building) {
-    buildingForm.building = building;
-    buildingForm.post(route('moon.buildings.upgrade', { planet: props.planet.id, orbit: props.moon.orbit }));
 }
 function jump() {
     jumpForm.transform((data) => ({
@@ -65,8 +55,8 @@ function jump() {
                     <div class="command-heading">
                         <div>
                             <p class="eyebrow"><span class="eyebrow-line"></span>{{ t('moonLogistics.title') }}</p>
-                            <h1>{{ t('galaxyMoon', { orbit: moon.orbit, diameter: format(moon.diameter) }) }}</h1>
-                            <p class="command-subtitle">{{ planet.name }} [{{ planet.coordinates }}]</p>
+                            <h1>{{ moon.name || moon.generatedName || t('galaxyMoon', { orbit: moon.orbit, diameter: format(moon.diameter) }) }}</h1>
+                            <p class="command-subtitle">{{ moon.planetGeneratedName ?? planet.name }} · {{ planet.coordinates }}</p>
                         </div>
                         <Link class="button button-outline" :href="route('galaxy.index', { planet: planet.id, galaxy: planet.galaxy, system: planet.system })">{{ t('moonLogistics.back') }}</Link>
                     </div>
@@ -78,17 +68,9 @@ function jump() {
                             <span>{{ t('common.deuterium') }} : {{ format(moon.deuterium) }}</span><span>{{ t('moonLogistics.fields', { used: moonEconomy.fields.used, max: moonEconomy.fields.max }) }}</span><span>{{ t('common.energy') }} : {{ format(moonEconomy.energy) }}</span>
                         </div>
                     </section>
-                    <section class="data-panel moon-panel mt-4">
+                    <section class="data-panel moon-panel mt-4 p-4">
                         <div class="panel-heading"><div><span class="panel-kicker">{{ t('moonLogistics.buildings') }}</span><h2>{{ t('moonLogistics.buildings') }}</h2></div></div>
-                        <div class="moon-building-grid p-4">
-                            <form v-for="building in moonEconomy.buildings" :key="building.key" class="moon-building-card" @submit.prevent="upgradeMoon(building.key)">
-                                <div><strong>{{ moonBuildingNames[building.key] }}</strong><small>{{ t('moonLogistics.level', { level: building.level }) }}<template v-if="building.queued"> · {{ t('moonLogistics.queued', { count: building.queued }) }}</template></small></div>
-                                <p class="moon-building-cost">{{ t('common.metal') }} {{ format(building.cost.metal) }} · {{ t('common.crystal') }} {{ format(building.cost.crystal) }} · {{ t('common.deuterium') }} {{ format(building.cost.deuterium) }}</p>
-                                <button class="button button-outline" type="submit" :disabled="!building.canBuild || buildingForm.processing" @click="buildingForm.building = building.key">{{ t('moonLogistics.build') }}</button>
-                            </form>
-                        </div>
-                        <p class="px-4 pb-3 text-sm text-slate-400">{{ t('moonLogistics.fields', { used: moonEconomy.fields.used, max: moonEconomy.fields.max }) }}</p>
-                        <article v-for="item in moonEconomy.queue" :key="item.id" class="moon-queue-row"><strong>{{ moonBuildingNames[item.key] ?? item.key }} {{ t('moonLogistics.level', { level: item.targetLevel }) }}</strong><span>{{ t('units.endsAt', { date: item.completesAt }) }}</span></article>
+                        <Link class="button button-outline mt-4" :href="route('moon.buildings', { planet: planet.id, orbit: moon.orbit })">{{ t('moonLogistics.openBuildings') }}</Link>
                     </section>
                     <section v-if="moonEconomy.buildings.find((building) => building.key === 'phalanx')?.level > 0" class="data-panel moon-panel mt-4 p-4">
                         <h2 class="text-lg font-semibold">{{ t('moonLogistics.phalanx') }}</h2>

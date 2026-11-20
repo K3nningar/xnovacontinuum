@@ -1,6 +1,6 @@
 /*
  * Author / Contributor : K3nningar
- * Code Version : 0.1.0-alpha.5
+ * Code Version : 0.1.1-alpha
  * Revision : 34ddc84
  * Description : Provides translated messages for the es moon interface.
  */
@@ -10,6 +10,38 @@ export default {
     "title": "Luna natural",
     "back": "Volver a la galaxia",
     "buildings": "Edificios lunares",
+    "openBuildings": "Gestionar edificios lunares",
+    "selectMoon": "Luna seleccionada",
+    "building": "Construyendo…",
+    "moonDetails": "Detalles de la luna",
+    "rename": "Renombrar luna",
+    "save": "Guardar",
+    "saving": "Guardando…",
+    "cancel": "Cancelar",
+    "defaultName": "Luna {orbit}",
+    "resources": "Recursos lunares",
+    "availableBuildings": "Instalaciones disponibles",
+    "nextLevel": "SIGUIENTE NIVEL",
+    "requirementsMissing": "Requisitos no cumplidos",
+    "queueFull": "La cola de construcción está llena",
+    "fieldsFull": "No hay campos lunares disponibles",
+    "constructionCount": "{count} construcción(es) en cola",
+    "noConstruction": "No hay construcciones en curso.",
+    "constructionWillAppear": "Las próximas construcciones aparecerán aquí.",
+    "openQueue": "Ver cola",
+    "closeQueue": "Cerrar cola",
+    "constructionQueue": "Cola de construcción lunar",
+    "queuesUsed": "{count} construcción(es) en cola",
+    "inConstruction": "En construcción",
+    "waiting": "En espera",
+    "ends": "Finaliza:",
+    "remaining": "Tiempo restante",
+    "categories": { "label": "Categorías", "all": "Todas", "infrastructure": "Infraestructura", "surveillance": "Vigilancia", "transport": "Transporte" },
+    "buildingDescriptions": {
+      "moon_base": "Amplía las instalaciones lunares y aumenta el número de campos disponibles.",
+      "phalanx": "Explora sistemas cercanos en busca de flotas.",
+      "jump_gate": "Transfiere flotas instantáneamente entre puertas de salto lunares."
+    },
     "fields": "Campos ocupados: {used} / {max}",
     "level": "Nivel {level}",
     "queued": "{count} en cola",

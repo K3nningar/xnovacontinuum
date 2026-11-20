@@ -1,6 +1,6 @@
 <!--
 Author / Contributor : K3nningar
-Code Version : 0.1.0-alpha.5
+Code Version : 0.1.1-alpha
 Revision : 34ddc84
 Description : Renders the Index Inertia page.
 -->
@@ -248,8 +248,6 @@ function upgrade(building) {
         </main>
     </GameLayout>
 </template>
-<<<<<<< HEAD
-=======
 
 <style scoped>
 .building-pos { height: auto; background: transparent; }
@@ -289,4 +287,3 @@ function upgrade(building) {
     .building-pos .pos-content { width: 100%; }
 }
 </style>
->>>>>>> f5ddd0077cf5fad13a3eb1c581b74895b49fdf21

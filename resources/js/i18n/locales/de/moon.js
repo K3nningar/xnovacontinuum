@@ -1,6 +1,6 @@
 /*
  * Author / Contributor : K3nningar
- * Code Version : 0.1.0-alpha.5
+ * Code Version : 0.1.1-alpha
  * Revision : 34ddc84
  * Description : Provides translated messages for the de moon interface.
  */
@@ -10,6 +10,38 @@ export default {
     "title": "Natürlicher Mond",
     "back": "Zurück zur Galaxie",
     "buildings": "Mondgebäude",
+    "openBuildings": "Mondgebäude verwalten",
+    "selectMoon": "Ausgewählter Mond",
+    "building": "Wird gebaut…",
+    "moonDetails": "Monddetails",
+    "rename": "Mond umbenennen",
+    "save": "Speichern",
+    "saving": "Wird gespeichert…",
+    "cancel": "Abbrechen",
+    "defaultName": "Mond {orbit}",
+    "resources": "Mondressourcen",
+    "availableBuildings": "Verfügbare Anlagen",
+    "nextLevel": "NÄCHSTE STUFE",
+    "requirementsMissing": "Voraussetzungen nicht erfüllt",
+    "queueFull": "Bauwarteschlange ist voll",
+    "fieldsFull": "Keine Mondfelder verfügbar",
+    "constructionCount": "{count} Bauauftrag/-aufträge in der Warteschlange",
+    "noConstruction": "Kein Bau im Gange.",
+    "constructionWillAppear": "Anstehende Bauaufträge erscheinen hier.",
+    "openQueue": "Warteschlange anzeigen",
+    "closeQueue": "Warteschlange schließen",
+    "constructionQueue": "Mondbau-Warteschlange",
+    "queuesUsed": "{count} Bauauftrag/-aufträge in der Warteschlange",
+    "inConstruction": "Im Bau",
+    "waiting": "Wartend",
+    "ends": "Endet:",
+    "remaining": "Verbleibende Zeit",
+    "categories": { "label": "Kategorien", "all": "Alle", "infrastructure": "Infrastruktur", "surveillance": "Überwachung", "transport": "Transport" },
+    "buildingDescriptions": {
+      "moon_base": "Erweitert die Mondanlagen und erhöht die Anzahl verfügbarer Mondfelder.",
+      "phalanx": "Scannt nahe Systeme nach Flotten.",
+      "jump_gate": "Transportiert Flotten sofort zwischen Mond-Sprungtoren."
+    },
     "fields": "Belegte Felder: {used} / {max}",
     "level": "Stufe {level}",
     "queued": "{count} in Warteschlange",

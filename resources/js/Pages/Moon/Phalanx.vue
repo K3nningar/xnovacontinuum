@@ -20,7 +20,7 @@ const shipName = (code) => unitNames[code] ? t(`unitNames.${unitNames[code]}`) :
     <Head :title="t('moonLogistics.phalanx')" />
     <GameLayout>
         <main class="command-layout"><section class="command-content">
-            <div class="command-heading"><div><p class="eyebrow">{{ t('moonLogistics.phalanx') }}</p><h1>{{ t('moonLogistics.scan') }}</h1><p class="command-subtitle">{{ t('galaxyMoon', { orbit: moon.orbit, diameter: format(moon.diameter) }) }} · {{ planet.name }} [{{ planet.coordinates }}]</p></div><Link class="button button-outline" :href="route('moon.show', { planet: planet.id, orbit: moon.orbit })">{{ t('moonLogistics.back') }}</Link></div>
+            <div class="command-heading"><div><p class="eyebrow">{{ t('moonLogistics.phalanx') }}</p><h1>{{ t('moonLogistics.scan') }}</h1><p class="command-subtitle">{{ moon.name ?? moon.generatedName ?? t('galaxyMoon', { orbit: moon.orbit, diameter: format(moon.diameter) }) }} · {{ moon.planetGeneratedName ?? planet.name }} [{{ planet.coordinates }}]</p></div><Link class="button button-outline" :href="route('moon.show', { planet: planet.id, orbit: moon.orbit })">{{ t('moonLogistics.back') }}</Link></div>
             <section class="data-panel">
                 <div class="panel-heading"><h2>{{ t('moonLogistics.detectedFleets') }}</h2><span class="panel-count">{{ visibleFleets.length }}</span></div>
                 <article v-for="fleet in visibleFleets" :key="fleet.id" class="fleet-mission-row border-b border-slate-700 p-4">

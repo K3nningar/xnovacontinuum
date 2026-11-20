@@ -55,7 +55,9 @@ class MoonEconomy
                 'code' => (int) $entry->building_code,
                 'targetLevel' => (int) $entry->target_level,
                 'position' => (int) $entry->position,
+                'startsAt' => $entry->starts_at->toIso8601String(),
                 'completesAt' => $entry->completes_at->toIso8601String(),
+                'durationSeconds' => max(1, (int) $entry->starts_at->diffInSeconds($entry->completes_at)),
                 'remainingSeconds' => max(0, (int) now()->diffInSeconds($entry->completes_at, false)),
             ])->values(),
             'fields' => ['used' => (int) $stock->used_fields, 'max' => (int) $stock->max_fields],
@@ -143,6 +145,36 @@ class MoonEconomy
                 'mission_report' => ['moonBuilding' => ['code' => $definition['code'], 'targetLevel' => $nextLevel, 'orbit' => $orbit]],
             ]);
             $order->save();
+            MoonBuildingQueue::query()->create([
+                'planet_id' => $lockedPlanet->id,
+                'orbit' => $orbit,
+                'building_key' => $building,
+                'building_code' => $definition['code'],
+                'target_level' => $nextLevel,
+                'position' => $queue->count() + 1,
+                'cost_metal' => $cost['metal'],
+                'cost_crystal' => $cost['crystal'],
+                'cost_deuterium' => $cost['deuterium'],
+                'starts_at' => $startsAt,
+                'completes_at' => $completesAt,
+            ]);
+        }, 3);
+    }
+
+    public function rename(User $user, Planet $planet, int $orbit, string $name): void
+    {
+        DB::transaction(function () use ($user, $planet, $orbit, $name): void {
+            $lockedUser = User::query()->whereKey($user->id)->lockForUpdate()->firstOrFail();
+            $lockedPlanet = Planet::query()->whereKey($planet->id)->where('user_id', $lockedUser->id)
+                ->where('universe_id', $lockedUser->universe_id)->lockForUpdate()->firstOrFail();
+            $this->ownedMoon($lockedUser, $lockedPlanet, $orbit);
+            $stock = DB::table('moon_stocks')->where('planet_id', $lockedPlanet->id)->where('orbit', $orbit)->lockForUpdate()->first();
+
+            if (! $stock) {
+                throw ValidationException::withMessages(['moon' => 'Cette lune n’existe plus.']);
+            }
+
+            DB::table('moon_stocks')->where('id', $stock->id)->update(['name' => $name, 'updated_at' => now()]);
         }, 3);
     }
 

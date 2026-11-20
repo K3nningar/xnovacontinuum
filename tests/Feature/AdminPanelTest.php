@@ -2,7 +2,7 @@
 
 /*
  * Author / Contributor : K3nningar
- * Code Version : 0.1.0-alpha.5
+ * Code Version : 0.1.1-alpha
  * Revision : 34ddc84
  * Description : Tests the application's AdminPanelTest behavior.
  */
@@ -12,6 +12,7 @@ namespace Tests\Feature;
 use App\Models\Planet;
 use App\Models\Universe;
 use App\Models\User;
+use App\Services\CelestialNames;
 use App\Services\PlanetEconomy;
 use Illuminate\Foundation\Testing\LazilyRefreshDatabase;
 use Illuminate\Support\Facades\DB;
@@ -142,16 +143,25 @@ class AdminPanelTest extends TestCase
         $this->actingAs($founder)->post(route('admin.universes.store'), [
             'name' => 'Pegasus',
             'slug' => 'pegasus',
-            'galaxies' => 5,
-            'systems_per_galaxy' => 300,
+            'galaxies' => 2,
+            'systems_per_galaxy' => 3,
             'economy_speed' => 2.5,
             'fleet_speed' => 3,
         ])->assertRedirect(route('admin.universes'));
 
         $universe = Universe::query()->where('slug', 'pegasus')->firstOrFail();
+        $this->assertDatabaseCount('universe_system_names', 6);
+        $generatedNames = app(CelestialNames::class)->forSystem($universe, 1, 1);
+        $this->assertDatabaseHas('universe_system_names', [
+            'universe_id' => $universe->id,
+            'galaxy' => 1,
+            'system' => 1,
+            'star_name' => $generatedNames['starName'],
+        ]);
+        $this->assertSame($generatedNames['starName'].' VIII', $generatedNames['planetNames'][8]);
         $this->assertSame('active', $universe->status);
-        $this->assertSame(5, $universe->galaxies);
-        $this->assertSame(300, $universe->systems_per_galaxy);
+        $this->assertSame(2, $universe->galaxies);
+        $this->assertSame(3, $universe->systems_per_galaxy);
         $this->assertSame(2.5, (float) $universe->economy_speed);
         $this->assertSame(3.0, (float) $universe->fleet_speed);
         $this->assertDatabaseHas('admin_audit_logs', [
@@ -169,13 +179,17 @@ class AdminPanelTest extends TestCase
     {
         $founder = User::factory()->create();
         $founder->forceFill(['admin_level' => 4])->save();
-        $universe = Universe::query()->create(['name' => 'Pegasus', 'slug' => 'pegasus', 'status' => 'closed']);
+        $universe = Universe::query()->create(['name' => 'Pegasus', 'slug' => 'pegasus', 'status' => 'closed', 'galaxies' => 1, 'systems_per_galaxy' => 2]);
+        DB::table('universe_system_names')->insert(['universe_id' => $universe->id, 'galaxy' => 1, 'system' => 1,
+            'star_name' => 'Preexisting star', 'planet_names' => '{}', 'moon_names' => '{}', 'created_at' => now(), 'updated_at' => now()]);
         $player = User::factory()->create(['universe_id' => $universe->id]);
 
         $this->actingAs($founder)->post(route('admin.universes.open', $universe))
             ->assertRedirect(route('admin.universes'));
 
         $this->assertSame('active', $universe->fresh()->status);
+        $this->assertSame(2, DB::table('universe_system_names')->where('universe_id', $universe->id)->count());
+        $this->assertDatabaseHas('universe_system_names', ['universe_id' => $universe->id, 'system' => 1, 'star_name' => 'Preexisting star']);
         $this->assertSame($universe->id, $player->fresh()->universe_id);
         $this->assertDatabaseHas('admin_audit_logs', [
             'actor_id' => $founder->id,

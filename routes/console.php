@@ -2,12 +2,13 @@
 
 /*
  * Author / Contributor : K3nningar
- * Code Version : 0.1.0-alpha.5
+ * Code Version : 0.1.1-alpha
  * Revision : 34ddc84
  * Description : Registers the application's console routes.
  */
 
 use App\Models\User;
+use App\Services\CelestialNames;
 use App\Services\ExplorationMissions;
 use App\Services\ResearchService;
 use Illuminate\Foundation\Inspiring;
@@ -26,6 +27,13 @@ Artisan::command('inspire', function () {
 Artisan::command('fleets:process', function (ExplorationMissions $missions): void {
     $missions->processDue();
 })->purpose('Traiter les missions de flotte arrivées à échéance');
+
+Artisan::command('universes:names-backfill', function (CelestialNames $names): int {
+    $generated = $names->backfillMissing();
+    $this->info("Noms stellaires générés pour {$generated} systèmes.");
+
+    return 0;
+})->purpose('Pré-générer les noms célestes des univers existants');
 
 Schedule::command('fleets:process')->everyMinute()->withoutOverlapping();
 

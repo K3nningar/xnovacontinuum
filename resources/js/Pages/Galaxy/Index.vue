@@ -1,6 +1,6 @@
 <!--
 Author / Contributor : K3nningar
-Code Version : 0.1.0-alpha.5
+Code Version : 0.1.1-alpha
 Revision : 34ddc84
 Description : Renders the Index Inertia page.
 -->
@@ -23,6 +23,7 @@ const props = defineProps({
     systemLimit: { type: Number, required: true },
     spyLevel: { type: Number, required: true },
     star: { type: String, required: true },
+    starName: { type: String, required: true },
     slots: { type: Array, required: true },
     availableShips: { type: Array, required: true },
     fleetSpeed: { type: Number, required: true },
@@ -130,11 +131,15 @@ function selectPosition(event, position) {
 function slotLabel(slot) {
     const position = t('galaxy.position', { position: slot.position });
     if (!slot.visible) return `${position} · ${t('galaxy.hidden')} · ${t('galaxy.required', { level: slot.requiredSpyLevel })}`;
-    const body = slot.kind === 'planet'
-        ? t('galaxy.planetType', { type: t(`galaxy.types.${slot.type}`) })
-        : t('galaxy.asteroid', { type: t(`galaxy.types.${slot.type}`) });
-    const owner = slot.kind === 'planet' && slot.planet?.owned ? ` · ${t('galaxy.own')}` : '';
-    return `${position} · ${body}${owner}`;
+    if (slot.kind === 'planet') {
+        const name = slot.planet?.name ?? slot.generatedName;
+        const owner = slot.planet?.owned ? ` · ${t('galaxy.own')}` : '';
+        const generated = slot.planet?.name && slot.generatedName !== slot.planet.name ? ` · ${slot.generatedName}` : '';
+
+        return `${position} · ${name}${generated}${owner}`;
+    }
+
+    return `${position} · ${t('galaxy.asteroid', { type: t(`galaxy.types.${slot.type}`) })}`;
 }
 
 /** Reset the ship selection and stale errors whenever a new target/mission is prepared. */
@@ -232,18 +237,22 @@ function navigate(galaxy = targetGalaxy.value, system = targetSystem.value) {
                             <svg class="system-map-orbits" viewBox="0 0 960 640" aria-hidden="true">
                                 <ellipse v-for="slot in slots" :key="slot.position" cx="480" cy="320" :rx="orbitRadius(slot.position).x" :ry="orbitRadius(slot.position).y" />
                             </svg>
-                            <a class="system-map-star" :class="[`star-${star}`, { 'is-current': selectedPosition === 1 }]" href="#galaxy-position-1" :aria-label="`${t('galaxy.position', { position: 1 })} · ${t('galaxy.star')} · ${t(`galaxy.types.${star}`)}`" aria-describedby="galaxy-tooltip-1" @mouseenter="dismissedTooltip = null" @focus="dismissedTooltip = null" @keydown.esc="dismissedTooltip = 1" @click="selectPosition($event, 1)">
+                            <a class="system-map-star" :class="[`star-${star}`, { 'is-current': selectedPosition === 1 }]" href="#galaxy-position-1" :aria-label="`${t('galaxy.position', { position: 1 })} · ${t('galaxy.starName')} ${starName} · ${t(`galaxy.types.${star}`)}`" aria-describedby="galaxy-tooltip-1" @mouseenter="dismissedTooltip = null" @focus="dismissedTooltip = null" @keydown.esc="dismissedTooltip = 1" @click="selectPosition($event, 1)">
                                 <span class="system-map-star-core"></span><span class="system-map-number">1</span>
-                                <span id="galaxy-tooltip-1" class="system-map-tooltip" :class="{ 'tooltip-dismissed': dismissedTooltip === 1 }" role="tooltip">{{ t('galaxy.star') }} · {{ t(`galaxy.types.${star}`) }}</span>
+                                <span id="galaxy-tooltip-1" class="system-map-tooltip" :class="{ 'tooltip-dismissed': dismissedTooltip === 1 }" role="tooltip">{{ starName }} · {{ t(`galaxy.types.${star}`) }}</span>
                             </a>
                             <a v-for="slot in slots" :key="slot.position" class="system-map-marker" :class="[!slot.visible ? 'body-hidden' : slot.kind === 'asteroid' ? `body-asteroid body-${slot.type}` : [`body-planet`, `body-${slot.type}`, { 'body-owned': slot.planet?.owned }], { 'is-current': selectedPosition === slot.position }]" :style="markerStyle(slot.position)" :href="`#galaxy-position-${slot.position}`" :aria-label="slotLabel(slot)" :aria-describedby="`galaxy-tooltip-${slot.position}`" @mouseenter="dismissedTooltip = null" @focus="dismissedTooltip = null" @keydown.esc="dismissedTooltip = slot.position" @click="selectPosition($event, slot.position)">
                                 <span class="system-map-body" aria-hidden="true"></span>
                                 <span class="system-map-number">{{ slot.position }}</span>
+                                <span v-if="slot.visible && slot.kind === 'planet'" class="system-map-body-name" aria-hidden="true">{{ slot.planet?.name ?? slot.generatedName }}</span>
                                 <span :id="`galaxy-tooltip-${slot.position}`" class="system-map-tooltip" :class="[tooltipPlacement(slot.position), { 'tooltip-dismissed': dismissedTooltip === slot.position }]" role="tooltip">
                                     <strong>{{ slotLabel(slot) }}</strong>
                                     <template v-if="slot.visible && slot.kind === 'planet'">
-                                        <span>{{ slot.planet ? (slot.planet.owned ? t('galaxy.own') : t('galaxy.owner', { name: slot.planet.owner })) : t('galaxy.unoccupied') }}<template v-if="slot.planet"> · {{ slot.planet.name }}</template></span>
+                                        <span class="system-map-star-name">{{ t('galaxy.star') }} · {{ starName }} · {{ t(`galaxy.types.${star}`) }}</span>
+                                        <span>{{ slot.planet ? (slot.planet.owned ? t('galaxy.own') : t('galaxy.owner', { name: slot.planet.owner })) : t('galaxy.unoccupied') }} · {{ slot.planet?.name ?? slot.generatedName }}</span>
+                                        <small v-if="slot.planet?.name && slot.planet.name !== slot.generatedName">{{ t('galaxy.generatedPlanet') }} · {{ slot.generatedName }}</small>
                                         <span>{{ t('galaxy.moons', { count: slot.moons }) }}</span>
+                                        <ul v-if="slot.naturalMoons.length" class="system-map-moon-names"><li v-for="moon in slot.naturalMoons" :key="moon.orbit">{{ moon.name }} · {{ format(moon.diameter) }} km</li></ul>
                                         <span>{{ t('galaxy.potential') }} : ▰ {{ slot.resources.metal }}% · ◇ {{ slot.resources.crystal }}% · ⬡ {{ slot.resources.deuterium }}%</span>
                                     </template>
                                     <template v-else-if="slot.visible">
@@ -266,7 +275,7 @@ function navigate(galaxy = targetGalaxy.value, system = targetSystem.value) {
                 </section>
 
                 <section id="galaxy-position-1" class="data-panel galaxy-details">
-                    <div class="panel-heading"><div><span class="panel-kicker">{{ t('galaxy.galaxy') }} {{ galaxy }} · {{ t('galaxy.system') }} {{ system }} · <span class="galaxy-mobile-hint">{{ t('galaxy.position', { position: 1 }) }}</span><span class="galaxy-desktop-hint" aria-live="polite">{{ t('galaxy.position', { position: selectedPosition }) }}</span></span><h2><span class="galaxy-mobile-hint">{{ t('galaxy.star') }} · {{ t(`galaxy.types.${star}`) }}</span><span class="galaxy-desktop-hint">{{ selectedPosition === 1 ? `${t('galaxy.star')} · ${t(`galaxy.types.${star}`)}` : t('galaxyMap.title') }}</span></h2></div><span class="text-xl text-amber-300" aria-hidden="true">✦</span></div>
+                    <div class="panel-heading"><div><span class="panel-kicker">{{ t('galaxy.galaxy') }} {{ galaxy }} · {{ t('galaxy.system') }} {{ system }} · <span class="galaxy-mobile-hint">{{ t('galaxy.position', { position: 1 }) }}</span><span class="galaxy-desktop-hint" aria-live="polite">{{ t('galaxy.position', { position: selectedPosition }) }}</span></span><h2><span class="galaxy-mobile-hint">{{ starName }} · {{ t(`galaxy.types.${star}`) }}</span><span class="galaxy-desktop-hint">{{ selectedPosition === 1 ? `${starName} · ${t(`galaxy.types.${star}`)}` : t('galaxyMap.title') }}</span></h2></div><span class="text-xl text-amber-300" aria-hidden="true">✦</span></div>
                     <div class="galaxy-details-grid grid grid-cols-1 gap-3 p-4 md:grid-cols-2 xl:grid-cols-3">
                         <article v-for="slot in slots" :id="`galaxy-position-${slot.position}`" :key="slot.position" class="galaxy-position-card border border-slate-700 bg-slate-950/40 p-4" :class="{ 'opacity-60': !slot.visible, 'is-selected': selectedPosition === slot.position }">
                             <p class="text-sm text-slate-400">{{ t('galaxy.position', { position: slot.position }) }}</p>
@@ -276,10 +285,12 @@ function navigate(galaxy = targetGalaxy.value, system = targetSystem.value) {
                             </template>
 
                             <template v-else-if="slot.kind === 'planet'">
-                                <h3 class="mt-2 font-semibold text-cyan-300">{{ t('galaxy.planetType', { type: t(`galaxy.types.${slot.type}`) }) }}</h3>
-                                <p class="mt-2 text-sm">{{ slot.planet ? (slot.planet.owned ? t('galaxy.own') : t('galaxy.owner', { name: slot.planet.owner })) : t('galaxy.unoccupied') }}<template v-if="slot.planet"> · {{ slot.planet.name }}</template></p>
+                                <h3 class="mt-2 font-semibold text-cyan-300">{{ slot.planet?.name ?? slot.generatedName }}</h3>
+                                <p v-if="slot.planet?.name && slot.planet.name !== slot.generatedName" class="mt-1 text-xs text-slate-400">{{ t('galaxy.generatedPlanet') }} · {{ slot.generatedName }}</p>
+                                <p class="mt-2 text-sm">{{ t('galaxy.planetType', { type: t(`galaxy.types.${slot.type}`) }) }} · {{ slot.planet ? (slot.planet.owned ? t('galaxy.own') : t('galaxy.owner', { name: slot.planet.owner })) : t('galaxy.unoccupied') }}</p>
                                 <p class="mt-2 text-sm text-slate-400">{{ t('galaxy.moons', { count: slot.moons }) }}</p>
-                                <ul v-if="slot.naturalMoons.length" class="mt-1 text-sm text-slate-400"><li v-for="moon in slot.naturalMoons" :key="moon.orbit"><Link v-if="slot.planet?.owned" class="text-cyan-300 underline" :href="route('moon.show', { planet: slot.planet.id, orbit: moon.orbit })">{{ t('galaxyMoon', { orbit: moon.orbit, diameter: n(moon.diameter, 'game') }) }}</Link><template v-else>{{ t('galaxyMoon', { orbit: moon.orbit, diameter: n(moon.diameter, 'game') }) }}</template></li></ul>
+                                <p v-if="slot.naturalMoons.length" class="mt-1 text-xs text-slate-400">{{ t('galaxy.moonNames') }}</p>
+                                        <ul v-if="slot.naturalMoons.length" class="mt-1 text-sm text-slate-400"><li v-for="moon in slot.naturalMoons" :key="moon.orbit"><Link v-if="slot.planet?.owned" class="text-cyan-300 underline" :href="route('moon.show', { planet: slot.planet.id, orbit: moon.orbit })">{{ moon.name }} · {{ n(moon.diameter, 'game') }} km</Link><template v-else>{{ moon.name }} · {{ n(moon.diameter, 'game') }} km</template></li></ul>
                                 <p class="mt-2 text-sm text-slate-400">{{ t('galaxy.potential') }} : ▰ {{ slot.resources.metal }}% · ◇ {{ slot.resources.crystal }}% · ⬡ {{ slot.resources.deuterium }}%</p>
                                 <div class="mt-3 flex flex-wrap gap-2"><button v-for="mission in missionsForSlot(slot)" :key="mission" class="button button-outline" type="button" @click="prepareMission(mission, slot.position)">{{ t(`galaxyMissions.${mission}`) }}</button></div>
                             </template>
@@ -386,6 +397,7 @@ function navigate(galaxy = targetGalaxy.value, system = targetSystem.value) {
 .body-hidden .system-map-body { background: #606b79; box-shadow: none; }
 .body-owned .system-map-body { outline: 2px solid #67e8f9; outline-offset: 3px; }
 .system-map-number { position: absolute; top: 34px; color: #e2e8f0; font-size: 11px; font-weight: 700; line-height: 1; text-shadow: 0 1px 3px #000; }
+.system-map-body-name { position: absolute; top: 48px; max-width: 110px; overflow: hidden; color: #d9e4ee; font-size: 7px; text-align: center; text-overflow: ellipsis; text-shadow: 0 1px 5px #03070c; white-space: nowrap; pointer-events: none; }
 .system-map-star { left: 50%; top: 50%; }
 .system-map-star-core { width: 36px; height: 36px; border-radius: 50%; background: radial-gradient(circle, #fffdf0, var(--star-color, #ffc66a) 50%, #ee772d); box-shadow: 0 0 22px var(--star-color, #ffc66a); }
 .star-blue_giant, .star-neutron_star { --star-color: #8ed3ff; }

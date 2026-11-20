@@ -1,6 +1,6 @@
 /*
  * Author / Contributor : K3nningar
- * Code Version : 0.1.0-alpha.5
+ * Code Version : 0.1.1-alpha
  * Revision : 34ddc84
  * Description : Provides translated messages for the it moon interface.
  */
@@ -10,6 +10,38 @@ export default {
     "title": "Luna naturale",
     "back": "Torna alla galassia",
     "buildings": "Edifici lunari",
+    "openBuildings": "Gestisci gli edifici lunari",
+    "selectMoon": "Luna selezionata",
+    "building": "Costruzione…",
+    "moonDetails": "Dettagli della luna",
+    "rename": "Rinomina la luna",
+    "save": "Salva",
+    "saving": "Salvataggio…",
+    "cancel": "Annulla",
+    "defaultName": "Luna {orbit}",
+    "resources": "Risorse lunari",
+    "availableBuildings": "Installazioni disponibili",
+    "nextLevel": "LIVELLO SUCCESSIVO",
+    "requirementsMissing": "Requisiti non soddisfatti",
+    "queueFull": "La coda di costruzione è piena",
+    "fieldsFull": "Nessun campo lunare disponibile",
+    "constructionCount": "{count} costruzione/i in coda",
+    "noConstruction": "Nessuna costruzione in corso.",
+    "constructionWillAppear": "Le prossime costruzioni appariranno qui.",
+    "openQueue": "Mostra la coda",
+    "closeQueue": "Chiudi la coda",
+    "constructionQueue": "Coda di costruzione lunare",
+    "queuesUsed": "{count} costruzione/i in coda",
+    "inConstruction": "In costruzione",
+    "waiting": "In attesa",
+    "ends": "Termina:",
+    "remaining": "Tempo rimanente",
+    "categories": { "label": "Categorie", "all": "Tutte", "infrastructure": "Infrastruttura", "surveillance": "Sorveglianza", "transport": "Trasporto" },
+    "buildingDescriptions": {
+      "moon_base": "Espande le strutture lunari e aumenta il numero di campi disponibili.",
+      "phalanx": "Scansiona i sistemi vicini alla ricerca di flotte.",
+      "jump_gate": "Trasferisce istantaneamente le flotte tra portali lunari."
+    },
     "fields": "Campi utilizzati: {used} / {max}",
     "level": "Livello {level}",
     "queued": "{count} in coda",

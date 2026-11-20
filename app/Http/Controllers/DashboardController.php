@@ -2,7 +2,7 @@
 
 /*
  * Author / Contributor : K3nningar
- * Code Version : 0.1.0-alpha.5
+ * Code Version : 0.1.1-alpha
  * Revision : 34ddc84
  * Description : Handles HTTP requests for DashboardController operations.
  */
@@ -19,6 +19,7 @@ use App\Services\ResearchService;
 use App\Services\UnitProductionService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Inertia\Response;
 
 class DashboardController extends Controller
@@ -52,6 +53,7 @@ class DashboardController extends Controller
                 })
             : collect();
         $moonsByPlanet = [];
+        $generatedPlanetNames = [];
         $moonSystems = [];
         $reservedSystems = $planets
             ->filter(fn (Planet $planet): bool => $planet->position < 2 || $planet->position > 15)
@@ -60,17 +62,12 @@ class DashboardController extends Controller
         foreach ($planets as $planet) {
             $systemKey = "{$planet->galaxy}:{$planet->system}";
 
-            if (isset($reservedSystems[$systemKey])) {
+            if (isset($reservedSystems[$systemKey]) || $planet->position < 2 || $planet->position > 15) {
                 $moonsByPlanet[$planet->id] = [];
 
                 continue;
             }
 
-            if ($planet->position < 2 || $planet->position > 15) {
-                $moonsByPlanet[$planet->id] = [];
-
-                continue;
-            }
             $moonSystems[$systemKey] ??= $map->system(
                 $universe,
                 $user,
@@ -78,9 +75,13 @@ class DashboardController extends Controller
                 (int) $planet->system,
                 (int) $planet->position,
             )['slots'];
-            $moonsByPlanet[$planet->id] = $moonSystems[$systemKey][$planet->position - 2]['naturalMoons'] ?? [];
+            $slot = $moonSystems[$systemKey][$planet->position - 2] ?? [];
+            $generatedPlanetNames[$planet->id] = $slot['generatedName'] ?? null;
+            $moonsByPlanet[$planet->id] = $slot['naturalMoons'] ?? [];
         }
 
+        $moonStocks = DB::table('moon_stocks')->whereIn('planet_id', $planets->pluck('id'))
+            ->get()->keyBy(fn ($stock): string => "{$stock->planet_id}:{$stock->orbit}");
         $planetId = $request->integer('planet');
         $activePlanet = $planetId > 0 ? $planets->firstWhere('id', $planetId) : $planets->first();
         if ($planetId > 0 && ! $activePlanet) {
@@ -127,7 +128,18 @@ class DashboardController extends Controller
                 : null,
             'planets' => $planets->map(fn ($planet) => [
                 ...$planet->only('id', 'name', 'galaxy', 'system', 'position', 'coordinates', 'fields', 'max_temperature'),
-                'moons' => $moonsByPlanet[$planet->id] ?? [],
+                'generatedName' => $generatedPlanetNames[$planet->id] ?? null,
+                'moons' => collect($moonsByPlanet[$planet->id] ?? [])->map(function (array $moon) use ($planet, $moonStocks): array {
+                    $stock = $moonStocks->get("{$planet->id}:{$moon['orbit']}");
+
+                    return [...$moon,
+                        'name' => $stock?->name ?? $moon['name'],
+                        'generatedName' => $moon['generatedName'],
+                        'metal' => (int) ($stock?->metal ?? 0),
+                        'crystal' => (int) ($stock?->crystal ?? 0),
+                        'deuterium' => (int) ($stock?->deuterium ?? 0),
+                    ];
+                })->values(),
                 'shields' => [
                     'small' => (int) $planet->unit_407 > 0,
                     'large' => (int) $planet->unit_408 > 0,

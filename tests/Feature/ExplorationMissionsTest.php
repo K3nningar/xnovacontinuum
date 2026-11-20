@@ -2,7 +2,7 @@
 
 /*
  * Author / Contributor : K3nningar
- * Code Version : 0.1.0-alpha.5
+ * Code Version : 0.1.1-alpha
  * Revision : 34ddc84
  * Description : Tests the application's ExplorationMissionsTest behavior.
  */
@@ -430,8 +430,13 @@ class ExplorationMissionsTest extends TestCase
         $this->travelTo($fleet->arrives_at->addSecond());
         app(ExplorationMissions::class)->processDue();
         $this->assertSame(2, $user->planets()->where('universe_id', $user->universe_id)->count());
-        $this->assertSame(0, (int) Planet::where('universe_id', $user->universe_id)->where('galaxy', 1)->where('system', $system)->where('position', $position)->value('unit_208'));
+        $colonizedPlanet = Planet::where('universe_id', $user->universe_id)->where('galaxy', 1)->where('system', $system)->where('position', $position)->firstOrFail();
+        $this->assertSame(0, (int) $colonizedPlanet->unit_208);
         $this->assertSame('colonized', $fleet->fresh()->outcome);
+        $generatedName = app(GalaxyMap::class)->system($user->universe, $user, 1, $system, $home->position)['slots'][$position - 2]['generatedName'];
+        $this->assertSame($generatedName, $user->planets()->where('universe_id', $user->universe_id)
+            ->where('galaxy', 1)->where('system', $system)->where('position', $position)->value('name'));
+        $this->assertSame($generatedName, $fleet->fresh()->mission_report['colonizedPlanetName']);
     }
 
     public function test_recycling_debris_is_depleted_once_and_moon_stock_is_removed_when_destroyed(): void

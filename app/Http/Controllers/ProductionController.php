@@ -2,7 +2,7 @@
 
 /*
  * Author / Contributor : K3nningar
- * Code Version : 0.1.0-alpha.5
+ * Code Version : 0.1.1-alpha
  * Revision : 34ddc84
  * Description : Handles HTTP requests for ProductionController operations.
  */
@@ -10,10 +10,13 @@
 namespace App\Http\Controllers;
 
 use App\Models\Planet;
+use App\Services\GalaxyMap;
+use App\Services\MoonEconomy;
 use App\Services\PlanetEconomy;
 use App\Services\UnitProductionService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Inertia\Response;
 
 class ProductionController extends Controller
@@ -40,7 +43,7 @@ class ProductionController extends Controller
      * Fleet and report queries are scoped to the authenticated user's selected universe; an optional planet
      * selector falls back to the first ordered owned planet.
      */
-    public function fleet(Request $request, PlanetEconomy $economy, UnitProductionService $production): Response|RedirectResponse
+    public function fleet(Request $request, PlanetEconomy $economy, UnitProductionService $production, GalaxyMap $map, MoonEconomy $moonEconomy): Response|RedirectResponse
     {
         $user = $request->user();
         $planets = $user->planets()->where('universe_id', $user->universe_id)
@@ -68,18 +71,29 @@ class ProductionController extends Controller
         $request->validate(['moon_orbit' => ['sometimes', 'integer', 'between:1,10']]);
         $moonFleet = [];
         if ($moonOrbit) {
-            $map = app(\App\Services\GalaxyMap::class);
+            $map = app(GalaxyMap::class);
             $map->ownedMoon($user, $selectedPlanet, $moonOrbit);
-            $moonFleet = app(\App\Services\MoonEconomy::class)->ships($selectedPlanet, $moonOrbit);
+            $moonFleet = app(MoonEconomy::class)->ships($selectedPlanet, $moonOrbit);
         }
+
+        $moonStocks = DB::table('moon_stocks')->whereIn('planet_id', $planets->pluck('id'))
+            ->get()->keyBy(fn ($stock): string => "{$stock->planet_id}:{$stock->orbit}");
 
         return inertia('Fleet/Index', [
             'user' => $user->only('id', 'name'), 'universe' => $user->universe?->only('id', 'name', 'galaxies', 'systems_per_galaxy'),
-            'planets' => $planets->map(function (Planet $planet) use ($user, $economy): array {
-                $map = app(\App\Services\GalaxyMap::class);
-                $moons = $map->system($planet->universe, $user, (int) $planet->galaxy, (int) $planet->system, (int) $planet->position)['slots'][$planet->position - 2]['naturalMoons'];
+            'planets' => $planets->map(function (Planet $planet) use ($user, $economy, $map, $moonStocks): array {
+                $slots = $map->system($planet->universe, $user, (int) $planet->galaxy, (int) $planet->system, (int) $planet->position)['slots'];
+                $slot = $slots[$planet->position - 2];
+                $moons = $slot['naturalMoons'];
+                foreach ($moons as &$moon) {
+                    $moon['generatedName'] ??= $moon['name'];
+                    $stock = $moonStocks->get("{$planet->id}:{$moon['orbit']}");
+                    $moon['name'] = $stock?->name ?? $moon['generatedName'];
+                }
+                unset($moon);
 
-                return [...$planet->only('id', 'name', 'coordinates', 'unit_216', 'unit_217', 'alliance_depot_level'), 'moons' => $moons,
+                return [...$planet->only('id', 'name', 'coordinates', 'unit_216', 'unit_217', 'alliance_depot_level'),
+                    'generatedName' => $slot['generatedName'], 'moons' => $moons,
                     ...$economy->snapshot($planet, (int) $user->energy_technology_level, (int) $user->computer_technology_level)];
             })->values(),
             'moonFleet' => $moonFleet,

@@ -1,6 +1,6 @@
 /*
  * Author / Contributor : K3nningar
- * Code Version : 0.1.0-alpha.5
+ * Code Version : 0.1.1-alpha
  * Revision : 34ddc84
  * Description : Provides application localization support for pageMessages.
  */
@@ -41,6 +41,7 @@ export const pageTranslationPaths = {
     declarations: ['multiAccounts', 'admin.previous', 'admin.next'],
     galaxy: ['galaxyLegacySensors', 'galaxyMap', 'galaxyCombatLimit', 'galaxyEncounter', 'galaxyEarlyReturn', 'galaxyMoon', 'galaxyShipsFound', 'galaxyMissions', 'galaxyConcentrationNote', 'galaxy', 'unitNames', 'fleet.ship', 'common.select'],
     moon: ['moonLogistics', 'galaxyMissions', 'galaxyMoon', 'fleet.ship', 'buildingCatalog', 'overview.returning', 'overview.outbound', 'units.endsAt'],
+    moonBuildings: ['moonLogistics', 'galaxyMoon', 'common', 'nav', 'units.endsAt', 'overview.returning', 'overview.outbound'],
     moonPhalanx: ['moonLogistics', 'galaxyMissions', 'galaxyMoon', 'fleet.ship', 'overview.returning', 'overview.outbound'],
     buildings: ['catalogFilters', 'buildingFilters', 'buildings', 'buildingActions', 'buildingCatalog'],
     research: ['research', 'researchLabels', 'technologyTree', 'elementInfo', 'buildingCatalog', 'unitNames', 'officerNames', 'galaxy.sensorsDesc'],
@@ -48,6 +49,7 @@ export const pageTranslationPaths = {
     fleet: [
         'fleet',
         'fleet.ship',
+        'galaxyMoon',
         'galaxy',
         'unitNames',
         'galaxyMissions',

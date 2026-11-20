@@ -2,7 +2,7 @@
 
 /*
  * Author / Contributor : K3nningar
- * Code Version : 0.1.0-alpha.5
+ * Code Version : 0.1.1-alpha
  * Revision : 34ddc84
  * Description : Implements the ExplorationMissions application service.
  */
@@ -805,7 +805,7 @@ class ExplorationMissions
         $user = User::query()->whereKey($fleet->user_id)->lockForUpdate()->firstOrFail();
         abort_if($user->planets()->where('universe_id', $fleet->universe_id)->count() >= 21, 409);
         $concentrations = $this->map->planetConcentrations($fleet->universe, $fleet->target_galaxy, $fleet->target_system, $fleet->target_position);
-        $planet = new Planet(['name' => 'Colonie']);
+        $planet = new Planet(['name' => $slot['generatedName']]);
         $planet->forceFill([
             'universe_id' => $fleet->universe_id, 'user_id' => $fleet->user_id, 'galaxy' => $fleet->target_galaxy,
             'system' => $fleet->target_system, 'position' => $fleet->target_position, 'metal' => 500, 'crystal' => 500,
@@ -820,7 +820,7 @@ class ExplorationMissions
         unset($ships[208]);
         $fleet->ships = $ships;
         $fleet->outcome = 'colonized';
-        $fleet->mission_report = ['colonizedPlanetId' => $planet->id];
+        $fleet->mission_report = ['colonizedPlanetId' => $planet->id, 'colonizedPlanetName' => $planet->name];
     }
 
     private function resolveMoonDestruction(Fleet $fleet): void

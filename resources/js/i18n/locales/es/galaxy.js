@@ -1,6 +1,6 @@
 /*
  * Author / Contributor : K3nningar
- * Code Version : 0.1.0-alpha.5
+ * Code Version : 0.1.1-alpha
  * Revision : 34ddc84
  * Description : Provides translated messages for the es galaxy interface.
  */
@@ -90,6 +90,9 @@ export default {
     "sensorsDesc": "Cada nivel de espionaje revela una posición adicional a cada lado de la posición de tu planeta de origen. Tus planetas siempre son visibles.",
     "sensorLevel": "Espionaje: nivel {level}",
     "star": "Estrella central",
+    "starName": "Nombre de la estrella",
+    "generatedPlanet": "Planeta generado",
+    "moonNames": "Nombres de lunas",
     "position": "Posición {position}",
     "hidden": "Fuera del alcance del espionaje",
     "required": "Se requiere nivel {level} de espionaje",

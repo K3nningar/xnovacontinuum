@@ -1,6 +1,6 @@
 <!--
 Author / Contributor : K3nningar
-Code Version : 0.1.0-alpha.5
+Code Version : 0.1.1-alpha
 Revision : 34ddc84
 Description : Renders the Index Inertia page.
 -->
@@ -31,7 +31,7 @@ const shipNames = computed(() => Object.fromEntries([
     ...Object.keys(props.moonFleet ?? {}).map((code) => ({ code: Number(code) })),
 ].map((ship) => [ship.code, translateUnitName(ship.code, t)])));
 const originShipName = (code) => translateUnitName(code, t);
-const moonName = (orbit) => t('moonLogistics.moonTarget', { orbit });
+const moonName = (orbit) => moonOptions.value.find((moon) => Number(moon.orbit) === Number(orbit))?.name ?? moonOptions.value.find((moon) => Number(moon.orbit) === Number(orbit))?.generatedName ?? t('moonLogistics.moonTarget', { orbit });
 const moonOptions = computed(() => selectedOrigin.value?.moons ?? []);
 const originMoonSelected = computed(() => missionForm.origin_target_type === 'moon' ? moonOptions.value.find((moon) => Number(moon.orbit) === Number(missionForm.origin_moon_orbit)) : null);
 const chosenTargetMoons = computed(() => selectedOrigin.value?.moons ?? []);
@@ -73,6 +73,14 @@ watch(() => props.selectedPlanetId, () => {
 function resetMissionShips() {
     missionForm.ships = missionForm.origin_target_type === 'moon' ? Object.fromEntries(Object.keys(props.moonFleet ?? {}).map((code) => [code, 0])) : { ...initialFleetCounts };
 }
+function missionTargetName(mission) {
+    if (mission.report?.colonizedPlanetName) {
+        return mission.report.colonizedPlanetName;
+    }
+
+    return mission.targetName || t('fleet.unknownPosition');
+}
+
 function changeMission(mission) {
     missionForm.mission = mission;
     missionForm.origin_target_type = 'planet';
@@ -145,7 +153,7 @@ function timeLeft(mission) {
             </form>
             <section class="command-panels fleet-panels">
                 <section class="data-panel"><div class="panel-heading"><div><span class="panel-kicker">{{ missionForm.origin_target_type === 'moon' ? t('moonLogistics.stationedFleet') : t('fleet.stationed') }}</span><h2>{{ t('fleet.ships') }}</h2></div><span class="panel-count">{{ missionForm.origin_target_type === 'moon' ? Object.keys(moonFleet).length : fleet.length }}</span></div><article v-for="ship in missionForm.origin_target_type === 'moon' ? Object.entries(moonFleet).map(([code, count]) => ({ code: Number(code), count })) : fleet" :key="ship.code" class="fleet-inventory-row"><img :src="`/images/ships/${ship.code}.png`" :alt="translateUnitName(ship.code, t)" loading="lazy"><span><strong>{{ translateUnitName(ship.code, t) }}</strong><small>{{ t('fleet.stationedUnit') }}</small></span><strong class="fleet-count">{{ format(ship.count) }}</strong></article><div v-if="!(missionForm.origin_target_type === 'moon' ? Object.keys(moonFleet).length : fleet.length)" class="empty-state compact"><span class="empty-orb">➤</span><strong>{{ t('fleet.noShips') }}</strong><p>{{ t('fleet.produceShips') }}</p><Link v-if="missionForm.origin_target_type !== 'moon'" class="button button-primary" :href="route('shipyard.index', { planet: selectedPlanet?.id })">{{ t('fleet.openShipyard') }} →</Link></div></section>
-                <section class="data-panel"><div class="panel-heading"><div><span class="panel-kicker">{{ t('fleet.missions') }}</span><h2>{{ t('fleet.inFlight') }}</h2></div><span class="panel-count">{{ fleets.length }}</span></div><article v-for="mission in fleets" :key="mission.id" class="fleet-mission-row"><span class="mission-orbit">➤</span><span><strong>{{ missionName(mission.mission) }}</strong><small>{{ mission.originName || t('fleet.unknownOrigin') }} [{{ mission.origin || '—' }}]{{ mission.originOrbit ? ` · ${moonName(mission.originOrbit)}` : '' }} → {{ mission.targetName || t('fleet.unknownPosition') }} [{{ mission.target || '—' }}]{{ mission.targetOrbit ? ` · ${moonName(mission.targetOrbit)}` : mission.moonOrbit ? ` · ${moonName(mission.moonOrbit)}` : '' }} · {{ mission.status === 'returning' ? t('overview.returning') : t('overview.outbound') }}</small></span><time :datetime="mission.status === 'returning' ? (mission.returnsAt ?? mission.arrivesAt) : mission.arrivesAt">{{ timeLeft(mission) }}</time><small>{{ t('units.endsAt', { date: formatDate(mission.status === 'returning' ? (mission.returnsAt ?? mission.arrivesAt) : mission.arrivesAt) }) }}</small></article><div v-if="!fleets.length" class="empty-state compact"><span class="empty-orb">⌖</span><strong>{{ t('fleet.noMissions') }}</strong></div></section>
+                <section class="data-panel"><div class="panel-heading"><div><span class="panel-kicker">{{ t('fleet.missions') }}</span><h2>{{ t('fleet.inFlight') }}</h2></div><span class="panel-count">{{ fleets.length }}</span></div><article v-for="mission in fleets" :key="mission.id" class="fleet-mission-row"><span class="mission-orbit">➤</span><span><strong>{{ missionName(mission.mission) }}</strong><small>{{ mission.originName || t('fleet.unknownOrigin') }} [{{ mission.origin || '—' }}]{{ mission.originOrbit ? ` · ${moonName(mission.originOrbit)}` : '' }} → {{ missionTargetName(mission) }} [{{ mission.target || '—' }}]{{ mission.targetOrbit ? ` · ${moonName(mission.targetOrbit)}` : mission.moonOrbit ? ` · ${moonName(mission.moonOrbit)}` : '' }} · {{ mission.status === 'returning' ? t('overview.returning') : t('overview.outbound') }}</small></span><time :datetime="mission.status === 'returning' ? (mission.returnsAt ?? mission.arrivesAt) : mission.arrivesAt">{{ timeLeft(mission) }}</time><small>{{ t('units.endsAt', { date: formatDate(mission.status === 'returning' ? (mission.returnsAt ?? mission.arrivesAt) : mission.arrivesAt) }) }}</small></article><div v-if="!fleets.length" class="empty-state compact"><span class="empty-orb">⌖</span><strong>{{ t('fleet.noMissions') }}</strong></div></section>
             </section>
             <section v-if="reports.length" class="data-panel mt-4">
                 <div class="panel-heading"><h2>{{ t('galaxyMissions.reports') }}</h2></div>
