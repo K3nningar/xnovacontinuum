@@ -27,14 +27,14 @@ class ChangelogPublicationTest extends TestCase
         $this->actingAs($player)->get(route('dashboard'))->assertOk()
             ->assertInertia(fn (Assert $page) => $page
                 ->component('Dashboard')
-                ->where('gameVersion', '0.1.0-alpha.5'));
+                ->where('gameVersion', '0.1.0-alpha.6'));
         $this->get(route('changelog'))->assertInertia(fn (Assert $page) => $page->has('releases', 0));
     }
 
-    public function test_alpha_five_changelog_covers_recent_game_features_and_fixes(): void
+    public function test_alpha_six_changelog_covers_recent_game_features_and_fixes(): void
     {
         DB::table('changelog_release_states')->insert([
-            'version' => '0.1.0-alpha.5',
+            'version' => '0.1.0-alpha.6',
             'published' => true,
             'created_at' => now(),
             'updated_at' => now(),
@@ -42,15 +42,18 @@ class ChangelogPublicationTest extends TestCase
         $operator = User::factory()->create(['admin_level' => 1]);
 
         $this->actingAs($operator)->get(route('admin.changelog'))->assertOk()->assertInertia(fn (Assert $page) => $page
-            ->where('releases.0.version', '0.1.0-alpha.5')
-            ->where('releases.0.entries.0.key', 'multiUniverseAccounts')
-            ->where('releases.0.entries.1.key', 'playerProfileSecurity')
-            ->where('releases.0.entries.2.key', 'commanderAvatar')
-            ->where('releases.0.entries.3.key', 'adminUniverseManagement')
-            ->where('releases.0.entries.4.key', 'welcomeGamePreview')
-            ->where('releases.0.entries.5.key', 'totpLoginChallenge')
-            ->where('releases.0.entries.6.key', 'avatarPublicUrls')
-            ->where('releases.0.entries.7.key', 'universeSelectionRateLimit'));
+            ->where('releases.0.version', '0.1.0-alpha.6')
+            ->where('releases.0.entries.0.key', 'versionBumpAlpha6')
+            ->where('releases.0.entries.1.key', 'multiUniverseAccounts')
+            ->where('releases.0.entries.2.key', 'playerProfileSecurity')
+            ->where('releases.0.entries.3.key', 'commanderAvatar')
+            ->where('releases.0.entries.4.key', 'adminUniverseManagement')
+            ->where('releases.0.entries.5.key', 'welcomeGamePreview')
+            ->where('releases.0.entries.6.key', 'totpLoginChallenge')
+            ->where('releases.0.entries.7.key', 'avatarPublicUrls')
+            ->where('releases.0.entries.8.key', 'universeSelectionRateLimit')
+            ->where('releases.1.version', '0.1.0-alpha.5')
+            ->where('releases.1.entries.0.key', 'moonLogistics'));
     }
 
     public function test_unpublished_versions_are_hidden_from_public_pages_but_visible_to_operators(): void
@@ -63,9 +66,9 @@ class ChangelogPublicationTest extends TestCase
         $this->actingAs($operator)->get(route('admin.changelog'))->assertOk()
             ->assertInertia(fn (Assert $page) => $page
                 ->where('administration', true)
-                ->where('releases.0.version', '0.1.0-alpha.5')
+                ->where('releases.0.version', '0.1.0-alpha.6')
                 ->where('releases.0.published', false)
-                ->where('releases.1.version', '0.1.0-alpha.4')
+                ->where('releases.1.version', '0.1.0-alpha.5')
                 ->where('releases.1.published', false)
                 ->has('releases.0.entries'));
     }
@@ -85,16 +88,18 @@ class ChangelogPublicationTest extends TestCase
         $this->get(route('changelog'))->assertInertia(fn (Assert $page) => $page
             ->has('releases', 1)->where('releases.0.version', '0.1.0-alpha.1'));
         $this->actingAs($operator)->get(route('admin.changelog'))->assertInertia(fn (Assert $page) => $page
-            ->where('releases.0.version', '0.1.0-alpha.5')
+            ->where('releases.0.version', '0.1.0-alpha.6')
             ->where('releases.0.published', false)
-            ->where('releases.1.version', '0.1.0-alpha.4')
+            ->where('releases.1.version', '0.1.0-alpha.5')
             ->where('releases.1.published', false)
-            ->where('releases.2.version', '0.1.0-alpha.3')
+            ->where('releases.2.version', '0.1.0-alpha.4')
             ->where('releases.2.published', false)
-            ->where('releases.3.version', '0.1.0-alpha.2')
+            ->where('releases.3.version', '0.1.0-alpha.3')
             ->where('releases.3.published', false)
-            ->where('releases.4.version', '0.1.0-alpha.1')
-            ->where('releases.4.published', true));
+            ->where('releases.4.version', '0.1.0-alpha.2')
+            ->where('releases.4.published', false)
+            ->where('releases.5.version', '0.1.0-alpha.1')
+            ->where('releases.5.published', true));
     }
 
     public function test_an_operator_can_publish_and_hide_a_version(): void
@@ -169,10 +174,10 @@ class ChangelogPublicationTest extends TestCase
             'action' => 'changelog_entry_added',
         ]);
         $this->get(route('admin.changelog'))->assertInertia(fn (Assert $page) => $page
-            ->where('releases.3.version', '0.1.0-alpha.2')
-            ->where('releases.3.entries.0.text', 'A manually recorded fix')
-            ->where('releases.3.entries.0.date', '2026-11-17')
-            ->where('releases.3.entries.0.type', 'HOTFIX'));
+            ->where('releases.4.version', '0.1.0-alpha.2')
+            ->where('releases.4.entries.0.text', 'A manually recorded fix')
+            ->where('releases.4.entries.0.date', '2026-11-17')
+            ->where('releases.4.entries.0.type', 'HOTFIX'));
     }
 
     public static function manual_entry_levels(): array

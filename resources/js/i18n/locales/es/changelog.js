@@ -18,6 +18,7 @@ export default {
       "fleetMissions": "Se ampliaron las misiones de flota con transporte, ataque, espionaje, colonización, reciclaje y operaciones lunares.",
       "commandCenterMoons": "Se muestran las lunas de cada planeta en el centro de mando, con acceso directo a su gestión.",
       "versionBumpAlpha5": "La versión preliminar avanza a 0.1.0-alpha.5.",
+      "versionBumpAlpha6": "La versión preliminar avanza a 0.1.0-alpha.6 con esta entrega.",
       "multiUniverseAccounts": "Una cuenta de comandante puede gestionar un imperio distinto en cada universo y continuar donde lo dejó.",
       "playerProfileSecurity": "Se añadió un perfil de jugador con cambio de contraseña y autenticación TOTP de dos factores para iniciar sesión.",
       "commanderAvatar": "Se añadieron la carga y visualización de avatares personalizados en el juego.",

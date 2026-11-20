@@ -18,6 +18,7 @@ export default {
       "fleetMissions": "Flottenmissionen um Transport, Angriff, Spionage, Kolonisierung, Recycling und Mondeinsätze erweitert.",
       "commandCenterMoons": "Die Monde jedes Planeten werden mit direkten Links zur Mondverwaltung in der Kommandozentrale angezeigt.",
       "versionBumpAlpha5": "Die Vorabversion wurde auf 0.1.0-alpha.5 angehoben.",
+      "versionBumpAlpha6": "Die Vorabversion wird für diese Lieferung auf 0.1.0-alpha.6 angehoben.",
       "multiUniverseAccounts": "Ein Kommandantenkonto kann nun in jedem Universum ein eigenes Imperium verwalten und dort weiterspielen, wo es aufgehört hat.",
       "playerProfileSecurity": "Spielerprofil mit Passwortänderung und TOTP-Zwei-Faktor-Authentifizierung für die Anmeldung hinzugefügt.",
       "commanderAvatar": "Eigene Avatar-Uploads und deren Anzeige in der Spieloberfläche hinzugefügt.",

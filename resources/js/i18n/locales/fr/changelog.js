@@ -18,6 +18,7 @@ export default {
       "fleetMissions": "Extension des missions de flotte avec transport, attaque, espionnage, colonisation, recyclage et actions sur les lunes.",
       "commandCenterMoons": "Affichage des lunes de chaque planète dans le centre de commandement, avec accès direct à leur gestion.",
       "versionBumpAlpha5": "Passage à la préversion 0.1.0-alpha.5.",
+      "versionBumpAlpha6": "Passage à la préversion 0.1.0-alpha.6 pour cette livraison.",
       "multiUniverseAccounts": "Un compte commandant peut maintenant gérer un empire distinct dans chaque univers et reprendre sa partie là où il l’avait laissée.",
       "playerProfileSecurity": "Ajout du profil joueur avec changement de mot de passe et authentification à deux facteurs TOTP avec code requis à la connexion.",
       "commanderAvatar": "Ajout de l’import et de l’affichage d’un avatar personnalisé dans l’interface du jeu.",
