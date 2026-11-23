@@ -10,4 +10,4 @@ Actually, we don't provide support while XNova Continuum is not in a stable phas
 
 ## Reporting a Vulnerability
 
-You can report vulnerabilities with pull requests and explain the issue.
+You can report vulnerabilities with issue reporting.
