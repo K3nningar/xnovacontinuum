@@ -2,7 +2,7 @@
 
 # XNova Continuum
 
-[![SemVer](https://img.shields.io/badge/SemVer-0.1.0--alpha.6-blue)](https://semver.org/)
+[![SemVer](https://img.shields.io/badge/SemVer-0.1.1.alpha-blue)](https://semver.org/)
 ![PHP](https://img.shields.io/badge/PHP-8.5-777BB4?logo=php&logoColor=white)
 ![Laravel](https://img.shields.io/badge/Laravel-13-FF2D20?logo=laravel&logoColor=white)
 ![Vue.js](https://img.shields.io/badge/Vue.js-3-4FC08D?logo=vuedotjs&logoColor=white)
@@ -10,7 +10,7 @@
 
 XNova Continuum is an in-development browser-based space strategy game forked from XNova Legacies project, ported using Laravel and PHP 8.5. It is built with Laravel 13, Inertia.js 3, Vue 3, and Vite. Players develop planets, research technologies, build fleets, and explore a shared universe.
 
-> **Status:** `0.1.0-alpha.5` is a pre-release. Features, balance, and database schema may change between versions. Back up your database before upgrading; do not deploy this version as a production game without reviewing its operational and security requirements.
+> **Status:** `0.1.1-alpha` is a pre-release. Features, balance, and database schema may change between versions. Back up your database before upgrading; do not deploy this version as a production game without reviewing its operational and security requirements.
 
 ## Contents
 
@@ -287,7 +287,7 @@ php artisan config:show database
 
 ## Version and changelog
 
-The current pre-release version is **0.1.0-alpha.5**. Built-in releases are listed newest-first in `resources/js/changelog.json`; translated text is stored in the locale changelog modules. Keep the SemVer badge above and the current version in the code-file metadata headers in sync when preparing a release. The in-game changelog controls visibility separately from the version shown in the game UI.
+The current pre-release version is **0.1.1-alpha**. Built-in releases are listed newest-first in `resources/js/changelog.json`; translated text is stored in the locale changelog modules. Keep the SemVer badge above and the current version in the code-file metadata headers in sync when preparing a release. The in-game changelog controls visibility separately from the version shown in the game UI.
 
 ## License
 

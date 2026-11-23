@@ -252,7 +252,7 @@ function navigate(galaxy = targetGalaxy.value, system = targetSystem.value) {
                                         <span>{{ slot.planet ? (slot.planet.owned ? t('galaxy.own') : t('galaxy.owner', { name: slot.planet.owner })) : t('galaxy.unoccupied') }} · {{ slot.planet?.name ?? slot.generatedName }}</span>
                                         <small v-if="slot.planet?.name && slot.planet.name !== slot.generatedName">{{ t('galaxy.generatedPlanet') }} · {{ slot.generatedName }}</small>
                                         <span>{{ t('galaxy.moons', { count: slot.moons }) }}</span>
-                                        <ul v-if="slot.naturalMoons.length" class="system-map-moon-names"><li v-for="moon in slot.naturalMoons" :key="moon.orbit">{{ moon.name }} · {{ format(moon.diameter) }} km</li></ul>
+                                        <ul v-if="slot.naturalMoons.length" class="system-map-moon-names"><li v-for="moon in slot.naturalMoons" :key="moon.orbit">{{ moon.name }} · {{ n(moon.diameter) }} km</li></ul>
                                         <span>{{ t('galaxy.potential') }} : ▰ {{ slot.resources.metal }}% · ◇ {{ slot.resources.crystal }}% · ⬡ {{ slot.resources.deuterium }}%</span>
                                     </template>
                                     <template v-else-if="slot.visible">
