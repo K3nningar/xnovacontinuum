@@ -460,6 +460,24 @@ class AdminController extends Controller
         ]);
 
         $allowedUniverses = app(AdminAccess::class)->manageableUniverseIds($request->user(), 1);
+        $playerProps = $this->playerSelectionProps($data, $allowedUniverses);
+
+        return inertia('Admin/Index', array_merge(
+            ['mode' => $mode],
+            $playerProps,
+            $this->modeSpecificProps($mode, $allowedUniverses),
+        ));
+    }
+
+    /**
+     * Builds the player, selected-player, and selected-planet props shared by administration pages.
+     *
+     * @param  array<string, mixed>  $data
+     * @return array{players: LengthAwarePaginator, selectedPlayer: ?User, selectedPlanetId: ?int}
+     */
+    private function playerSelectionProps(array $data, $allowedUniverses): array
+    {
+        /** @var \Illuminate\Database\Eloquent\Collection<int, User> $accounts */
         $accounts = User::query()->whereNull('universe_id')
             ->when($allowedUniverses !== null, fn ($query) => $query->whereIn('commander_id', DB::table('commander_profiles')->whereIn('universe_id', $allowedUniverses)->select('commander_id')))
             ->when($data['search'] ?? null, fn ($query, $search) => $query->where('name', 'like', '%'.$search.'%'))
@@ -519,11 +537,21 @@ class AdminController extends Controller
             ? (int) $data['planet']
             : null;
 
-        return inertia('Admin/Index', [
-            'mode' => $mode,
+        return [
             'players' => $players,
             'selectedPlayer' => $selectedPlayer,
             'selectedPlanetId' => $selectedPlanetId,
+        ];
+    }
+
+    /**
+     * Builds the props specific to the requested administration page mode.
+     *
+     * @return array<string, mixed>
+     */
+    private function modeSpecificProps(string $mode, $allowedUniverses): array
+    {
+        return [
             'overview' => $mode === 'overview' ? [
                 'players' => User::query()->whereNull('universe_id')->count(),
                 'planets' => Planet::query()->when($allowedUniverses !== null, fn ($query) => $query->whereIn('universe_id', $allowedUniverses))->count(),
@@ -555,7 +583,7 @@ class AdminController extends Controller
                 ->flatMap(fn ($items, $category) => collect($items)->map(fn ($item, $key) => [
                     'category' => $category, 'key' => (string) $key, 'label' => $item['label'],
                 ])->values())->values() : [],
-        ]);
+        ];
     }
 
     /**

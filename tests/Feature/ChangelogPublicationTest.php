@@ -41,25 +41,19 @@ class ChangelogPublicationTest extends TestCase
         ]);
         $operator = User::factory()->create(['admin_level' => 1]);
 
+        $expectedKeys = [
+            'versionBumpAlpha6', 'celestialNameCatalog', 'planetMoonResourceIsolation',
+            'lunarBuildingManagement', 'moonRenaming', 'colonizationNames', 'lunarConstructionQueue',
+            'legacyUniverseNameCatalog', 'serverMessages', 'multiUniverseAccounts', 'playerProfileSecurity',
+            'commanderAvatar', 'adminUniverseManagement', 'welcomeGamePreview', 'totpLoginChallenge',
+            'avatarPublicUrls', 'universeSelectionRateLimit',
+        ];
+
         $this->actingAs($operator)->get(route('admin.changelog'))->assertOk()->assertInertia(fn (Assert $page) => $page
             ->where('releases.0.version', '0.1.1-alpha')
-            ->where('releases.0.entries.0.key', 'versionBumpAlpha6')
-            ->where('releases.0.entries.1.key', 'celestialNameCatalog')
-            ->where('releases.0.entries.2.key', 'planetMoonResourceIsolation')
-            ->where('releases.0.entries.3.key', 'lunarBuildingManagement')
-            ->where('releases.0.entries.4.key', 'moonRenaming')
-            ->where('releases.0.entries.5.key', 'colonizationNames')
-            ->where('releases.0.entries.6.key', 'lunarConstructionQueue')
-            ->where('releases.0.entries.7.key', 'legacyUniverseNameCatalog')
-            ->where('releases.0.entries.8.key', 'serverMessages')
-            ->where('releases.0.entries.9.key', 'multiUniverseAccounts')
-            ->where('releases.0.entries.10.key', 'playerProfileSecurity')
-            ->where('releases.0.entries.11.key', 'commanderAvatar')
-            ->where('releases.0.entries.12.key', 'adminUniverseManagement')
-            ->where('releases.0.entries.13.key', 'welcomeGamePreview')
-            ->where('releases.0.entries.14.key', 'totpLoginChallenge')
-            ->where('releases.0.entries.15.key', 'avatarPublicUrls')
-            ->where('releases.0.entries.16.key', 'universeSelectionRateLimit')
+            ->where('releases.0.entries', function (array $entries) use ($expectedKeys): void {
+                $this->assertEqualsCanonicalizing($expectedKeys, array_column($entries, 'key'));
+            })
             ->where('releases.1.version', '0.1.0-alpha.5')
             ->where('releases.1.entries.0.key', 'moonLogistics'));
     }
@@ -76,7 +70,6 @@ class ChangelogPublicationTest extends TestCase
                 ->where('administration', true)
                 ->where('releases.0.version', '0.1.1-alpha')
                 ->where('releases.0.published', false)
-                ->where('releases.1.version', '0.1.0-alpha.5')
                 ->where('releases.1.version', '0.1.0-alpha.5')
                 ->where('releases.1.published', false)
                 ->has('releases.0.entries'));
@@ -100,12 +93,9 @@ class ChangelogPublicationTest extends TestCase
             ->where('releases.0.version', '0.1.1-alpha')
             ->where('releases.0.published', false)
             ->where('releases.1.version', '0.1.0-alpha.5')
-            ->where('releases.1.version', '0.1.0-alpha.5')
             ->where('releases.1.published', false)
             ->where('releases.2.version', '0.1.0-alpha.4')
-            ->where('releases.2.version', '0.1.0-alpha.4')
             ->where('releases.2.published', false)
-            ->where('releases.3.version', '0.1.0-alpha.3')
             ->where('releases.3.version', '0.1.0-alpha.3')
             ->where('releases.3.published', false)
             ->where('releases.4.version', '0.1.0-alpha.2')

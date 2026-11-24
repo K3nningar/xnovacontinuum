@@ -240,7 +240,7 @@ function categoryLabel(category) {
                     <ul v-if="adminAnnouncements?.data.length" class="mt-4 flex flex-col gap-3">
                         <li v-for="announcement in adminAnnouncements.data" :key="announcement.id" class="rounded border border-slate-700 p-3">
                             <p class="text-sm text-slate-400">{{ announcement.created_at }} · {{ t(announcement.revoked_at ? 'announcements.revoked' : 'announcements.active') }}</p>
-                            <p class="my-2 whitespace-pre-wrap break-words">{{ announcement.body }}</p>
+                            <p class="my-2 whitespace-pre-wrap wrap-break-word">{{ announcement.body }}</p>
                             <button v-if="!announcement.revoked_at && adminLevel >= 3" class="button button-outline" type="button" :disabled="revokeAnnouncementForm.processing" @click="revokeAnnouncement(announcement.id)">{{ t('announcements.revoke') }}</button>
                         </li>
                     </ul>
