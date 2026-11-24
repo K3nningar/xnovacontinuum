@@ -46,7 +46,7 @@ class AdminPanelTest extends TestCase
     public function test_insufficient_levels_cannot_access_administrative_pages(int $level, string $route): void
     {
         $user = User::factory()->create();
-        $user->forceFill(['admin_level' => $level])->save();
+        $this->assignAccessLevel($user, $level);
 
         $this->actingAs($user)->get(route($route))->assertForbidden();
     }
@@ -68,7 +68,7 @@ class AdminPanelTest extends TestCase
     public function test_authorized_levels_can_open_administrative_pages(int $level, string $route, string $mode): void
     {
         $user = User::factory()->create();
-        $user->forceFill(['admin_level' => $level])->save();
+        $this->assignAccessLevel($user, $level);
 
         $this->actingAs($user)->get(route($route))->assertOk()->assertInertia(fn (Assert $page) => $page
             ->component('Admin/Index')
@@ -92,8 +92,8 @@ class AdminPanelTest extends TestCase
     public function test_overview_displays_totals_and_the_selected_players_planet(): void
     {
         $operator = User::factory()->create();
-        $operator->forceFill(['admin_level' => 1])->save();
         $planet = $this->createPlanet();
+        $this->assignAccessLevel($operator, 1, (int) $planet->universe_id);
         $playerAccount = User::query()->where('commander_id', $planet->user->commander_id)->whereNull('universe_id')->firstOrFail();
         DB::table('fleets')->insert([
             'universe_id' => $planet->universe_id, 'user_id' => $planet->user_id,
@@ -118,7 +118,7 @@ class AdminPanelTest extends TestCase
     public function test_insufficient_levels_cannot_post_administrative_actions(int $level, string $route): void
     {
         $user = User::factory()->create();
-        $user->forceFill(['admin_level' => $level])->save();
+        $this->assignAccessLevel($user, $level);
 
         $this->actingAs($user)->post(route($route), [])->assertForbidden();
         $this->assertDatabaseCount('admin_audit_logs', 0);
@@ -253,13 +253,16 @@ class AdminPanelTest extends TestCase
         $founder = User::factory()->create();
         $founder->forceFill(['admin_level' => 4])->save();
         $target = User::factory()->create();
+        $universe = Universe::query()->create(['name' => 'Pegasus', 'slug' => fake()->unique()->slug()]);
 
         $this->actingAs($founder)->post(route('admin.roles.update'), [
             'player_id' => $target->id,
             'admin_level' => 2,
+            'universe_ids' => [$universe->id],
         ])->assertRedirect(route('admin.roles', ['player' => $target->id]));
 
-        $this->assertSame(2, $target->fresh()->admin_level);
+        $this->assertSame(0, $target->fresh()->admin_level);
+        $this->assertDatabaseHas('universe_staff', ['commander_id' => $target->commander_id, 'universe_id' => $universe->id, 'level' => 2]);
         $this->assertDatabaseHas('admin_audit_logs', [
             'actor_id' => $founder->id,
             'target_user_id' => $target->id,
@@ -318,8 +321,8 @@ class AdminPanelTest extends TestCase
     {
         $this->freezeTime();
         $moderator = User::factory()->create();
-        $moderator->forceFill(['admin_level' => 2])->save();
         $planet = $this->createPlanet();
+        $this->assignAccessLevel($moderator, 2, (int) $planet->universe_id);
 
         $this->actingAs($moderator)->post(route('admin.resources.store'), [
             'player_id' => $planet->user_id,
@@ -339,8 +342,8 @@ class AdminPanelTest extends TestCase
     public function test_resource_addition_rejects_another_players_planet_and_invalid_quantities(): void
     {
         $moderator = User::factory()->create();
-        $moderator->forceFill(['admin_level' => 2])->save();
         $planet = $this->createPlanet();
+        $this->assignAccessLevel($moderator, 2, (int) $planet->universe_id);
         $other = User::factory()->create();
 
         $this->actingAs($moderator)->post(route('admin.resources.store'), [
@@ -360,8 +363,8 @@ class AdminPanelTest extends TestCase
     {
         $this->freezeTime();
         $moderator = User::factory()->create();
-        $moderator->forceFill(['admin_level' => 2])->save();
         $planet = $this->createPlanet();
+        $this->assignAccessLevel($moderator, 2, (int) $planet->universe_id);
         $planet->forceFill(['resources_updated_at' => now()->subHour()])->save();
 
         $this->actingAs($moderator)->post(route('admin.resources.store'), [
@@ -376,8 +379,8 @@ class AdminPanelTest extends TestCase
     {
         $this->freezeTime();
         $moderator = User::factory()->create();
-        $moderator->forceFill(['admin_level' => 2])->save();
         $planet = $this->createPlanet();
+        $this->assignAccessLevel($moderator, 2, (int) $planet->universe_id);
 
         $this->actingAs($moderator)->post(route('admin.resources.store'), [
             'player_id' => $planet->user_id, 'planet_id' => $planet->id,
@@ -391,9 +394,9 @@ class AdminPanelTest extends TestCase
     public function test_staff_cannot_grant_resources_to_a_peer_or_themselves(): void
     {
         $planet = $this->createPlanet();
-        $planet->user->forceFill(['admin_level' => 2])->save();
+        $this->assignAccessLevel($planet->user, 2, (int) $planet->universe_id);
         $moderator = User::factory()->create();
-        $moderator->forceFill(['admin_level' => 2])->save();
+        $this->assignAccessLevel($moderator, 2, (int) $planet->universe_id);
 
         $this->actingAs($moderator)->post(route('admin.resources.store'), [
             'player_id' => $planet->user_id, 'planet_id' => $planet->id,
@@ -625,7 +628,7 @@ class AdminPanelTest extends TestCase
     {
         $this->freezeTime();
         $operator = User::factory()->create();
-        $operator->forceFill(['admin_level' => 1])->save();
+        $this->assignAccessLevel($operator, 1);
         $player = User::factory()->create();
 
         $this->actingAs($operator)->post(route('admin.suspend'), [
@@ -645,9 +648,9 @@ class AdminPanelTest extends TestCase
     {
         $this->freezeTime();
         $operator = User::factory()->create();
-        $operator->forceFill(['admin_level' => 1])->save();
+        $this->assignAccessLevel($operator, 1);
         $moderator = User::factory()->create();
-        $moderator->forceFill(['admin_level' => 2])->save();
+        $this->assignAccessLevel($moderator, 2);
         $player = User::factory()->create();
         $player->forceFill(['suspended_until' => now()->addDay(), 'suspension_reason' => 'Violation'])->save();
 
@@ -662,9 +665,9 @@ class AdminPanelTest extends TestCase
     public function test_staff_cannot_suspend_an_equal_or_higher_level(): void
     {
         $operator = User::factory()->create();
-        $operator->forceFill(['admin_level' => 1])->save();
+        $this->assignAccessLevel($operator, 1);
         $other = User::factory()->create();
-        $other->forceFill(['admin_level' => 2])->save();
+        $this->assignAccessLevel($other, 2);
 
         $this->actingAs($operator)->post(route('admin.suspend'), [
             'player_id' => $other->id, 'days' => 2, 'reason' => 'Violation',
@@ -678,7 +681,7 @@ class AdminPanelTest extends TestCase
     {
         $this->freezeTime();
         $operator = User::factory()->create();
-        $operator->forceFill(['admin_level' => 1])->save();
+        $this->assignAccessLevel($operator, 1);
         $player = User::factory()->create();
 
         $this->actingAs($operator)->post(route('admin.announcements.store'), [
@@ -701,7 +704,7 @@ class AdminPanelTest extends TestCase
     {
         $player = User::factory()->create();
         $operator = User::factory()->create();
-        $operator->forceFill(['admin_level' => 1])->save();
+        $this->assignAccessLevel($operator, 1);
 
         $this->actingAs($player)->post(route('admin.announcements.store'), ['body' => 'Message'])
             ->assertForbidden();
@@ -716,9 +719,9 @@ class AdminPanelTest extends TestCase
     {
         $this->freezeTime();
         $operator = User::factory()->create();
-        $operator->forceFill(['admin_level' => 1])->save();
+        $this->assignAccessLevel($operator, 1);
         $moderator = User::factory()->create();
-        $moderator->forceFill(['admin_level' => 2])->save();
+        $this->assignAccessLevel($moderator, 2);
         $administrator = User::factory()->create();
         $administrator->forceFill(['admin_level' => 3])->save();
         $player = User::factory()->create();
@@ -754,7 +757,7 @@ class AdminPanelTest extends TestCase
     public function test_announcement_content_is_not_rendered_as_html(): void
     {
         $operator = User::factory()->create();
-        $operator->forceFill(['admin_level' => 1])->save();
+        $this->assignAccessLevel($operator, 1);
         $player = User::factory()->create();
         $this->actingAs($operator)->post(route('admin.announcements.store'), ['body' => '<script>alert(1)</script>']);
 
@@ -765,7 +768,7 @@ class AdminPanelTest extends TestCase
     public function test_general_announcements_are_rate_limited_per_operator(): void
     {
         $operator = User::factory()->create();
-        $operator->forceFill(['admin_level' => 1])->save();
+        $this->assignAccessLevel($operator, 1);
         $this->actingAs($operator);
         for ($number = 1; $number <= 5; $number++) {
             $this->post(route('admin.announcements.store'), ['body' => "Message {$number}"])->assertRedirect();
@@ -775,6 +778,40 @@ class AdminPanelTest extends TestCase
 
         $this->assertDatabaseCount('admin_announcements', 5);
         $this->assertDatabaseCount('admin_audit_logs', 5);
+    }
+
+    /**
+     * Assigns global levels to the account row and local staff levels to universe_staff.
+     */
+    private function assignAccessLevel(User $user, int $level, ?int $universeId = null): void
+    {
+        if ($level >= 3) {
+            $user->forceFill(['admin_level' => $level])->save();
+
+            return;
+        }
+
+        if ($level <= 0 || $level > 2) {
+            $user->forceFill(['admin_level' => $level])->save();
+
+            return;
+        }
+
+        if ($universeId === null) {
+            $universe = Universe::query()->create([
+                'name' => 'Admin test universe',
+                'slug' => fake()->unique()->slug(),
+            ]);
+            $universeId = (int) $universe->id;
+        }
+
+        DB::table('universe_staff')->insert([
+            'commander_id' => $user->commander_id,
+            'universe_id' => $universeId,
+            'level' => $level,
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
     }
 
     private function createPlanet(): Planet
