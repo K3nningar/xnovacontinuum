@@ -11,6 +11,7 @@ import { Head, Link, router, useForm, usePage } from '@inertiajs/vue3';
 import { useI18n } from 'vue-i18n';
 import { route as ziggyRoute } from 'ziggy-js';
 import GameLayout from '../../Layouts/GameLayout.vue';
+import UniverseRoleSelector from '../../Components/UniverseRoleSelector.vue';
 
 const props = defineProps({
     players: { type: Object, required: true },
@@ -22,6 +23,7 @@ const props = defineProps({
     activeFleets: { type: Array, default: () => [] },
     adminAnnouncements: { type: Object, default: null },
     universes: { type: Array, default: () => [] },
+    roleUniverses: { type: Array, default: () => [] },
     mode: { type: String, required: true },
 });
 
@@ -33,9 +35,9 @@ const adminLevel = computed(() => Number(page.props.auth?.user?.admin_level ?? 0
 const sections = computed(() => [
     { mode: 'overview', route: 'admin.index', allowed: adminLevel.value >= 1 },
     { mode: 'declarations', route: 'admin.declarations', allowed: adminLevel.value >= 1 },
-    { mode: 'elements', route: 'admin.elements', allowed: adminLevel.value >= 3 },
+    { mode: 'elements', route: 'admin.elements', allowed: adminLevel.value >= 2 },
     { mode: 'resources', route: 'admin.resources', allowed: adminLevel.value >= 2 },
-    { mode: 'roles', route: 'admin.roles', allowed: adminLevel.value === 4 },
+    { mode: 'roles', route: 'admin.roles', allowed: page.props.auth?.user?.admin_global === true },
     { mode: 'universes', route: 'admin.universes', allowed: adminLevel.value === 4 },
 ].filter((section) => section.allowed));
 const currentRoute = computed(() => ({
@@ -53,7 +55,7 @@ const query = computed(() => ({
 const categories = computed(() => [...new Set(props.catalog.map((item) => item.category))]);
 const elementForm = useForm({ player_id: null, planet_id: null, category: '', key: '', amount: 0 });
 const resourceForm = useForm({ player_id: null, planet_id: null, metal: 0, crystal: 0, deuterium: 0 });
-const roleForm = useForm({ player_id: null, admin_level: 0 });
+const roleForm = useForm({ player_id: null, admin_level: 0, universe_ids: [] });
 const suspensionForm = useForm({ player_id: null, days: 1, reason: '' });
 const unsuspendForm = useForm({ player_id: null });
 const announcementForm = useForm({ body: '' });
@@ -77,6 +79,7 @@ watch(() => [props.selectedPlayer?.id, props.selectedPlanetId], () => {
     resourceForm.planet_id = props.selectedPlanetId;
     roleForm.player_id = props.selectedPlayer?.id ?? null;
     roleForm.admin_level = props.selectedPlayer?.admin_level ?? 0;
+    roleForm.universe_ids = props.selectedPlayer?.staff_universe_ids ?? [];
     suspensionForm.player_id = props.selectedPlayer?.id ?? null;
     suspensionForm.reset('days', 'reason');
     unsuspendForm.player_id = props.selectedPlayer?.id ?? null;
@@ -173,10 +176,10 @@ function categoryLabel(category) {
                     <Link v-for="section in sections" :key="section.mode" class="button button-outline" :class="{ 'button-primary': mode === section.mode }" :href="route(section.route, query)" :aria-current="mode === section.mode ? 'page' : undefined">
                         {{ t(section.mode === 'declarations' ? 'multiAccounts.title' : `admin.${section.mode}`) }}
                     </Link>
-                    <Link class="button button-outline" :href="route('admin.changelog')">{{ t('changelog.title') }}</Link>
+                    <Link v-if="page.props.auth?.user?.admin_global" class="button button-outline" :href="route('admin.changelog')">{{ t('changelog.title') }}</Link>
                 </nav>
 
-                <section v-if="mode === 'universes' && adminLevel === 4" class="rounded border border-slate-700 bg-slate-900/70 p-4 sm:p-6">
+                <section v-if="mode === 'universes' && page.props.auth?.user?.admin_global" class="rounded border border-slate-700 bg-slate-900/70 p-4 sm:p-6">
                     <h2 class="mb-4 text-lg font-semibold text-white">{{ t('adminUniverses.title') }}</h2>
                     <p class="mb-4 text-sm text-slate-400">{{ t('adminUniverses.hint') }}</p>
                     <form class="grid max-w-3xl gap-4 sm:grid-cols-2" @submit.prevent="universeForm.post(route('admin.universes.store'), { preserveScroll: true })">
@@ -192,7 +195,7 @@ function categoryLabel(category) {
                     </form>
                 </section>
 
-                <section v-if="mode === 'universes' && adminLevel === 4" class="rounded border border-slate-700 bg-slate-900/70 p-4 sm:p-6">
+                <section v-if="mode === 'universes' && page.props.auth?.user?.admin_global" class="rounded border border-slate-700 bg-slate-900/70 p-4 sm:p-6">
                     <h2 class="mb-4 text-lg font-semibold text-white">{{ t('adminUniverses.list') }}</h2>
                     <p v-if="openUniverseForm.errors.universe" class="field-error mb-3" role="alert">{{ openUniverseForm.errors.universe }}</p>
                     <p v-if="!universes.length" class="text-slate-400">{{ t('adminUniverses.empty') }}</p>
@@ -340,7 +343,7 @@ function categoryLabel(category) {
                         <button class="button button-primary self-start" type="submit" :disabled="resourceForm.processing || selectedPlanetId === null">{{ resourceForm.processing ? t('admin.saving') : t('admin.submit') }}</button>
                     </form>
 
-                    <form v-else-if="mode === 'roles' && adminLevel === 4" class="flex max-w-lg flex-col gap-4" @submit.prevent="roleForm.post(route('admin.roles.update'), { preserveScroll: true })">
+                    <form v-else-if="mode === 'roles' && page.props.auth?.user?.admin_global" class="flex max-w-lg flex-col gap-4" @submit.prevent="roleForm.post(route('admin.roles.update'), { preserveScroll: true })">
                         <div v-if="Object.keys(roleForm.errors).length" class="form-alert" role="alert"><p v-for="(error, field) in roleForm.errors" :key="field">{{ error }}</p></div>
                         <p v-if="roleForm.recentlySuccessful && !page.props.flash?.success" class="flash-message" role="status">{{ t('admin.success') }}</p>
                         <p v-if="!canManagePlayer" class="text-slate-400">{{ t('adminModeration.protected') }}</p>
@@ -349,10 +352,11 @@ function categoryLabel(category) {
                                 <option v-for="level in [0, 1, 2, 3]" :key="level" :value="level">{{ level }} · {{ t(`adminLevels.level${level}`) }}</option>
                             </select>
                         </label>
+                        <UniverseRoleSelector v-if="[1, 2].includes(roleForm.admin_level)" v-model="roleForm.universe_ids" :universes="roleUniverses" />
                         <button class="button button-primary self-start" type="submit" :disabled="roleForm.processing || !canManagePlayer">{{ roleForm.processing ? t('admin.saving') : t('admin.submit') }}</button>
                     </form>
                 </section>
-                <section v-if="mode === 'roles' && adminLevel === 4" class="rounded border border-slate-700 bg-slate-900/70 p-4 sm:p-6">
+                <section v-if="mode === 'roles' && page.props.auth?.user?.admin_global" class="rounded border border-slate-700 bg-slate-900/70 p-4 sm:p-6">
                     <h2 class="mb-4 text-lg font-semibold text-white">{{ t('adminAudit.title') }}</h2>
                     <p v-if="!auditLogs.length" class="text-slate-400">{{ t('adminAudit.empty') }}</p>
                     <ol v-else class="flex flex-col gap-3">

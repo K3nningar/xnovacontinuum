@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 /*
  * Author / Contributor : K3nningar
  * Code Version : 0.1.1-alpha
@@ -49,9 +51,9 @@ Route::middleware('guest')->group(function () {
 Route::middleware(['auth', EnsureAccountIsActive::class, ProcessExplorationMissions::class])->group(function () {
     Route::prefix('admin')->name('admin.')->middleware('admin:1')->group(function () {
         Route::get('/', [AdminController::class, 'index'])->name('index');
-        Route::get('/changelog', [ChangelogController::class, 'administration'])->name('changelog');
-        Route::patch('/changelog', [ChangelogController::class, 'update'])->middleware('throttle:game-action')->name('changelog.update');
-        Route::post('/changelog/entries', [ChangelogController::class, 'storeEntry'])->middleware(['admin:2', 'throttle:game-action'])->name('changelog.entries.store');
+        Route::get('/changelog', [ChangelogController::class, 'administration'])->middleware('admin:3')->name('changelog');
+        Route::patch('/changelog', [ChangelogController::class, 'update'])->middleware(['admin:3', 'throttle:game-action'])->name('changelog.update');
+        Route::post('/changelog/entries', [ChangelogController::class, 'storeEntry'])->middleware(['admin:3', 'throttle:game-action'])->name('changelog.entries.store');
         Route::get('/elements', [AdminController::class, 'elements'])->middleware('admin:3')->name('elements');
         Route::post('/elements', [AdminController::class, 'storeElement'])->middleware(['admin:3', 'throttle:game-action'])->name('elements.store');
         Route::get('/resources', [AdminController::class, 'resources'])->middleware('admin:2')->name('resources');
@@ -60,14 +62,14 @@ Route::middleware(['auth', EnsureAccountIsActive::class, ProcessExplorationMissi
         Route::post('/universes', [AdminController::class, 'storeUniverse'])->middleware(['admin:4', 'throttle:game-action'])->name('universes.store');
         Route::post('/universes/{universe}/open', [AdminController::class, 'openUniverse'])->whereNumber('universe')
             ->middleware(['admin:4', 'throttle:game-action'])->name('universes.open');
-        Route::get('/roles', [AdminController::class, 'roles'])->middleware('admin:4')->name('roles');
-        Route::post('/roles', [AdminController::class, 'updateRole'])->middleware(['admin:4', 'throttle:game-action'])->name('roles.update');
-        Route::post('/suspensions', [AdminController::class, 'suspend'])->middleware('throttle:game-action')->name('suspend');
-        Route::delete('/suspensions', [AdminController::class, 'unsuspend'])->middleware(['admin:2', 'throttle:game-action'])->name('unsuspend');
-        Route::post('/announcements', [AdminController::class, 'storeAnnouncement'])->middleware('throttle:admin-announcement')->name('announcements.store');
+        Route::get('/roles', [AdminController::class, 'roles'])->middleware('admin:3')->name('roles');
+        Route::post('/roles', [AdminController::class, 'updateRole'])->middleware(['admin:3', 'throttle:game-action'])->name('roles.update');
+        Route::post('/suspensions', [AdminController::class, 'suspend'])->middleware(['admin:3', 'throttle:game-action'])->name('suspend');
+        Route::delete('/suspensions', [AdminController::class, 'unsuspend'])->middleware(['admin:3', 'throttle:game-action'])->name('unsuspend');
+        Route::post('/announcements', [AdminController::class, 'storeAnnouncement'])->middleware(['admin:3', 'throttle:admin-announcement'])->name('announcements.store');
         Route::delete('/announcements/{announcement}', [AdminController::class, 'revokeAnnouncement'])
             ->whereNumber('announcement')->middleware(['admin:3', 'throttle:game-action'])->name('announcements.revoke');
-        Route::get('/declarations', [MultiAccountDeclarationController::class, 'administration'])->name('declarations');
+        Route::get('/declarations', [MultiAccountDeclarationController::class, 'administration'])->middleware('admin:1')->name('declarations');
     });
     Route::get('/announcements', AnnouncementController::class)->name('announcements.index');
     Route::get('/multi-account-declarations', [MultiAccountDeclarationController::class, 'index'])->name('multi-accounts.index');

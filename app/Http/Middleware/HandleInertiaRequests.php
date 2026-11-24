@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 /*
  * Author / Contributor : K3nningar
  * Code Version : 0.1.1-alpha
@@ -10,6 +12,7 @@
 namespace App\Http\Middleware;
 
 use App\Services\Changelog;
+use App\Services\AdminAccess;
 use App\Services\PublicAvatarUrl;
 use Closure;
 use Illuminate\Http\Request;
@@ -79,7 +82,10 @@ class HandleInertiaRequests extends Middleware
             'auth' => [
                 'twoFactorChallenge' => (bool) $request->session()->get('auth.two_factor_challenge', false),
                 'user' => $request->user() ? [
-                    ...$request->user()->only('id', 'name', 'email', 'universe_id', 'alliance_id', 'admin_level', 'avatar_path'),
+                    ...$request->user()->only('id', 'name', 'email', 'universe_id', 'alliance_id', 'avatar_path'),
+                    'admin_level' => app(AdminAccess::class)->highestLevel($request->user()),
+                    'admin_global' => app(AdminAccess::class)->isGlobal($request->user(), 3),
+                    'admin_universe_ids' => app(AdminAccess::class)->staffUniverses($request->user())->values(),
                     'avatar_url' => $commanderAccount?->avatar_path ? app(PublicAvatarUrl::class)->for($request, $commanderAccount->avatar_path) : null,
                 ] : null,
             ],

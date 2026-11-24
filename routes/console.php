@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 /*
  * Author / Contributor : K3nningar
  * Code Version : 0.1.1-alpha
@@ -69,12 +71,14 @@ Artisan::command('admin:founder {userId}', function (string $userId): int {
             return 1;
         }
 
-        $previousLevel = $user->admin_level;
-        User::query()->where('commander_id', $user->commander_id)->update(['admin_level' => 4]);
-        $user->refresh();
+        $account = User::query()->where('commander_id', $user->commander_id)->whereNull('universe_id')->lockForUpdate()->firstOrFail();
+        $previousLevel = $account->admin_level;
+        User::query()->whereKey($account->id)->update(['admin_level' => 4]);
+        $user = $account->fresh();
         DB::table('admin_audit_logs')->insert([
             'actor_id' => $user->id,
             'actor_level' => 4,
+            'universe_id' => null,
             'target_user_id' => $user->id,
             'action' => 'founder_bootstrap',
             'details' => json_encode(['previous_level' => $previousLevel, 'source' => 'console'], JSON_THROW_ON_ERROR),

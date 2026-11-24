@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 /*
  * Author / Contributor : K3nningar
  * Code Version : 0.1.1-alpha
@@ -9,13 +11,17 @@
 
 namespace App\Providers;
 
+use App\Services\AdminAccess;
 use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\ServiceProvider;
 
 class AppServiceProvider extends ServiceProvider
 {
-    public function register(): void {}
+    public function register(): void
+    {
+        $this->app->singleton(AdminAccess::class);
+    }
 
     /**
      * Defines named request limits, keying unauthenticated flows by IP and game actions by player identity.

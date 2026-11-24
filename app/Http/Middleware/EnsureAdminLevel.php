@@ -1,29 +1,28 @@
 <?php
 
-/*
- * Author / Contributor : K3nningar
- * Code Version : 0.1.1-alpha
- * Revision : 34ddc84
- * Description : Applies the EnsureAdminLevel HTTP middleware.
- */
+declare(strict_types=1);
 
 namespace App\Http\Middleware;
 
+use App\Services\AdminAccess;
 use Closure;
 use Illuminate\Http\Request;
 use Symfony\Component\HttpFoundation\Response;
 
 class EnsureAdminLevel
 {
-    /**
-     * Handle an incoming request, requiring the route's minimum privilege and rejecting levels above founder.
-     *
-     * @param  Closure(Request): (Response)  $next
-     */
     public function handle(Request $request, Closure $next, int $minimumLevel): Response
     {
-        $level = (int) $request->user()?->admin_level;
-        abort_unless($level >= $minimumLevel && $level <= 4, 403);
+        $user = $request->user();
+        abort_unless($user, 403);
+        $access = app(AdminAccess::class);
+        $ids = $access->staffUniverses($user)->all();
+        $request->attributes->set('admin_universe_ids', $ids);
+        if ($minimumLevel >= 3) {
+            abort_unless($access->isGlobal($user, $minimumLevel), 403);
+        } else {
+            abort_unless($access->isGlobal($user, 3) || $access->staffUniverses($user, $minimumLevel)->isNotEmpty(), 403);
+        }
 
         return $next($request);
     }

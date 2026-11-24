@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 /*
  * Author / Contributor : K3nningar
  * Code Version : 0.1.1-alpha
@@ -9,6 +11,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Services\AdminAccess;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -33,9 +36,10 @@ class MultiAccountDeclarationController extends Controller
     /**
      * Presents the paginated declaration list to the admin route's authorized caller.
      */
-    public function administration(): Response
+    public function administration(Request $request): Response
     {
-        return inertia('Admin/Declarations', ['declarations' => $this->declarations()]);
+        $universes = app(AdminAccess::class)->manageableUniverseIds($request->user(), 1);
+        return inertia('Admin/Declarations', ['declarations' => $this->declarations(null, $universes)]);
     }
 
     /**
@@ -84,11 +88,12 @@ class MultiAccountDeclarationController extends Controller
      *
      * A null declarant id returns all declarations for administration; a supplied id restricts results to its owner.
      */
-    private function declarations(?int $declarantId = null): LengthAwarePaginator
+    private function declarations(?int $declarantId = null, ?\Illuminate\Support\Collection $universes = null): LengthAwarePaginator
     {
         $declarations = DB::table('multi_account_declarations as declarations')
             ->join('users as declarants', 'declarants.id', '=', 'declarations.declarant_id')
             ->when($declarantId !== null, fn ($query) => $query->where('declarations.declarant_id', $declarantId))
+            ->when($universes !== null, fn ($query) => $query->whereIn('declarations.universe_id', $universes))
             ->orderByDesc('declarations.id')
             ->paginate(20, ['declarations.id', 'declarations.universe_id', 'declarations.declarant_id',
                 'declarations.reason', 'declarations.created_at', 'declarants.name as declarant_name']);

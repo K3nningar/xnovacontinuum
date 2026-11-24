@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 /*
  * Author / Contributor : K3nningar
  * Code Version : 0.1.1-alpha
@@ -17,6 +19,7 @@ use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Illuminate\Support\Carbon;
@@ -127,6 +130,13 @@ class User extends Authenticatable
     public function account(): BelongsTo
     {
         return $this->belongsTo(self::class, 'commander_id', 'commander_id')->whereNull('universe_id');
+    }
+
+    /** Univers surveillés par le commandant selon les attributions d’administration. */
+    public function staffUniverses(): BelongsToMany
+    {
+        return $this->belongsToMany(Universe::class, 'universe_staff', 'commander_id', 'universe_id', 'commander_id', 'id')
+            ->withPivot('level')->withTimestamps();
     }
 
     /**

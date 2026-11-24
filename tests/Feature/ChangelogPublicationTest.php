@@ -32,7 +32,6 @@ class ChangelogPublicationTest extends TestCase
     }
 
     public function test_alpha_six_changelog_covers_recent_game_features_and_fixes(): void
-    public function test_alpha_six_changelog_covers_recent_game_features_and_fixes(): void
     {
         DB::table('changelog_release_states')->insert([
             'version' => '0.1.1-alpha',
@@ -113,10 +112,6 @@ class ChangelogPublicationTest extends TestCase
             ->where('releases.4.published', false)
             ->where('releases.5.version', '0.1.0-alpha.1')
             ->where('releases.5.published', true));
-            ->where('releases.4.version', '0.1.0-alpha.2')
-            ->where('releases.4.published', false)
-            ->where('releases.5.version', '0.1.0-alpha.1')
-            ->where('releases.5.published', true));
     }
 
     public function test_an_operator_can_publish_and_hide_a_version(): void
@@ -191,10 +186,6 @@ class ChangelogPublicationTest extends TestCase
             'action' => 'changelog_entry_added',
         ]);
         $this->get(route('admin.changelog'))->assertInertia(fn (Assert $page) => $page
-            ->where('releases.4.version', '0.1.0-alpha.2')
-            ->where('releases.4.entries.0.text', 'A manually recorded fix')
-            ->where('releases.4.entries.0.date', '2026-11-17')
-            ->where('releases.4.entries.0.type', 'HOTFIX'));
             ->where('releases.4.version', '0.1.0-alpha.2')
             ->where('releases.4.entries.0.text', 'A manually recorded fix')
             ->where('releases.4.entries.0.date', '2026-11-17')

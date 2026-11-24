@@ -56,7 +56,7 @@ function addEntry() {
             </div>
             <p v-if="form.errors.version || form.errors.published" class="field-error mb-4" role="alert">{{ form.errors.version || form.errors.published }}</p>
             <p v-if="form.recentlySuccessful" class="mb-4 text-green-300" role="status">{{ t('changelogPublication.saved') }}</p>
-            <section v-if="administration && page.props.auth?.user?.admin_level >= 2 && releases.length" class="mb-5 rounded border border-slate-700 bg-slate-900/70 p-4 sm:p-6">
+            <section v-if="administration && page.props.auth?.user?.admin_global && releases.length" class="mb-5 rounded border border-slate-700 bg-slate-900/70 p-4 sm:p-6">
                 <h2 class="mb-2 text-xl font-semibold text-white">{{ t('changelogManual.title') }}</h2>
                 <p class="mb-4 text-sm text-slate-400">{{ t('changelogManual.hint') }}</p>
                 <form class="flex flex-col gap-4" @submit.prevent="addEntry">
@@ -98,7 +98,7 @@ function addEntry() {
                     <h2 class="mb-2 text-xl font-semibold text-white">{{ release.version }} <span v-if="administration" class="text-sm font-normal text-slate-400">· {{ t(release.published ? 'changelogPublication.published' : 'changelog.unreleased') }}</span></h2>
                     <p v-if="release.baseline" class="mb-5 text-sm text-slate-400">{{ t('changelogPublication.baseline') }}</p>
                     <ChangelogEntries :entries="release.entries" />
-                    <button v-if="administration" class="button button-outline mt-5" type="button" :disabled="form.processing" @click="changePublication(release)">{{ t(release.published ? 'changelogPublication.unpublish' : 'changelogPublication.publish') }}</button>
+                    <button v-if="administration && page.props.auth?.user?.admin_global" class="button button-outline mt-5" type="button" :disabled="form.processing" @click="changePublication(release)">{{ t(release.published ? 'changelogPublication.unpublish' : 'changelogPublication.publish') }}</button>
                 </section>
             </div>
         </main>

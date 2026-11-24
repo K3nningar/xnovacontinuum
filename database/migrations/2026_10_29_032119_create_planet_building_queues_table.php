@@ -32,8 +32,9 @@ return new class extends Migration
             $table->timestamp('starts_at');
             $table->timestamp('completes_at')->index();
             $table->timestamps();
-            $table->index(['planet_id', 'position']);
-            $table->unique(['planet_id', 'building_key', 'target_level']);
+
+            $table->index(['planet_id', 'position'], 'pbq_planet_position_idx');
+            $table->unique(['planet_id', 'building_key', 'target_level'], 'pbq_planet_building_level_unique');
         });
     }
 

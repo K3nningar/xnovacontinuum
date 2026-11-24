@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 /*
  * Author / Contributor : K3nningar
  * Code Version : 0.1.1-alpha
@@ -69,7 +71,8 @@ class ChangelogController extends Controller
             ], ['version'], ['published', 'updated_at']);
             DB::table('admin_audit_logs')->insert([
                 'actor_id' => $request->user()->id,
-                'actor_level' => $request->user()->admin_level,
+                'actor_level' => app(\App\Services\AdminAccess::class)->highestLevel($request->user()),
+                'universe_id' => $request->user()->universe_id,
                 'target_user_id' => null,
                 'planet_id' => null,
                 'action' => 'changelog_publication_changed',
@@ -104,7 +107,8 @@ class ChangelogController extends Controller
             ]);
             DB::table('admin_audit_logs')->insert([
                 'actor_id' => $request->user()->id,
-                'actor_level' => $request->user()->admin_level,
+                'actor_level' => app(\App\Services\AdminAccess::class)->highestLevel($request->user()),
+                'universe_id' => $request->user()->universe_id,
                 'target_user_id' => null,
                 'planet_id' => null,
                 'action' => 'changelog_entry_added',
