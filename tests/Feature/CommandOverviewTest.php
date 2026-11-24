@@ -98,7 +98,7 @@ class CommandOverviewTest extends TestCase
         $this->actingAs($user)->get(route('dashboard'))->assertInertia(fn (Assert $page) => $page
             ->where('planets.0.metal', 9000)
             ->where('planets.0.moons.0.name', 'Asteria')
-            ->where('planets.0.moons.1.name', null)
+            ->where('planets.0.moons.1.name', $moons[1]['name'])
             ->where('planets.0.crystal', 8000)
             ->where('planets.0.deuterium', 7000)
             ->where('planets.0.moons.0.metal', 100)

@@ -16,7 +16,9 @@ class AdminAccess
         $account = $user->universe_id === null ? $user : User::query()
             ->where('commander_id', $user->commander_id)->whereNull('universe_id')->first();
 
-        return (int) ($account?->admin_level ?? 0);
+        $level = (int) ($account?->admin_level ?? 0);
+
+        return $level >= 3 && $level <= 4 ? $level : 0;
     }
 
     public function isGlobal(User $user, int $minimumLevel = 3): bool
@@ -40,13 +42,13 @@ class AdminAccess
         }
 
         return (int) DB::table('universe_staff')->where('commander_id', $user->commander_id)
-            ->where('universe_id', $universeId)->value('level');
+            ->where('universe_id', $universeId)->whereBetween('level', [1, 2])->value('level');
     }
 
     public function highestLevel(User $user): int
     {
         return max($this->globalLevel($user), (int) DB::table('universe_staff')
-            ->where('commander_id', $user->commander_id)->max('level'));
+            ->where('commander_id', $user->commander_id)->whereBetween('level', [1, 2])->max('level'));
     }
 
     /** @return Collection<int, int>|null Null signifie que tous les univers sont accessibles. */

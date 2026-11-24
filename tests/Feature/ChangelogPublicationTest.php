@@ -9,8 +9,10 @@
 
 namespace Tests\Feature;
 
+use App\Models\Universe;
 use App\Models\User;
 use Illuminate\Foundation\Testing\LazilyRefreshDatabase;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 use Inertia\Testing\AssertableInertia as Assert;
 use PHPUnit\Framework\Attributes\DataProvider;
@@ -39,28 +41,28 @@ class ChangelogPublicationTest extends TestCase
             'created_at' => now(),
             'updated_at' => now(),
         ]);
-        $operator = User::factory()->create(['admin_level' => 1]);
+        $operator = User::factory()->create(['admin_level' => 3]);
 
         $expectedKeys = [
             'versionBumpAlpha6', 'celestialNameCatalog', 'planetMoonResourceIsolation',
             'lunarBuildingManagement', 'moonRenaming', 'colonizationNames', 'lunarConstructionQueue',
-            'legacyUniverseNameCatalog', 'serverMessages', 'multiUniverseAccounts', 'playerProfileSecurity',
+            'legacyUniverseNameCatalog', 'moonStockReads', 'serverMessages', 'multiUniverseAccounts', 'playerProfileSecurity',
             'commanderAvatar', 'adminUniverseManagement', 'welcomeGamePreview', 'totpLoginChallenge',
             'avatarPublicUrls', 'universeSelectionRateLimit',
         ];
 
         $this->actingAs($operator)->get(route('admin.changelog'))->assertOk()->assertInertia(fn (Assert $page) => $page
             ->where('releases.0.version', '0.1.1-alpha')
-            ->where('releases.0.entries', function (array $entries) use ($expectedKeys): void {
-                $this->assertEqualsCanonicalizing($expectedKeys, array_column($entries, 'key'));
+            ->where('releases.0.entries', function (Collection $entries) use ($expectedKeys): bool {
+                return $entries->pluck('key')->sort()->values()->all() === collect($expectedKeys)->sort()->values()->all();
             })
             ->where('releases.1.version', '0.1.0-alpha.5')
             ->where('releases.1.entries.0.key', 'moonLogistics'));
     }
 
-    public function test_unpublished_versions_are_hidden_from_public_pages_but_visible_to_operators(): void
+    public function test_unpublished_versions_are_hidden_from_public_pages_but_visible_to_administrators(): void
     {
-        $operator = User::factory()->create(['admin_level' => 1]);
+        $operator = User::factory()->create(['admin_level' => 3]);
 
         $this->get(route('home'))->assertOk()->assertInertia(fn (Assert $page) => $page->has('releases', 0));
         $this->get(route('changelog'))->assertOk()->assertInertia(fn (Assert $page) => $page
@@ -83,7 +85,7 @@ class ChangelogPublicationTest extends TestCase
             'created_at' => now(),
             'updated_at' => now(),
         ]);
-        $operator = User::factory()->create(['admin_level' => 1]);
+        $operator = User::factory()->create(['admin_level' => 3]);
 
         $this->get(route('home'))->assertInertia(fn (Assert $page) => $page
             ->has('releases', 1)->where('releases.0.version', '0.1.0-alpha.1'));
@@ -104,9 +106,9 @@ class ChangelogPublicationTest extends TestCase
             ->where('releases.5.published', true));
     }
 
-    public function test_an_operator_can_publish_and_hide_a_version(): void
+    public function test_an_administrator_can_publish_and_hide_a_version(): void
     {
-        $operator = User::factory()->create(['admin_level' => 1]);
+        $operator = User::factory()->create(['admin_level' => 3]);
         $version = '0.1.0-alpha.2';
 
         $this->actingAs($operator)->patch(route('admin.changelog.update'), [
@@ -144,7 +146,7 @@ class ChangelogPublicationTest extends TestCase
 
     public function test_invalid_publication_requests_do_not_change_visibility(): void
     {
-        $operator = User::factory()->create(['admin_level' => 1]);
+        $operator = User::factory()->create(['admin_level' => 3]);
 
         $this->actingAs($operator)->from(route('admin.changelog'))->patch(route('admin.changelog.update'), [
             'version' => 'unknown', 'published' => 'invalid',
@@ -155,7 +157,7 @@ class ChangelogPublicationTest extends TestCase
     }
 
     #[DataProvider('manual_entry_levels')]
-    public function test_moderators_and_higher_can_add_a_manual_entry(int $level): void
+    public function test_administrators_and_higher_can_add_a_manual_entry(int $level): void
     {
         $moderator = User::factory()->create(['admin_level' => $level]);
         $entry = [
@@ -184,12 +186,12 @@ class ChangelogPublicationTest extends TestCase
 
     public static function manual_entry_levels(): array
     {
-        return ['moderator' => [2], 'administrator' => [3], 'founder' => [4]];
+        return ['administrator' => [3], 'founder' => [4]];
     }
 
     public function test_manual_entries_follow_their_versions_publication_state(): void
     {
-        $moderator = User::factory()->create(['admin_level' => 2]);
+        $moderator = User::factory()->create(['admin_level' => 3]);
         $entry = [
             'version' => '0.1.0-alpha.2',
             'date' => '2026-11-17',
@@ -221,13 +223,17 @@ class ChangelogPublicationTest extends TestCase
         $this->get(route('changelog'))->assertInertia(fn (Assert $page) => $page->has('releases', 0));
     }
 
-    public function test_guests_players_and_operators_cannot_add_manual_entries(): void
+    public function test_guests_players_and_local_staff_cannot_add_manual_entries(): void
     {
         $entry = ['version' => '0.1.0-alpha.2', 'date' => '2026-11-17', 'type' => 'CHANGE', 'description' => 'Example'];
 
         $this->post(route('admin.changelog.entries.store'), $entry)->assertRedirect(route('login'));
-        foreach ([0, 1] as $level) {
-            $this->actingAs(User::factory()->create(['admin_level' => $level]))
+        $this->actingAs(User::factory()->create())->post(route('admin.changelog.entries.store'), $entry)->assertForbidden();
+        $universe = Universe::query()->create(['name' => 'Test', 'slug' => 'test']);
+        foreach ([1, 2] as $level) {
+            $staff = User::factory()->create();
+            DB::table('universe_staff')->insert(['commander_id' => $staff->commander_id, 'universe_id' => $universe->id, 'level' => $level, 'created_at' => now(), 'updated_at' => now()]);
+            $this->actingAs($staff)
                 ->post(route('admin.changelog.entries.store'), $entry)->assertForbidden();
         }
 
@@ -237,7 +243,7 @@ class ChangelogPublicationTest extends TestCase
 
     public function test_entries_added_to_a_published_version_are_visible_and_ordered_by_date(): void
     {
-        $moderator = User::factory()->create(['admin_level' => 2]);
+        $moderator = User::factory()->create(['admin_level' => 3]);
         $this->actingAs($moderator)->patch(route('admin.changelog.update'), [
             'version' => '0.1.0-alpha.2', 'published' => true,
         ]);
@@ -259,7 +265,7 @@ class ChangelogPublicationTest extends TestCase
 
     public function test_invalid_manual_entries_are_rejected_without_writing(): void
     {
-        $moderator = User::factory()->create(['admin_level' => 2]);
+        $moderator = User::factory()->create(['admin_level' => 3]);
 
         $this->actingAs($moderator)->from(route('admin.changelog'))
             ->post(route('admin.changelog.entries.store'), [

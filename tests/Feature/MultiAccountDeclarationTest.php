@@ -32,7 +32,8 @@ class MultiAccountDeclarationTest extends TestCase
         $this->actingAs($player)->get(route('admin.declarations'))->assertForbidden();
 
         $operator = User::factory()->create();
-        $operator->forceFill(['admin_level' => 1])->save();
+        $universe = Universe::query()->create(['name' => 'Test', 'slug' => 'test']);
+        DB::table('universe_staff')->insert(['commander_id' => $operator->commander_id, 'universe_id' => $universe->id, 'level' => 1, 'created_at' => now(), 'updated_at' => now()]);
         $this->actingAs($operator)->get(route('admin.declarations'))
             ->assertOk()->assertInertia(fn (Assert $page) => $page->component('Admin/Declarations'));
     }
@@ -71,7 +72,7 @@ class MultiAccountDeclarationTest extends TestCase
         $this->actingAs($players[0])->get(route('multi-accounts.index'))
             ->assertInertia(fn (Assert $page) => $page->has('declarations.data', 0));
         $operator = User::factory()->create();
-        $operator->forceFill(['admin_level' => 1])->save();
+        DB::table('universe_staff')->insert(['commander_id' => $operator->commander_id, 'universe_id' => $universe->id, 'level' => 1, 'created_at' => now(), 'updated_at' => now()]);
         $this->actingAs($operator)->get(route('admin.declarations'))
             ->assertInertia(fn (Assert $page) => $page->has('declarations.data', 1)
                 ->where('declarations.data.0.declarant_id', $declarant->id));

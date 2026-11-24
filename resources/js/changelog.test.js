@@ -26,6 +26,7 @@ test('changelog entries have valid dates, categories and translations', () => {
     const locales = { en, fr, de, es, it };
 
     assert.ok(releases.length > 0);
+    assert.equal(new Set(releases.map((release) => release.version)).size, releases.length, 'Release versions must be unique');
     for (const release of releases) {
         assert.match(release.version, /^(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)(?:-[0-9A-Za-z.-]+)?$/);
         assert.ok(release.entries.length > 0);

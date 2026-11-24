@@ -35,7 +35,7 @@ const adminLevel = computed(() => Number(page.props.auth?.user?.admin_level ?? 0
 const sections = computed(() => [
     { mode: 'overview', route: 'admin.index', allowed: adminLevel.value >= 1 },
     { mode: 'declarations', route: 'admin.declarations', allowed: adminLevel.value >= 1 },
-    { mode: 'elements', route: 'admin.elements', allowed: adminLevel.value >= 2 },
+    { mode: 'elements', route: 'admin.elements', allowed: page.props.auth?.user?.admin_global === true },
     { mode: 'resources', route: 'admin.resources', allowed: adminLevel.value >= 2 },
     { mode: 'roles', route: 'admin.roles', allowed: page.props.auth?.user?.admin_global === true },
     { mode: 'universes', route: 'admin.universes', allowed: adminLevel.value === 4 },
@@ -79,7 +79,7 @@ watch(() => [props.selectedPlayer?.id, props.selectedPlanetId], () => {
     resourceForm.planet_id = props.selectedPlanetId;
     roleForm.player_id = props.selectedPlayer?.id ?? null;
     roleForm.admin_level = props.selectedPlayer?.admin_level ?? 0;
-    roleForm.universe_ids = props.selectedPlayer?.staff_universe_ids ?? [];
+    roleForm.universe_ids = [];
     suspensionForm.player_id = props.selectedPlayer?.id ?? null;
     suspensionForm.reset('days', 'reason');
     unsuspendForm.player_id = props.selectedPlayer?.id ?? null;
@@ -226,7 +226,7 @@ function categoryLabel(category) {
                         </table>
                     </div>
                 </section>
-                <section v-if="mode === 'overview'" class="rounded border border-slate-700 bg-slate-900/70 p-4 sm:p-6">
+                <section v-if="mode === 'overview' && page.props.auth?.user?.admin_global" class="rounded border border-slate-700 bg-slate-900/70 p-4 sm:p-6">
                     <h2 class="mb-4 text-lg font-semibold text-white">{{ t('announcements.manage') }}</h2>
                     <form class="flex max-w-2xl flex-col gap-3" @submit.prevent="publishAnnouncement">
                         <label class="flex flex-col gap-1" for="announcement-body">{{ t('announcements.body') }}
@@ -293,7 +293,7 @@ function categoryLabel(category) {
                     </template>
                 </section>
 
-                <section v-if="mode === 'overview' && selectedPlayer" class="rounded border border-slate-700 bg-slate-900/70 p-4 sm:p-6">
+                <section v-if="mode === 'overview' && selectedPlayer && page.props.auth?.user?.admin_global" class="rounded border border-slate-700 bg-slate-900/70 p-4 sm:p-6">
                     <h2 class="mb-4 text-lg font-semibold text-white">{{ t('adminModeration.title') }}</h2>
                     <p v-if="!canManagePlayer" class="text-slate-400">{{ t('adminModeration.protected') }}</p>
                     <template v-else>
@@ -344,6 +344,9 @@ function categoryLabel(category) {
                     </form>
 
                     <form v-else-if="mode === 'roles' && page.props.auth?.user?.admin_global" class="flex max-w-lg flex-col gap-4" @submit.prevent="roleForm.post(route('admin.roles.update'), { preserveScroll: true })">
+                        <ul v-if="selectedPlayer.staff_roles?.length" class="text-sm text-slate-300">
+                            <li v-for="role in selectedPlayer.staff_roles" :key="role.id">{{ role.name }} : {{ t(`adminLevels.level${role.level}`) }}</li>
+                        </ul>
                         <div v-if="Object.keys(roleForm.errors).length" class="form-alert" role="alert"><p v-for="(error, field) in roleForm.errors" :key="field">{{ error }}</p></div>
                         <p v-if="roleForm.recentlySuccessful && !page.props.flash?.success" class="flash-message" role="status">{{ t('admin.success') }}</p>
                         <p v-if="!canManagePlayer" class="text-slate-400">{{ t('adminModeration.protected') }}</p>
@@ -352,7 +355,7 @@ function categoryLabel(category) {
                                 <option v-for="level in [0, 1, 2, 3]" :key="level" :value="level">{{ level }} · {{ t(`adminLevels.level${level}`) }}</option>
                             </select>
                         </label>
-                        <UniverseRoleSelector v-if="[1, 2].includes(roleForm.admin_level)" v-model="roleForm.universe_ids" :universes="roleUniverses" />
+                        <UniverseRoleSelector v-if="roleForm.admin_level < 3 && selectedPlayer.admin_level < 3" v-model="roleForm.universe_ids" :universes="roleUniverses" />
                         <button class="button button-primary self-start" type="submit" :disabled="roleForm.processing || !canManagePlayer">{{ roleForm.processing ? t('admin.saving') : t('admin.submit') }}</button>
                     </form>
                 </section>

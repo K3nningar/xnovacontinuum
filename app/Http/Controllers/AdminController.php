@@ -22,6 +22,7 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
 use Inertia\Response;
 
@@ -159,10 +160,10 @@ class AdminController extends Controller
 
         DB::transaction(function () use ($request, $data, $definition): void {
             $target = User::query()->lockForUpdate()->findOrFail($data['player_id']);
-            $this->ensureEligibleTarget($request, $target);
             $planet = Planet::query()->whereKey($data['planet_id'])
                 ->whereIn('user_id', $this->profileIds($target))
                 ->lockForUpdate()->firstOrFail();
+            $this->ensureEligibleTarget($request, $target, (int) $planet->universe_id);
             $amount = (int) $data['amount'];
             $category = $data['category'];
             $column = $definition['column'];
@@ -272,10 +273,10 @@ class AdminController extends Controller
 
         DB::transaction(function () use ($request, $data, $economy): void {
             $target = User::query()->lockForUpdate()->findOrFail($data['player_id']);
-            $this->ensureEligibleTarget($request, $target);
             $planet = Planet::query()->whereKey($data['planet_id'])
                 ->whereIn('user_id', $this->profileIds($target))
                 ->lockForUpdate()->firstOrFail();
+            $this->ensureEligibleTarget($request, $target, (int) $planet->universe_id);
             $planet = $economy->materialize($planet);
             $before = $planet->only('metal', 'crystal', 'deuterium');
             $capacities = $economy->storageCapacities($planet);
@@ -307,25 +308,51 @@ class AdminController extends Controller
         $data = $request->validate([
             'player_id' => ['required', 'integer', 'min:1', 'exists:users,id'],
             'admin_level' => ['required', 'integer', 'between:0,3'],
+            'universe_ids' => ['nullable', 'array', 'list'],
+            'universe_ids.*' => ['required', 'integer', 'distinct', Rule::exists('universes', 'id')],
         ]);
 
         DB::transaction(function () use ($request, $data): void {
             $target = User::query()->lockForUpdate()->findOrFail($data['player_id']);
-            if ($target->commander_id === $request->user()->commander_id || $target->admin_level >= 4) {
-                throw ValidationException::withMessages(['player_id' => 'Le compte fondateur ne peut pas être modifié ici.']);
+            $access = app(AdminAccess::class);
+            $account = User::query()->where('commander_id', $target->commander_id)->whereNull('universe_id')->lockForUpdate()->firstOrFail();
+            $actorLevel = $access->globalLevel($request->user());
+            $previousLevel = $access->globalLevel($account);
+            $level = (int) $data['admin_level'];
+            $universeIds = $data['universe_ids'] ?? [];
+
+            if ($target->commander_id === $request->user()->commander_id || $previousLevel >= $actorLevel || $level >= $actorLevel) {
+                throw ValidationException::withMessages(['player_id' => 'Vous ne pouvez pas modifier ce compte ou lui attribuer ce niveau.']);
+            }
+            if ($level < 3 && $previousLevel < 3 && $universeIds === []) {
+                throw ValidationException::withMessages(['universe_ids' => 'Sélectionnez au moins un univers.']);
+            }
+            if ($previousLevel >= 3 && $level > 0 && $level < 3) {
+                throw ValidationException::withMessages(['admin_level' => 'Retirez d’abord le rôle global.']);
             }
 
-            $profiles = User::query()->where('commander_id', $target->commander_id)->lockForUpdate()->get();
-            $previousLevel = $target->admin_level;
-            foreach ($profiles as $profile) {
-                $profile->admin_level = (int) $data['admin_level'];
-                $profile->save();
+            if ($level === 3 || ($level === 0 && $previousLevel >= 3)) {
+                $account->forceFill(['admin_level' => $level])->save();
+                $this->audit($request, 'role_changed', $account->id, null, [
+                    'commander_id' => $account->commander_id, 'before' => $previousLevel, 'after' => $level,
+                ]);
+            } else {
+                foreach ($universeIds as $universeId) {
+                    $staff = DB::table('universe_staff')->where('commander_id', $account->commander_id)->where('universe_id', $universeId);
+                    $before = (int) $staff->value('level');
+                    if ($level === 0) {
+                        $staff->delete();
+                    } else {
+                        DB::table('universe_staff')->updateOrInsert(
+                            ['commander_id' => $account->commander_id, 'universe_id' => $universeId],
+                            ['level' => $level, 'updated_at' => now(), 'created_at' => now()],
+                        );
+                    }
+                    $this->audit($request, 'role_changed', $account->id, null, [
+                        'commander_id' => $account->commander_id, 'before' => $before, 'after' => $level,
+                    ], (int) $universeId);
+                }
             }
-            $this->audit($request, 'role_changed', $target->id, null, [
-                'commander_id' => $target->commander_id,
-                'before' => $previousLevel,
-                'after' => (int) $data['admin_level'],
-            ]);
         }, 3);
 
         return redirect()->route('admin.roles', ['player' => $data['player_id']])
@@ -459,11 +486,11 @@ class AdminController extends Controller
             'planet' => ['nullable', 'integer', 'min:1'],
         ]);
 
-        $allowedUniverses = app(AdminAccess::class)->manageableUniverseIds($request->user(), 1);
+        $allowedUniverses = app(AdminAccess::class)->manageableUniverseIds($request->user(), $mode === 'resources' ? 2 : 1);
         $playerProps = $this->playerSelectionProps($data, $allowedUniverses);
 
         return inertia('Admin/Index', array_merge(
-            ['mode' => $mode],
+            ['mode' => $mode, 'roleUniverses' => $mode === 'roles' ? Universe::query()->orderBy('name')->get(['id', 'name']) : []],
             $playerProps,
             $this->modeSpecificProps($mode, $allowedUniverses),
         ));
@@ -493,7 +520,7 @@ class AdminController extends Controller
             $profileIds = User::query()->whereIn('id', $profileIds)->whereIn('universe_id', $allowedUniverses)->pluck('id');
         }
         $profiles = User::query()->whereIn('id', $profileIds)
-            ->with(['universe:id,name', 'planets' => fn ($query) => $query->select(['id', 'user_id', 'name', 'galaxy', 'system', 'position'])])
+            ->with(['universe:id,name', 'planets' => fn ($query) => $query->select(['id', 'user_id', 'universe_id', 'name', 'galaxy', 'system', 'position'])])
             ->get()->keyBy('id');
         $players = $accounts->map(function (User $account) use ($profiles, $profilesByAccount, $legacyProfiles, $allowedUniverses): User {
             $ownedProfiles = $profilesByAccount->get($account->commander_id, collect())
@@ -521,6 +548,12 @@ class AdminController extends Controller
                 ->when($allowedUniverses !== null, fn ($query) => $query->whereIn('commander_id', DB::table('commander_profiles')->whereIn('universe_id', $allowedUniverses)->select('commander_id')))
                 ->findOrFail($data['player'])
             : null;
+        if ($selectedPlayer && $allowedUniverses === null) {
+            $selectedPlayer->setAttribute('staff_roles', DB::table('universe_staff')
+                ->join('universes', 'universes.id', '=', 'universe_staff.universe_id')
+                ->where('commander_id', $selectedPlayer->commander_id)
+                ->orderBy('universes.name')->get(['universes.id', 'universes.name', 'universe_staff.level']));
+        }
         if ($selectedPlayer && ! $selectedPlayer->hasAttribute('planets')) {
             $ownedProfiles = $profilesByAccount->get($selectedPlayer->commander_id, collect())
                 ->map(fn ($mapping) => $profiles->get($mapping->profile_user_id));
@@ -626,13 +659,15 @@ class AdminController extends Controller
      *
      * @param  array<string, mixed>  $details
      */
-    private function audit(Request $request, string $action, ?int $targetUserId, ?int $planetId, array $details): void
+    private function audit(Request $request, string $action, ?int $targetUserId, ?int $planetId, array $details, ?int $universeId = null): void
     {
+        $universeId ??= $planetId ? Planet::query()->whereKey($planetId)->value('universe_id') : null;
         DB::table('admin_audit_logs')->insert([
             'actor_id' => $request->user()->id,
-            'actor_level' => $request->user()->admin_level,
+            'actor_level' => $universeId !== null ? app(AdminAccess::class)->levelFor($request->user(), $universeId) : app(AdminAccess::class)->highestLevel($request->user()),
             'target_user_id' => $targetUserId,
             'planet_id' => $planetId,
+            'universe_id' => $universeId,
             'action' => $action,
             'details' => json_encode($details, JSON_THROW_ON_ERROR),
             'created_at' => now(),
@@ -661,10 +696,14 @@ class AdminController extends Controller
         return array_values(array_unique(array_map('intval', $ids)));
     }
 
-    private function ensureEligibleTarget(Request $request, User $target): void
+    private function ensureEligibleTarget(Request $request, User $target, ?int $universeId = null): void
     {
+        $access = app(AdminAccess::class);
+        $actorLevel = $universeId === null ? $access->globalLevel($request->user()) : $access->levelFor($request->user(), $universeId);
+        $targetLevel = $universeId === null ? $access->highestLevel($target) : $access->levelFor($target, $universeId);
+        abort_if($actorLevel < ($universeId === null ? 3 : 2), 403);
         if ($target->id === $request->user()->id || $target->commander_id === $request->user()->commander_id
-            || $target->admin_level >= $request->user()->admin_level) {
+            || $targetLevel >= $actorLevel) {
             throw ValidationException::withMessages(['player_id' => 'Vous ne pouvez pas modifier votre propre compte ou un compte de niveau égal ou supérieur.']);
         }
     }

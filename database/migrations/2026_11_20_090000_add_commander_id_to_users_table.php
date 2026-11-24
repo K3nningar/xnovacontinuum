@@ -53,11 +53,12 @@ return new class extends Migration
                     $account['universe_id'] = null;
                     $account['alliance_id'] = null;
                     $account['planetary_destroyer_losses'] = 0;
+                    $account['admin_level'] = $profile['admin_level'] >= 3 ? $profile['admin_level'] : 0;
                     DB::table('users')->where('id', $row->id)->update([
                         'commander_id' => $commanderId,
                         'email' => null,
                         'email_verified_at' => null,
-                        'admin_level' => 0,
+                        'admin_level' => $profile['admin_level'] <= 2 ? $profile['admin_level'] : 0,
                         'suspended_until' => null,
                         'suspension_reason' => null,
                     ]);

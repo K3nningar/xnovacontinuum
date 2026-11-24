@@ -252,13 +252,14 @@ class GalaxyMapTest extends TestCase
         $legacy = $this->planet($legacyUser, 8, 'Legacy');
         $this->assertSame(100, (int) $legacy->fresh()->metal_concentration);
         $newUser = User::factory()->create();
-        $this->actingAs($newUser)->post(route('universe.join'), ['universe_id' => $universe->id, 'name' => 'New home'])->assertRedirect();
-        $planet = $newUser->fresh()->planets()->firstOrFail();
+        $this->actingAs($newUser)->post(route('universe.join'), ['universe_id' => $universe->id, 'name' => 'New home'])->assertRedirect()->assertSessionHasNoErrors();
+        $profile = User::query()->where('commander_id', $newUser->commander_id)->where('universe_id', $universe->id)->firstOrFail();
+        $planet = $profile->planets()->firstOrFail();
         $concentrations = app(GalaxyMap::class)->planetConcentrations($universe, $planet->galaxy, $planet->system, $planet->position);
         $this->assertSame($concentrations['metal'], (int) $planet->metal_concentration);
         $this->assertSame($concentrations['crystal'], (int) $planet->crystal_concentration);
         $this->assertSame($concentrations['deuterium'], (int) $planet->deuterium_concentration);
-        $this->actingAs($newUser->fresh())->get(route('galaxy.index'))->assertInertia(fn (Assert $page) => $page
+        $this->actingAs($profile)->get(route('galaxy.index'))->assertInertia(fn (Assert $page) => $page
             ->where('slots.6.resources', $concentrations));
 
         $planet->forceFill(['metal_mine_level' => 10, 'crystal_mine_level' => 10, 'deuterium_synthesizer_level' => 10])->save();

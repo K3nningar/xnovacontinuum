@@ -462,11 +462,11 @@ class ExplorationMissionsTest extends TestCase
         [$defender, $target] = $this->opponent($attacker);
         $orbit = $this->moonOrbit($attacker, $target);
         $home->forceFill(['unit_214' => 1])->save();
-        $attacker->forceFill(['military_technology_level' => 100, 'spy_technology_level' => 0])->save();
+        $attacker->forceFill(['military_technology_level' => 100, 'spy_technology_level' => abs($target->position - $home->position)])->save();
         $this->travelTo(now()->startOfSecond());
         DB::table('moon_stocks')->insert(['planet_id' => $target->id, 'orbit' => $orbit, 'metal' => 900, 'crystal' => 800, 'deuterium' => 700, 'created_at' => now(), 'updated_at' => now()]);
         $this->actingAs($attacker)->post(route('planet.missions.store', $home), [
-            'mission' => 'destroy_moon', 'galaxy' => 1, 'system' => $target->system, 'position' => $target->position,
+            'mission' => 'destroy_moon', 'target_type' => 'moon', 'galaxy' => 1, 'system' => $target->system, 'position' => $target->position,
             'moon_orbit' => $orbit, 'ships' => [214 => 1],
         ])->assertRedirect()->assertSessionHasNoErrors();
         $fleet = Fleet::where('origin_planet_id', $home->id)->where('mission', 'destroy_moon')->firstOrFail();
@@ -478,7 +478,7 @@ class ExplorationMissionsTest extends TestCase
         $slot = app(GalaxyMap::class)->system($attacker->universe, $attacker, 1, $target->system, $home->position)['slots'][7];
         $this->assertFalse(collect($slot['naturalMoons'] ?? [])->contains(fn (array $moon): bool => $moon['orbit'] === $orbit));
         $this->from(route('galaxy.index'))->post(route('planet.missions.store', $home), [
-            'mission' => 'destroy_moon', 'galaxy' => 1, 'system' => $target->system, 'position' => $target->position,
+            'mission' => 'destroy_moon', 'target_type' => 'moon', 'galaxy' => 1, 'system' => $target->system, 'position' => $target->position,
             'moon_orbit' => $orbit, 'ships' => [214 => 1],
         ])->assertSessionHasErrors('moon_orbit');
     }

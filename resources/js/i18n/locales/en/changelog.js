@@ -26,6 +26,7 @@ export default {
       "colonizationNames": "Colonies and unnamed moons now use generated designations related to their system star.",
       "lunarConstructionQueue": "Fixed the lunar construction queue so building levels are applied when construction completes.",
       "legacyUniverseNameCatalog": "Universe name generation can be rerun without replacing names already generated.",
+      "moonStockReads": "Fixed reading moons without a resource stock row or a custom name.",
       "serverMessages": "Some server-side messages are still in French regardless of the selected language.",
       "multiUniverseAccounts": "A commander account can now manage a separate empire in each universe and resume where they left off.",
       "playerProfileSecurity": "Added a player profile with password changes and TOTP two-factor authentication required at sign-in.",

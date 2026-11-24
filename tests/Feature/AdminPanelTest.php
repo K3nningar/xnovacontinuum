@@ -58,7 +58,7 @@ class AdminPanelTest extends TestCase
             'operator resources' => [1, 'admin.resources'],
             'operator elements' => [1, 'admin.elements'],
             'moderator elements' => [2, 'admin.elements'],
-            'administrator roles' => [3, 'admin.roles'],
+            'moderator roles' => [2, 'admin.roles'],
             'administrator universes' => [3, 'admin.universes'],
             'invalid level' => [5, 'admin.index'],
         ];
@@ -130,7 +130,10 @@ class AdminPanelTest extends TestCase
             'player resources' => [0, 'admin.resources.store'],
             'operator resources' => [1, 'admin.resources.store'],
             'moderator elements' => [2, 'admin.elements.store'],
-            'administrator roles' => [3, 'admin.roles.update'],
+            'moderator roles' => [2, 'admin.roles.update'],
+            'moderator suspension' => [2, 'admin.suspend'],
+            'moderator announcement' => [2, 'admin.announcements.store'],
+            'moderator changelog publication' => [2, 'admin.changelog.entries.store'],
             'administrator universe creation' => [3, 'admin.universes.store'],
         ];
     }
@@ -624,11 +627,11 @@ class AdminPanelTest extends TestCase
         $this->assertDatabaseCount('admin_audit_logs', 0);
     }
 
-    public function test_operator_can_suspend_a_player_and_an_existing_session_is_blocked(): void
+    public function test_administrator_can_suspend_a_player_and_an_existing_session_is_blocked(): void
     {
         $this->freezeTime();
         $operator = User::factory()->create();
-        $this->assignAccessLevel($operator, 1);
+        $this->assignAccessLevel($operator, 3);
         $player = User::factory()->create();
 
         $this->actingAs($operator)->post(route('admin.suspend'), [
@@ -644,13 +647,13 @@ class AdminPanelTest extends TestCase
         $this->assertGuest();
     }
 
-    public function test_only_moderators_and_above_can_lift_a_suspension(): void
+    public function test_only_administrators_and_above_can_lift_a_suspension(): void
     {
         $this->freezeTime();
         $operator = User::factory()->create();
         $this->assignAccessLevel($operator, 1);
         $moderator = User::factory()->create();
-        $this->assignAccessLevel($moderator, 2);
+        $this->assignAccessLevel($moderator, 3);
         $player = User::factory()->create();
         $player->forceFill(['suspended_until' => now()->addDay(), 'suspension_reason' => 'Violation'])->save();
 
@@ -665,9 +668,9 @@ class AdminPanelTest extends TestCase
     public function test_staff_cannot_suspend_an_equal_or_higher_level(): void
     {
         $operator = User::factory()->create();
-        $this->assignAccessLevel($operator, 1);
+        $this->assignAccessLevel($operator, 3);
         $other = User::factory()->create();
-        $this->assignAccessLevel($other, 2);
+        $this->assignAccessLevel($other, 3);
 
         $this->actingAs($operator)->post(route('admin.suspend'), [
             'player_id' => $other->id, 'days' => 2, 'reason' => 'Violation',
@@ -677,11 +680,11 @@ class AdminPanelTest extends TestCase
         $this->assertDatabaseCount('admin_audit_logs', 0);
     }
 
-    public function test_operator_can_publish_a_general_announcement_for_existing_players(): void
+    public function test_administrator_can_publish_a_general_announcement_for_existing_players(): void
     {
         $this->freezeTime();
         $operator = User::factory()->create();
-        $this->assignAccessLevel($operator, 1);
+        $this->assignAccessLevel($operator, 3);
         $player = User::factory()->create();
 
         $this->actingAs($operator)->post(route('admin.announcements.store'), [
@@ -704,7 +707,7 @@ class AdminPanelTest extends TestCase
     {
         $player = User::factory()->create();
         $operator = User::factory()->create();
-        $this->assignAccessLevel($operator, 1);
+        $this->assignAccessLevel($operator, 3);
 
         $this->actingAs($player)->post(route('admin.announcements.store'), ['body' => 'Message'])
             ->assertForbidden();
@@ -719,7 +722,7 @@ class AdminPanelTest extends TestCase
     {
         $this->freezeTime();
         $operator = User::factory()->create();
-        $this->assignAccessLevel($operator, 1);
+        $this->assignAccessLevel($operator, 3);
         $moderator = User::factory()->create();
         $this->assignAccessLevel($moderator, 2);
         $administrator = User::factory()->create();
@@ -757,18 +760,19 @@ class AdminPanelTest extends TestCase
     public function test_announcement_content_is_not_rendered_as_html(): void
     {
         $operator = User::factory()->create();
-        $this->assignAccessLevel($operator, 1);
+        $this->assignAccessLevel($operator, 3);
         $player = User::factory()->create();
-        $this->actingAs($operator)->post(route('admin.announcements.store'), ['body' => '<script>alert(1)</script>']);
+        $this->actingAs($operator)->post(route('admin.announcements.store'), ['body' => '<script>alert(1)</script>'])
+            ->assertRedirect()->assertSessionHasNoErrors();
 
         $this->actingAs($player)->get(route('announcements.index'))
             ->assertOk()->assertDontSee('<script>alert(1)</script>', false);
     }
 
-    public function test_general_announcements_are_rate_limited_per_operator(): void
+    public function test_general_announcements_are_rate_limited_per_administrator(): void
     {
         $operator = User::factory()->create();
-        $this->assignAccessLevel($operator, 1);
+        $this->assignAccessLevel($operator, 3);
         $this->actingAs($operator);
         for ($number = 1; $number <= 5; $number++) {
             $this->post(route('admin.announcements.store'), ['body' => "Message {$number}"])->assertRedirect();

@@ -30,6 +30,7 @@ use Illuminate\Support\Str;
  * @property string $commander_id
  * @property string $name
  * @property string $email
+ * @property string $password
  * @property Carbon|null $email_verified_at
  * @property int|null $universe_id
  * @property int|null $alliance_id

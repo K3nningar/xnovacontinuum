@@ -12,7 +12,6 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('universe_staff', function (Blueprint $table): void {
-            // commander_id est un UUID dans le schéma d’identités du dépôt.
             $table->uuid('commander_id');
             $table->foreignId('universe_id')->constrained()->cascadeOnDelete();
             $table->unsignedTinyInteger('level');
@@ -29,6 +28,17 @@ return new class extends Migration
                 );
             });
 
+        DB::table('users')->whereNull('universe_id')->whereBetween('admin_level', [1, 2])
+            ->orderBy('id')->get()->each(function (object $account): void {
+                $profiles = DB::table('users')->where('commander_id', $account->commander_id)->whereNotNull('universe_id')->get(['universe_id']);
+                if ($profiles->count() === 1) {
+                    DB::table('universe_staff')->insertOrIgnore([
+                        'commander_id' => $account->commander_id, 'universe_id' => $profiles->first()->universe_id,
+                        'level' => $account->admin_level, 'created_at' => now(), 'updated_at' => now(),
+                    ]);
+                }
+            });
+
         DB::table('users')->whereBetween('admin_level', [1, 2])->update(['admin_level' => 0]);
         Schema::table('admin_audit_logs', function (Blueprint $table): void {
             $table->foreignId('universe_id')->nullable()->after('planet_id')->constrained()->nullOnDelete();
@@ -37,6 +47,10 @@ return new class extends Migration
 
     public function down(): void
     {
+        DB::table('universe_staff')->orderBy('commander_id')->orderBy('universe_id')->get()->each(function (object $staff): void {
+            DB::table('users')->where('commander_id', $staff->commander_id)
+                ->where('universe_id', $staff->universe_id)->update(['admin_level' => $staff->level]);
+        });
         Schema::table('admin_audit_logs', function (Blueprint $table): void {
             $table->dropConstrainedForeignId('universe_id');
         });
