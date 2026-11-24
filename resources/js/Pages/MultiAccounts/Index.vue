@@ -31,7 +31,7 @@ function submit() {
 function paginationLabel(label, index, length) {
     if (index === 0) return `« ${t('admin.previous')}`;
     if (index === length - 1) return `${t('admin.next')} »`;
-    return label.replace(/<[^>]*>/g, '');
+    return label;
 }
 </script>
 
