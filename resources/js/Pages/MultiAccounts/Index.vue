@@ -64,7 +64,7 @@ function paginationLabel(label, index, length) {
                         <li v-for="item in declarations.data" :key="item.id" class="rounded border border-slate-700 p-3">
                             <p class="text-sm text-slate-400">{{ item.created_at }} · {{ t('multiAccounts.universe') }} #{{ item.universe_id }}</p>
                             <p>{{ t('multiAccounts.players') }}: <span v-for="(player, index) in item.players" :key="player.id">{{ index ? ', ' : '' }}{{ player.name }} (#{{ player.id }})</span></p>
-                            <p class="mt-2 whitespace-pre-wrap break-words">{{ item.reason }}</p>
+                            <p class="mt-2 whitespace-pre-wrap wrap-break-word">{{ item.reason }}</p>
                         </li>
                     </ol>
                     <nav v-if="declarations.links?.length > 3" class="mt-4 flex flex-wrap gap-2" :aria-label="t('multiAccounts.pagination')">
