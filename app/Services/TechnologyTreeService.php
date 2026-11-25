@@ -44,9 +44,13 @@ class TechnologyTreeService
     public function catalog(User $user, Planet $planet, array $researches, array $buildingSnapshot, UnitProductionService $production): array
     {
         $elements = [];
+        $factionBuildings = app(FactionCatalog::class)->settings($user)['buildings'] ?? [];
         $buildingRarities = config('technology-tree.building_rarities');
         foreach (config('technology-tree.buildings') as $building) {
             [$key, $code, $column] = $building;
+            if (($factionBuildings[$key]['available'] ?? true) === false) {
+                continue;
+            }
             $level = (int) $planet->{$column};
             $requirements = $this->requirements($building[3] ?? [], $planet, $user);
             $canUpgrade = (bool) ($buildingSnapshot['canUpgrade'][$key] ?? false)

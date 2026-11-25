@@ -40,11 +40,12 @@ The current application includes:
 - A galaxy view with coordinate-based exploration, expeditions, asteroid-field recycling, and fleet return processing.
 - Moons, moon resources, and orbital resource transfers.
 - A seeded combat simulator with configurable fleets and reproducible simulations when a seed is provided.
+- Per-universe factions, founder-controlled diplomacy, faction-specific combat modifiers and configurable existing building, ship and defence catalogs.
 - A changelog with publication controls and moderator-added entries.
 - Localized interface content in English, French, German, Spanish, and Italian.
 - Administration tools for player lookup, resource and item adjustments, temporary suspensions, announcements, multi-account declarations, changelog publication, and audit history.
 
-The implementation is evolving; a feature listed above may still have incomplete rules or balancing. Consult the in-game changelog for release-specific changes. Factions, diplomacy, quests, and other planned modules are not implied to be available just because they are part of the long-term project direction.
+The implementation is evolving; a feature listed above may still have incomplete rules or balancing. Consult the in-game changelog for release-specific changes. Planned modules such as quests are not implied to be available just because they are part of the long-term project direction.
 
 ## Technology stack
 
@@ -158,6 +159,20 @@ The web panel cannot create or remove a level-4 founder. A founder can grant rol
 | 4 | Founder | Administrator access, role management, universe creation/reopening, and audit-log access. Level 4 is bootstrapped from the console. |
 
 Sensitive administration actions are recorded in the audit log. Founders can create active universes with bounded galaxy, system, and speed settings, or reopen a closed universe for new players; existing player assignments are unchanged. Resource grants respect storage capacity; item grants check relevant queues, requirements, and limits. The panel does not provide arbitrary SQL execution, account deletion, or universe resets.
+
+### Factions and diplomacy
+
+Founders can create a closed universe, configure its factions and diplomacy from the universe administration page, then open it to players. Existing universes and players retain faction `0`, which defaults to the original catalog, combat statistics, and same-faction attack and alliance-depot rules. Its name, banner, catalog, combat statistics, and relations with other factions can also be configured per universe. New profiles choose a faction when joining each universe; the choice is fixed for that profile. A faction may have a local banner image under `public/`.
+
+Relations between distinct factions are symmetric and default to neutral. Members of the same nonzero faction are allies. Hostile missions cannot target allies, but can target neutral factions or factions at war. Stationing at another player's active depot requires an allied faction, or the original same-alliance rule between faction-0 players. Diplomacy is checked when sending, not when a fleet arrives; changing it does not cancel missions already in flight.
+
+The faction editor lists existing buildings, ships and defences with availability checkboxes, optional names and local image paths, and combat multipliers. Unchanged elements keep their original settings. The underlying JSON uses building keys and numerical ship and defence codes; `statistics` sets `attack`, `shield`, and `hull` multipliers from `0.1` to `10`, defaulting to `1`. For example:
+
+```json
+{"ships":{"202":{"name":"Scout transport","image":"/images/factions/red/202.webp"}},"buildings":{"metal":{"available":false}},"statistics":{"attack":1.1}}
+```
+
+These settings customize existing implemented elements; defining a new unit or building still requires game logic and storage. The standalone combat simulator does not currently select faction modifiers. Stationed fleets retain the existing stationing implementation: they do not participate in planetary defence and cannot currently be recalled.
 
 ### Announcements and multi-account declarations
 

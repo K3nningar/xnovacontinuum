@@ -153,8 +153,13 @@ class UnitProductionService
     {
         $definitions = $type === 'ships' ? self::SHIPS : self::DEFENCES;
         $units = [];
+        $factionSettings = app(FactionCatalog::class)->settings($user)[$type] ?? [];
 
         foreach ($definitions as $code => $definition) {
+            $factionElement = $factionSettings[$code] ?? [];
+            if (($factionElement['available'] ?? true) === false) {
+                continue;
+            }
             $queueCount = (int) $planet->unitQueue()->where('unit_code', $code)
                 ->selectRaw('COALESCE(SUM(quantity - quantity_completed), 0) as remaining')->value('remaining');
             $count = (int) $planet->{self::COLUMNS[$code]};
@@ -211,6 +216,7 @@ class UnitProductionService
 
             $units[] = [
                 'code' => $code, 'key' => $definition['key'], 'name' => $definition['name'],
+                'factionName' => $factionElement['name'] ?? null, 'factionImage' => $factionElement['image'] ?? null,
                 'rarity' => $definition['rarity'],
                 'count' => $count, 'queued' => $queueCount,
                 'cost' => $cost,
@@ -242,6 +248,9 @@ class UnitProductionService
 
         DB::transaction(function () use ($user, $planet, $type, $code, $quantity, $definitions): void {
             $lockedUser = User::query()->whereKey($user->id)->lockForUpdate()->firstOrFail();
+            if (! app(FactionCatalog::class)->available($lockedUser, $type, $code)) {
+                throw ValidationException::withMessages(['unit' => 'Cette unité n’est pas disponible pour votre faction.']);
+            }
             $lockedPlanet = Planet::query()->whereKey($planet->id)->where('user_id', $user->id)
                 ->where('universe_id', $lockedUser->universe_id)->lockForUpdate()->firstOrFail();
             $this->complete($lockedPlanet);

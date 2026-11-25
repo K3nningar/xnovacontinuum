@@ -942,8 +942,24 @@ body { background: transparent; }
 .profile-detail-status.is-unverified { color: #e5bd77; }
 .hud-profile-link { display: inline-flex; min-width: 0; align-items: center; gap: 8px; color: inherit; text-decoration: none; }
 .hud-profile-link:hover { color: var(--accent); }
+.hud-profile-identity { display: flex; min-width: 0; flex-direction: column; }
+.hud-profile-faction { max-width: 180px; overflow: hidden; color: #8fa6a5; font-size: 9px; text-overflow: ellipsis; white-space: nowrap; }
 .hud-profile-avatar { display: grid; flex: 0 0 auto; width: 30px; height: 30px; place-items: center; overflow: hidden; border: 1px solid rgba(68, 217, 173, .5); border-radius: 50%; object-fit: cover; }
 .hud-profile-avatar-fallback { color: var(--accent); background: rgba(68, 217, 173, .09); font-size: 12px; }
+.faction-editor-statistics { display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 10px; padding: 14px; border: 1px solid var(--line); }
+.faction-editor-statistics legend, .faction-editor-statistics label, .faction-editor-overrides label { color: #b8c2ce; font-size: 10px; }
+.faction-editor-statistics label, .faction-editor-overrides label { display: grid; gap: 6px; }
+.faction-editor-statistics p { grid-column: 1 / -1; margin: 0; color: #8fa6a5; font-size: 10px; }
+.faction-editor-category { border: 1px solid var(--line); }
+.faction-editor-category > summary { display: flex; justify-content: space-between; gap: 10px; padding: 12px; color: #dfe8ef; cursor: pointer; }
+.faction-editor-category > summary span, .faction-editor-availability small { color: #8fa6a5; }
+.faction-editor-element { padding: 10px 12px; border-top: 1px solid var(--line); }
+.faction-editor-availability { display: flex; align-items: center; gap: 9px; color: #dfe8ef; cursor: pointer; }
+.faction-editor-availability input { accent-color: var(--accent); }
+.faction-editor-state { margin-left: auto; color: #8fa6a5; font-size: 10px; }
+.faction-editor-overrides { margin: 8px 0 0 22px; color: #8fa6a5; font-size: 10px; }
+.faction-editor-overrides summary { cursor: pointer; }
+.faction-editor-overrides label { margin-top: 10px; }
 @media (max-width: 850px) { .profile-columns { grid-template-columns: minmax(0, 1fr); } .profile-side-column { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
 @media (max-width: 600px) {
     .profile-page { padding-top: 13px !important; }
@@ -971,6 +987,7 @@ body { background: transparent; }
     .hud-header .server-status, .hud-header .commander-label { display: none; }
     .hud-header .user-menu { gap: 7px; }
     .hud-header .user-menu strong { max-width: 95px; }
+    .hud-profile-faction { max-width: 95px; }
     .hud-sidebar { visibility: hidden; }
     .hud-app.app-sidebar-mobile-toggled .hud-sidebar { visibility: visible; }
     .hud-content .header-resources { width: 100%; }
@@ -1279,4 +1296,31 @@ body { background: transparent; }
 @media (max-width: 767px) {
     .moon-rename-form { width: 100%; }
     .moon-rename-form label, .moon-rename-form input { width: 100%; }
+}
+
+.hud-content .admin-page { padding: 28px 0 48px; }
+.admin-page .command-heading { flex-wrap: wrap; margin-bottom: 8px; }
+.admin-page .command-content > section.rounded { padding: clamp(20px, 2.5vw, 32px); }
+.admin-page form.max-w-lg, .admin-page form.max-w-2xl, .admin-page form.max-w-3xl { max-width: 64rem; }
+.admin-page label.max-w-md { max-width: 40rem; }
+.admin-factions .command-content { display: grid; gap: 24px; }
+.admin-factions .data-panel { min-width: 0; min-height: 0; padding: clamp(20px, 2.5vw, 32px); }
+.admin-factions .data-panel > h2 { margin: 0 0 16px; color: var(--text); font-size: 19px; font-weight: 600; }
+.admin-factions .data-panel > p:not(.faction-roster-row) { color: #a7b7c3; }
+.admin-factions .data-panel > h2 + p { margin-bottom: 18px; }
+.admin-factions .auth-form { width: 100%; max-width: 64rem; gap: 14px; }
+.admin-factions .auth-form > label { display: grid; gap: 6px; color: #c3d0d7; font-size: 12px; }
+.admin-factions .auth-form textarea, .admin-factions .auth-form select { width: 100%; min-height: 43px; padding: 10px 12px; border: 1px solid rgba(128, 200, 190, .3); color: var(--text); background: rgba(3, 16, 19, .8); font-size: 12px; }
+.admin-factions .auth-form textarea { min-height: 90px; resize: vertical; }
+.admin-factions .auth-form select:focus-visible, .admin-factions .auth-form textarea:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.admin-factions .auth-form > .button { justify-self: start; }
+.admin-factions .field-error:empty { display: none; }
+.admin-factions .faction-relation { margin: 12px 0 0; }
+.admin-factions .faction-roster-row { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px; max-width: 64rem; margin: 0; padding: 12px 0; border-top: 1px solid var(--line); }
+.admin-factions .faction-roster-row + .auth-form { margin-top: 24px; }
+.admin-changelog { width: min(1600px, calc(100% - 80px)); }
+@media (max-width: 767px) {
+    .hud-content .admin-page { padding: 20px 0 36px; }
+    .admin-factions .command-content { gap: 16px; }
+    .admin-changelog { width: calc(100% - 32px); }
 }

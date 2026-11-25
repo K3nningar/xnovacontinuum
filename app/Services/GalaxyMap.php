@@ -43,11 +43,15 @@ class GalaxyMap
             ->where('universe_id', $universe->id)
             ->where('galaxy', $galaxy)
             ->where('system', $system)
-            ->with('user:id,name,alliance_id')
+            ->with('user:id,name,alliance_id,universe_id,faction_key')
             ->get()
             ->keyBy('position');
 
         abort_if($planets->has(1) || $planets->has(16), 409, 'Ce système contient une planète sur un emplacement réservé.');
+
+        $factionNames = DB::table('factions')->where('universe_id', $universe->id)
+            ->whereIn('key', $planets->map(fn (Planet $planet) => $planet->user->faction_key)->unique())
+            ->pluck('name', 'key');
 
         $asteroidFields = DB::table('asteroid_fields')
             ->where('universe_id', $universe->id)->where('galaxy', $galaxy)->where('system', $system)
@@ -137,8 +141,10 @@ class GalaxyMap
                 'planet' => $planet ? [
                     'name' => $planet->name,
                     'owner' => $planet->user->name,
+                    'factionName' => $factionNames[$planet->user->faction_key] ?? null,
                     'owned' => (int) $planet->user_id === (int) $viewer->id,
-                    'alliedDepot' => (int) $planet->user_id !== (int) $viewer->id && $viewer->alliance_id !== null && (int) $planet->user->alliance_id === (int) $viewer->alliance_id && (int) $planet->alliance_depot_level > 0,
+                    'hostileAllowed' => app(FactionDiplomacy::class)->relation($viewer, $planet->user) !== 'allied',
+                    'alliedDepot' => (int) $planet->user_id !== (int) $viewer->id && (int) $planet->alliance_depot_level > 0 && app(FactionDiplomacy::class)->canStation($viewer, $planet->user),
                     ...((int) $planet->user_id === (int) $viewer->id ? ['id' => $planet->id] : []),
                 ] : null,
             ];

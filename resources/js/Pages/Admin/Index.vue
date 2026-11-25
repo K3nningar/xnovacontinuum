@@ -60,7 +60,7 @@ const suspensionForm = useForm({ player_id: null, days: 1, reason: '' });
 const unsuspendForm = useForm({ player_id: null });
 const announcementForm = useForm({ body: '' });
 const revokeAnnouncementForm = useForm({});
-const universeForm = useForm({ name: '', slug: '', galaxies: 9, systems_per_galaxy: 499, economy_speed: 1, fleet_speed: 1 });
+const universeForm = useForm({ name: '', slug: '', galaxies: 9, systems_per_galaxy: 499, economy_speed: 1, fleet_speed: 1, status: 'active' });
 const openUniverseForm = useForm({});
 const canManagePlayer = computed(() => props.selectedPlayer
     && props.selectedPlayer.id !== page.props.auth?.user?.id
@@ -162,7 +162,7 @@ function categoryLabel(category) {
 <template>
     <Head :title="t('admin.title')" />
     <GameLayout>
-        <main class="command-layout">
+        <main class="command-layout admin-page">
             <section class="command-content flex flex-col gap-6">
                 <div class="command-heading">
                     <div>
@@ -191,6 +191,7 @@ function categoryLabel(category) {
                         <label class="flex flex-col gap-1 text-sm" for="universe-systems">{{ t('adminUniverses.systems') }}<input id="universe-systems" v-model.number="universeForm.systems_per_galaxy" class="rounded border border-slate-600 bg-slate-950 px-3 py-2 text-white" type="number" min="1" max="499" step="1" required></label>
                         <label class="flex flex-col gap-1 text-sm" for="universe-economy-speed">{{ t('adminUniverses.economySpeed') }}<input id="universe-economy-speed" v-model.number="universeForm.economy_speed" class="rounded border border-slate-600 bg-slate-950 px-3 py-2 text-white" type="number" min="0.1" max="100" step="0.1" required></label>
                         <label class="flex flex-col gap-1 text-sm" for="universe-fleet-speed">{{ t('adminUniverses.fleetSpeed') }}<input id="universe-fleet-speed" v-model.number="universeForm.fleet_speed" class="rounded border border-slate-600 bg-slate-950 px-3 py-2 text-white" type="number" min="0.1" max="100" step="0.1" required></label>
+                        <label class="flex flex-col gap-1 text-sm" for="universe-status">{{ t('factions.opening') }}<select id="universe-status" v-model="universeForm.status"><option value="active">{{ t('factions.openNow') }}</option><option value="closed">{{ t('factions.configureBefore') }}</option></select></label>
                         <button class="button button-primary self-start sm:col-span-2" type="submit" :disabled="universeForm.processing">{{ universeForm.processing ? t('admin.saving') : t('adminUniverses.create') }}</button>
                     </form>
                 </section>
@@ -205,6 +206,7 @@ function categoryLabel(category) {
                                 <p class="font-semibold text-white">{{ universe.name }} <span class="text-sm font-normal text-slate-400">({{ universe.slug }})</span></p>
                                 <p class="text-sm text-slate-400">{{ t(`adminUniverses.status.${universe.status}`) }} · {{ universe.galaxies }} {{ t('adminUniverses.galaxiesShort') }} × {{ universe.systems_per_galaxy }} {{ t('adminUniverses.systemsShort') }} · {{ t('adminUniverses.namedSystems', { count: universe.named_systems ?? 0 }) }} · {{ t('adminUniverses.speeds', { economy: universe.economy_speed, fleet: universe.fleet_speed }) }}</p>
                             </div>
+                            <Link class="button button-outline" :href="route('admin.factions.index', { universe: universe.id })">{{ t('factions.title') }}</Link>
                             <button v-if="universe.status === 'closed'" class="button button-primary shrink-0 self-start" type="button" :disabled="openUniverseForm.processing" @click="openUniverse(universe.id)">{{ t('adminUniverses.open') }}</button>
                         </li>
                     </ul>

@@ -6,6 +6,8 @@
  */
 
 export default {
+  "factionEditor": { "elements": "Éléments disponibles", "elementsHelp": "Décochez les éléments interdits à cette faction. Ouvrez une catégorie pour modifier les noms et les visuels.", "buildings": "Bâtiments", "ships": "Vaisseaux", "defences": "Défenses", "available": "Disponible", "unavailable": "Indisponible", "customize": "Personnaliser", "customName": "Nom personnalisé (facultatif)", "customImage": "Image personnalisée (chemin local facultatif)", "statistics": "Multiplicateurs de combat", "statisticsHelp": "De 0,1 à 10 ; 1 conserve les valeurs normales.", "attack": "Attaque", "shield": "Bouclier", "hull": "Coque" },
+  "factions": { "title": "Factions", "faction": "Faction", "historical": "La faction 0 conserve les règles historiques.", "universes": "Univers", "create": "Créer une faction", "key": "Identifiant", "name": "Nom", "description": "Description", "image": "Image (chemin local)", "diplomacy": "Diplomatie", "hint": "Les factions sans relation définie sont neutres. Les membres d’une même faction sont alliés, sauf ceux de la faction 0.", "other": "Autre faction", "choose": "Choisir", "relation": "Relation", "war": "En guerre", "neutral": "Neutre", "allied": "Allié", "save": "Enregistrer", "roster": "Effectifs et configuration", "configure": "Configurer", "elements": "Éléments (JSON)", "settingsHelp": "Catégories buildings, ships et defences : available, name, image. Multiplicateurs statistics : attack, shield, hull, de 0,1 à 10.", "opening": "Ouverture", "openNow": "Ouvrir immédiatement", "configureBefore": "Configurer avant ouverture", "membersPlanets": "{members} membres · {planets} planètes" },
   "rarities": {
     "ordinary": "Ordinaire",
     "remarkable": "Remarquable",
@@ -65,6 +67,7 @@ export default {
     "multiAccounts": "Déclaration de multi-compte",
     "online": "UNIVERS EN LIGNE",
     "commander": "COMMANDANT",
+    "faction": "Faction",
     "logout": "Déconnexion",
     "empire": "Empire",
     "resourcesOf": "Ressources de {scope}",

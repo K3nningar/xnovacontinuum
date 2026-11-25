@@ -6,6 +6,8 @@
  */
 
 export default {
+  "factionEditor": { "elements": "Verfügbare Elemente", "elementsHelp": "Deaktivieren Sie Elemente, die dieser Fraktion nicht zur Verfügung stehen. Öffnen Sie eine Kategorie, um Namen und Bilder zu ändern.", "buildings": "Gebäude", "ships": "Schiffe", "defences": "Verteidigung", "available": "Verfügbar", "unavailable": "Nicht verfügbar", "customize": "Anpassen", "customName": "Eigener Name (optional)", "customImage": "Eigenes Bild (optionaler lokaler Pfad)", "statistics": "Kampfmultiplikatoren", "statisticsHelp": "Von 0,1 bis 10; 1 behält die normalen Werte bei.", "attack": "Angriff", "shield": "Schild", "hull": "Hülle" },
+  "factions": { "title": "Fraktionen", "faction": "Fraktion", "historical": "Fraktion 0 behält die ursprünglichen Regeln.", "universes": "Universen", "create": "Fraktion erstellen", "key": "Kennung", "name": "Name", "description": "Beschreibung", "image": "Bild (lokaler Pfad)", "diplomacy": "Diplomatie", "hint": "Fraktionen ohne festgelegte Beziehung sind neutral. Mitglieder derselben Fraktion sind verbündet, außer in Fraktion 0.", "other": "Andere Fraktion", "choose": "Auswählen", "relation": "Beziehung", "war": "Im Krieg", "neutral": "Neutral", "allied": "Verbündet", "save": "Speichern", "roster": "Mitglieder und Konfiguration", "configure": "Konfigurieren", "elements": "Elemente (JSON)", "settingsHelp": "Kategorien buildings, ships und defences: available, name, image. Multiplikatoren statistics: attack, shield, hull, von 0,1 bis 10.", "opening": "Öffnung", "openNow": "Sofort öffnen", "configureBefore": "Vor der Öffnung konfigurieren", "membersPlanets": "{members} Mitglieder · {planets} Planeten" },
   "rarities": {
     "ordinary": "Gewöhnlich",
     "remarkable": "Bemerkenswert",
@@ -66,6 +68,7 @@ export default {
     "multiAccounts": "Mehrkonto-Erklärung",
     "online": "UNIVERSUM ONLINE",
     "commander": "KOMMANDANT",
+    "faction": "Fraktion",
     "logout": "Abmelden",
     "empire": "Imperium",
     "resourcesOf": "Ressourcen: {scope}",

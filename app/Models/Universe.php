@@ -21,6 +21,11 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 #[Fillable(['name', 'slug', 'status', 'galaxies', 'systems_per_galaxy', 'economy_speed', 'fleet_speed'])]
 class Universe extends Model
 {
+    public function factions(): HasMany
+    {
+        return $this->hasMany(Faction::class)->orderBy('name');
+    }
+
     /**
      * Players who have selected this universe.
      *

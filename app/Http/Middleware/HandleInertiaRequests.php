@@ -11,8 +11,10 @@ declare(strict_types=1);
 
 namespace App\Http\Middleware;
 
-use App\Services\Changelog;
+use App\Models\Faction;
 use App\Services\AdminAccess;
+use App\Services\Changelog;
+use App\Services\FactionCatalog;
 use App\Services\PublicAvatarUrl;
 use Closure;
 use Illuminate\Http\Request;
@@ -76,6 +78,12 @@ class HandleInertiaRequests extends Middleware
         $commanderAccount = $authenticatedUser?->universe_id !== null
             ? $authenticatedUser->account
             : $authenticatedUser;
+        $faction = match (true) {
+            $authenticatedUser?->universe_id === null => null,
+            default => Faction::query()->where('universe_id', $authenticatedUser->universe_id)
+                ->where('key', $authenticatedUser->faction_key ?? '0')->first(['key', 'name'])?->only('key', 'name')
+                ?? (($authenticatedUser->faction_key ?? '0') === '0' ? ['key' => '0', 'name' => 'Faction 0'] : null),
+        };
 
         return [
             ...parent::share($request),
@@ -87,9 +95,11 @@ class HandleInertiaRequests extends Middleware
                     'admin_global' => app(AdminAccess::class)->isGlobal($request->user(), 3),
                     'admin_universe_ids' => app(AdminAccess::class)->staffUniverses($request->user())->values(),
                     'avatar_url' => $commanderAccount?->avatar_path ? app(PublicAvatarUrl::class)->for($request, $commanderAccount->avatar_path) : null,
+                    'faction' => $faction,
                 ] : null,
             ],
             'locale' => app()->getLocale(),
+            'factionSettings' => fn () => $request->user() ? app(FactionCatalog::class)->settings($request->user()) : [],
             'gameVersion' => fn () => $request->user() ? $this->changelog->currentVersion() : null,
             'flash' => [
                 'success' => fn () => $request->session()->get('success'),

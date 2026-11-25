@@ -10,6 +10,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Planet;
+use App\Services\FactionCatalog;
 use App\Services\PlanetEconomy;
 use App\Services\ResearchService;
 use Illuminate\Http\RedirectResponse;
@@ -62,6 +63,7 @@ class BuildingController extends Controller
             'technologyEnergyLevel' => (int) $user->energy_technology_level,
             'technologyComputerLevel' => (int) $user->computer_technology_level,
             'buildingRarities' => config('technology-tree.building_rarities'),
+            'factionBuildings' => app(FactionCatalog::class)->settings($user)['buildings'] ?? [],
             'planets' => $planets->map(fn (Planet $planet) => [
                 ...$planet->only('id', 'name', 'coordinates', 'fields'),
                 ...$economy->snapshot($planet, (int) $user->energy_technology_level, (int) $user->computer_technology_level),

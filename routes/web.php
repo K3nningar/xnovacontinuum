@@ -19,6 +19,7 @@ use App\Http\Controllers\ChangelogController;
 use App\Http\Controllers\CombatSimulatorController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\ExplorationMissionController;
+use App\Http\Controllers\FactionAdminController;
 use App\Http\Controllers\GalaxyController;
 use App\Http\Controllers\MoonController;
 use App\Http\Controllers\MultiAccountDeclarationController;
@@ -59,6 +60,11 @@ Route::middleware(['auth', EnsureAccountIsActive::class, ProcessExplorationMissi
         Route::get('/resources', [AdminController::class, 'resources'])->middleware('admin:2')->name('resources');
         Route::post('/resources', [AdminController::class, 'storeResources'])->middleware(['admin:2', 'throttle:game-action'])->name('resources.store');
         Route::get('/universes', [AdminController::class, 'universes'])->middleware('admin:4')->name('universes');
+        Route::get('/universes/{universe}/factions', [FactionAdminController::class, 'index'])->whereNumber('universe')->middleware('admin:4')->name('factions.index');
+        Route::post('/universes/{universe}/factions', [FactionAdminController::class, 'store'])->whereNumber('universe')->middleware(['admin:4', 'throttle:game-action'])->name('factions.store');
+        Route::patch('/universes/{universe}/factions/template', [FactionAdminController::class, 'updateTemplate'])->whereNumber('universe')->middleware(['admin:4', 'throttle:game-action'])->name('factions.template.update');
+        Route::patch('/universes/{universe}/factions/{faction}', [FactionAdminController::class, 'update'])->whereNumber(['universe', 'faction'])->middleware(['admin:4', 'throttle:game-action'])->name('factions.update');
+        Route::post('/universes/{universe}/diplomacy', [FactionAdminController::class, 'diplomacy'])->whereNumber('universe')->middleware(['admin:4', 'throttle:game-action'])->name('factions.diplomacy');
         Route::post('/universes', [AdminController::class, 'storeUniverse'])->middleware(['admin:4', 'throttle:game-action'])->name('universes.store');
         Route::post('/universes/{universe}/open', [AdminController::class, 'openUniverse'])->whereNumber('universe')
             ->middleware(['admin:4', 'throttle:game-action'])->name('universes.open');

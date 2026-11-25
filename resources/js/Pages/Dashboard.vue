@@ -24,6 +24,7 @@ const props = defineProps({
     onboardingUniverseId: { type: Number, default: null },
     planets: { type: Array, default: () => [] },
     alliance: { type: Object, default: null },
+    faction: { type: Object, default: null },
     fleetCount: { type: Number, default: 0 },
     researchQueue: { type: Object, default: null },
     selectedPlanetId: { type: Number, default: null },
@@ -33,7 +34,9 @@ const props = defineProps({
     serverTimezone: { type: String, required: true },
 });
 
-const form = useForm({ universe_id: props.onboardingUniverseId ?? props.availableUniverses[0]?.id ?? '', name: `${props.user.name} Prime` });
+const form = useForm({ universe_id: props.onboardingUniverseId ?? props.availableUniverses[0]?.id ?? '', name: `${props.user.name} Prime`, faction_key: '0' });
+const availableFactions = computed(() => props.availableUniverses.find((item) => item.id === Number(form.universe_id))?.factions ?? []);
+watch(() => form.universe_id, () => { form.faction_key = '0'; });
 const renameForm = useForm({ name: '' });
 const isRenaming = ref(false);
 const clock = ref(Date.now());
@@ -140,6 +143,7 @@ function remaining(value) {
 }
 
 function buildingName(key) {
+    if (page.props.factionSettings?.buildings?.[key]?.name) return page.props.factionSettings.buildings[key].name;
     const path = `buildingCatalog.${key}.name`;
     return te(path) ? t(path) : key;
 }
@@ -261,6 +265,7 @@ function researchName(key) {
                         </section>
                     </div>
                     <div class="command-panels">
+                        <section v-if="faction" class="data-panel"><div class="panel-heading"><div><span class="panel-kicker">{{ t('factions.faction') }}</span><h2>{{ faction.name }}</h2></div></div><img v-if="faction.image" :src="faction.image" :alt="faction.name"><p>{{ faction.description }}</p><p>{{ t('factions.membersPlanets', { members: faction.members, planets: faction.planets }) }}</p></section>
                         <section id="planetes" class="data-panel">
                             <div class="panel-heading"><div><span class="panel-kicker">{{ t('dashboard.yourEmpire') }}</span><h2>{{ t('dashboard.planets') }}</h2></div><span class="panel-count">{{ planets.length }}</span></div>
                             <article v-for="planet in planets" :key="planet.id" class="planet-row">
@@ -294,7 +299,7 @@ function researchName(key) {
                     <div class="notice-bar"><span>✦</span><p>{{ t('dashboard.established', { name: universe.name }) }}</p><Link class="intel-discover" :href="route('buildings.index')">{{ t('dashboard.developBuildings') }} →</Link></div>
                 </template>
 
-                <section v-else class="onboarding-panel"><p class="eyebrow"><span class="eyebrow-line"></span> {{ t('dashboard.firstDirective') }}</p><h2>{{ t('dashboard.chooseStart') }}<br><span>{{ t('dashboard.startPoint') }}</span></h2><p class="command-subtitle">{{ t('dashboard.joinUniverse') }}</p><label v-if="availableUniverses.length > 1" class="universe-picker" for="universe-id">{{ t('dashboard.chooseUniverse') }}<select id="universe-id" v-model="form.universe_id"><option v-for="item in availableUniverses" :key="item.id" :value="item.id">{{ item.name }} · {{ item.galaxies }} galaxies</option></select></label><div v-if="availableUniverses.length" class="universe-choice"><div class="universe-emblem">⌖</div><div><span class="panel-kicker">{{ t('dashboard.selectedUniverse') }}</span><h3>{{ availableUniverses.find((item) => item.id === Number(form.universe_id))?.name }}</h3><p>{{ t('dashboard.galaxiesSystems', { galaxies: availableUniverses.find((item) => item.id === Number(form.universe_id))?.galaxies, systems: availableUniverses.find((item) => item.id === Number(form.universe_id))?.systems_per_galaxy }) }}</p></div></div><form v-if="availableUniverses.length" class="auth-form onboarding-form" @submit.prevent="joinUniverse"><label for="planet-name">{{ t('dashboard.startingPlanetName') }}</label><input id="planet-name" v-model="form.name" type="text" maxlength="80" required><span v-if="form.errors.name" class="field-error">{{ form.errors.name }}</span><span v-if="form.errors.universe_id || form.errors.universe" class="field-error">{{ form.errors.universe_id || form.errors.universe }}</span><button class="button button-primary button-large" type="submit" :disabled="form.processing">{{ form.processing ? t('dashboard.initializing') : t('dashboard.foundEmpire') }} <span aria-hidden="true">→</span></button></form><div v-else class="empty-state"><span class="empty-orb">◈</span><strong>{{ t('dashboard.noUniverses') }}</strong><p>{{ t('dashboard.returnSoon') }}</p></div></section>
+                <section v-else class="onboarding-panel"><p class="eyebrow"><span class="eyebrow-line"></span> {{ t('dashboard.firstDirective') }}</p><h2>{{ t('dashboard.chooseStart') }}<br><span>{{ t('dashboard.startPoint') }}</span></h2><p class="command-subtitle">{{ t('dashboard.joinUniverse') }}</p><label v-if="availableUniverses.length > 1" class="universe-picker" for="universe-id">{{ t('dashboard.chooseUniverse') }}<select id="universe-id" v-model="form.universe_id"><option v-for="item in availableUniverses" :key="item.id" :value="item.id">{{ item.name }} · {{ item.galaxies }} galaxies</option></select></label><div v-if="availableUniverses.length" class="universe-choice"><div class="universe-emblem">⌖</div><div><span class="panel-kicker">{{ t('dashboard.selectedUniverse') }}</span><h3>{{ availableUniverses.find((item) => item.id === Number(form.universe_id))?.name }}</h3><p>{{ t('dashboard.galaxiesSystems', { galaxies: availableUniverses.find((item) => item.id === Number(form.universe_id))?.galaxies, systems: availableUniverses.find((item) => item.id === Number(form.universe_id))?.systems_per_galaxy }) }}</p></div></div><form v-if="availableUniverses.length" class="auth-form onboarding-form" @submit.prevent="joinUniverse"><label for="faction-key">Faction</label><select id="faction-key" v-model="form.faction_key"><option v-for="item in availableFactions" :key="item.key" :value="item.key">{{ item.name }}</option></select><p>{{ availableFactions.find(item => item.key === form.faction_key)?.description }}</p><img v-if="availableFactions.find(item => item.key === form.faction_key)?.image" :src="availableFactions.find(item => item.key === form.faction_key).image" :alt="availableFactions.find(item => item.key === form.faction_key).name"><span v-if="form.errors.faction_key" class="field-error">{{ form.errors.faction_key }}</span><label for="planet-name">{{ t('dashboard.startingPlanetName') }}</label><input id="planet-name" v-model="form.name" type="text" maxlength="80" required><span v-if="form.errors.name" class="field-error">{{ form.errors.name }}</span><span v-if="form.errors.universe_id || form.errors.universe" class="field-error">{{ form.errors.universe_id || form.errors.universe }}</span><button class="button button-primary button-large" type="submit" :disabled="form.processing">{{ form.processing ? t('dashboard.initializing') : t('dashboard.foundEmpire') }} <span aria-hidden="true">→</span></button></form><div v-else class="empty-state"><span class="empty-orb">◈</span><strong>{{ t('dashboard.noUniverses') }}</strong><p>{{ t('dashboard.returnSoon') }}</p></div></section>
             </section>
         </main>
     </GameLayout>

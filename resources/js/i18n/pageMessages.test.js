@@ -31,7 +31,7 @@ test('locale dictionaries are physically split by page type', () => {
 test('page translation output contains only the namespaces assigned to that page', () => {
     const messages = getPageTranslations(fr, 'galaxy');
 
-    assert.deepEqual(Object.keys(messages), ['galaxyLegacySensors', 'galaxyMap', 'galaxyCombatLimit', 'galaxyEncounter', 'galaxyEarlyReturn', 'galaxyMoon', 'galaxyShipsFound', 'galaxyMissions', 'galaxyConcentrationNote', 'galaxy', 'unitNames', 'fleet', 'common']);
+    assert.deepEqual(Object.keys(messages), ['galaxyLegacySensors', 'galaxyMap', 'galaxyCombatLimit', 'galaxyEncounter', 'galaxyEarlyReturn', 'galaxyMoon', 'galaxyShipsFound', 'galaxyMissions', 'galaxyConcentrationNote', 'galaxy', 'unitNames', 'fleet', 'common', 'factions']);
     assert.equal(messages.galaxy.title, fr.galaxy.title);
     assert.equal(Object.hasOwn(messages, 'auth'), false);
 });
@@ -44,6 +44,12 @@ test('every page scope is available in every supported locale', () => {
                 `${locale} is missing translations for ${page}`,
             );
         }
+    }
+});
+
+test('the faction label is available in the shared game navigation in every locale', () => {
+    for (const [locale, translations] of Object.entries(locales)) {
+        assert.ok(getPageTranslations(translations, 'shared').nav.faction, `${locale} is missing the faction label`);
     }
 });
 

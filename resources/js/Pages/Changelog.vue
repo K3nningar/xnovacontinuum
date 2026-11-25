@@ -38,7 +38,7 @@ function addEntry() {
 </script>
 
 <template>
-    <div class="universe-shell">
+    <div class="universe-shell" :class="{ 'admin-changelog': administration }">
         <Head :title="t('changelog.title')" />
         <header class="topbar">
             <Link class="brand" :href="route('home')" :aria-label="t('welcome.homeLabel')"><span class="brand-mark" aria-hidden="true">X</span><span class="brand-copy"><strong>XNova</strong><small>Continuum</small></span></Link>

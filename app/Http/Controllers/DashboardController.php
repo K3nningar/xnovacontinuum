@@ -9,6 +9,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Faction;
 use App\Models\Fleet;
 use App\Models\Planet;
 use App\Models\Universe;
@@ -109,6 +110,10 @@ class DashboardController extends Controller
                 'eventAt' => ($fleet->status === 'returning' ? $fleet->returns_at : $fleet->arrives_at)?->toIso8601String(),
             ])->values() : collect();
 
+        $faction = $universe
+            ? Faction::query()->where('universe_id', $universe->id)->where('key', $user->faction_key ?? '0')->first()
+            : null;
+
         return inertia('Dashboard', [
             'user' => $user->only('id', 'name'),
             'hasUniverse' => $universe !== null,
@@ -120,8 +125,14 @@ class DashboardController extends Controller
             'availableUniverses' => $universe ? [] : Universe::query()
                 ->where('status', 'active')
                 ->orderBy('id')
+                ->with('factions:id,universe_id,key,name,description,image')
                 ->get(['id', 'name', 'galaxies', 'systems_per_galaxy'])
-                ->toArray(),
+                ->map(fn (Universe $available): array => [
+                    ...$available->only('id', 'name', 'galaxies', 'systems_per_galaxy'),
+                    'factions' => $available->factions->where('key', '!=', '0')->prepend(
+                        $available->factions->firstWhere('key', '0') ?? ['key' => '0', 'name' => 'Faction 0', 'description' => null, 'image' => null],
+                    )->values(),
+                ])->toArray(),
             'onboardingUniverseId' => $onboardingForAccount && $onboardingUniverseId > 0
                 && Universe::query()->where('status', 'active')->whereKey($onboardingUniverseId)->exists()
                 ? $onboardingUniverseId
@@ -151,6 +162,11 @@ class DashboardController extends Controller
                 'liveResources' => $economy->liveResourceSnapshot($planet),
             ])->values(),
             'alliance' => $user->alliance?->only('id', 'name', 'tag', 'description'),
+            'faction' => $faction ? [
+                ...$faction->only('name', 'description', 'image'),
+                'members' => User::query()->where('universe_id', $universe->id)->where('faction_key', $faction->key)->count(),
+                'planets' => Planet::query()->where('universe_id', $universe->id)->whereNull('destroyed_at')->whereHas('user', fn ($query) => $query->where('faction_key', $faction->key))->count(),
+            ] : null,
             'fleetCount' => $universe ? $user->fleets()->where('status', 'outbound')->count() : 0,
             'researchQueue' => $universe ? $user->researchQueues()->first()?->only('id', 'technology_key', 'technology_code', 'target_level', 'completes_at') : null,
             'activeFleets' => $fleets,

@@ -90,12 +90,13 @@ class AdminController extends Controller
             'systems_per_galaxy' => ['required', 'integer', 'between:1,499'],
             'economy_speed' => ['required', 'numeric', 'between:0.1,100'],
             'fleet_speed' => ['required', 'numeric', 'between:0.1,100'],
+            'status' => ['sometimes', Rule::in(['active', 'closed'])],
         ]);
 
         DB::transaction(function () use ($request, $data, $celestialNames): void {
             $universe = Universe::query()->create([
                 ...$data,
-                'status' => 'active',
+                'status' => $data['status'] ?? 'active',
             ]);
             $celestialNames->preGenerate($universe);
             $this->audit($request, 'universe_created', null, null, [
@@ -110,7 +111,7 @@ class AdminController extends Controller
             ]);
         }, 3);
 
-        return redirect()->route('admin.universes')->with('success', 'Univers créé et ouvert.');
+        return redirect()->route('admin.universes')->with('success', ($data['status'] ?? 'active') === 'active' ? 'Univers créé et ouvert.' : 'Univers créé et fermé.');
     }
 
     /**

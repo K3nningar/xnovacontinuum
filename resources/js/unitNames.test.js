@@ -21,3 +21,10 @@ test('fleet ship codes map to localized ship names on fleet and galaxy pages', (
         assert.ok(getPageTranslations(messages, 'galaxy').unitNames);
     }
 });
+
+test('faction names override the default ship names without affecting other units', () => {
+    const translate = (path) => path;
+    const settings = { ships: { 202: { name: 'Faction transport' } } };
+    assert.equal(translateUnitName(202, translate, settings), 'Faction transport');
+    assert.equal(translateUnitName(203, translate, settings), 'unitNames.large_cargo');
+});

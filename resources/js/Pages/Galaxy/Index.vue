@@ -39,7 +39,7 @@ const originPlanet = ref(props.selectedPlanetId);
 const selectedPosition = ref(1);
 const dismissedTooltip = ref(null);
 const missionForm = useForm({ mission: '', galaxy: props.galaxy, system: props.system, position: 16, ships: {}, target_type: 'planet', moon_orbit: null, origin_target_type: 'planet', origin_moon_orbit: null, cargo: { metal: 0, crystal: 0, deuterium: 0 } });
-const shipNames = computed(() => Object.fromEntries(props.availableShips.map((ship) => [ship.code, translateUnitName(ship.code, t)])));
+const shipNames = computed(() => Object.fromEntries(props.availableShips.map((ship) => [ship.code, translateUnitName(ship.code, t, page.props.factionSettings)])));
 const sendingShips = computed(() => {
     const available = missionForm.origin_target_type === 'moon'
         ? props.availableShips.filter((ship) => Object.hasOwn(missionForm.ships, ship.code))
@@ -71,10 +71,11 @@ const targetMissions = computed(() => {
     if (!slot.planet) return ['colonize'];
     if (slot.planet.owned) return ['transport'];
     return [
-        'transport', 'attack', 'spy',
-        ...(slot.naturalMoons?.length ? ['destroy_moon'] : []),
-        ...(props.missionConfig.hasAlliance && slot.planet.alliedDepot ? ['station'] : []),
-        ...(props.missionConfig.planetaryDestroyerAvailable ? ['destroy_planet'] : []),
+        'transport',
+        ...(slot.planet.hostileAllowed ? ['attack', 'spy'] : []),
+        ...(slot.planet.hostileAllowed && slot.naturalMoons?.length ? ['destroy_moon'] : []),
+        ...(slot.planet.alliedDepot ? ['station'] : []),
+        ...(slot.planet.hostileAllowed && props.missionConfig.planetaryDestroyerAvailable ? ['destroy_planet'] : []),
     ];
 });
 const availableMissionOptions = computed(() => props.missionConfig.missions.filter((mission) => targetMissions.value.includes(mission) && (mission !== 'destroy_planet' || props.missionConfig.planetaryDestroyerAvailable)));
@@ -150,10 +151,11 @@ function missionsForSlot(slot) {
     if (!slot.planet) return ['colonize'];
     if (slot.planet.owned) return ['transport'];
     return [
-        'transport', 'attack', 'spy',
-        ...(slot.naturalMoons?.length ? ['destroy_moon'] : []),
-        ...(props.missionConfig.hasAlliance && slot.planet.alliedDepot ? ['station'] : []),
-        ...(props.missionConfig.planetaryDestroyerAvailable ? ['destroy_planet'] : []),
+        'transport',
+        ...(slot.planet.hostileAllowed ? ['attack', 'spy'] : []),
+        ...(slot.planet.hostileAllowed && slot.naturalMoons?.length ? ['destroy_moon'] : []),
+        ...(slot.planet.alliedDepot ? ['station'] : []),
+        ...(slot.planet.hostileAllowed && props.missionConfig.planetaryDestroyerAvailable ? ['destroy_planet'] : []),
     ];
 }
 
@@ -250,6 +252,7 @@ function navigate(galaxy = targetGalaxy.value, system = targetSystem.value) {
                                     <template v-if="slot.visible && slot.kind === 'planet'">
                                         <span class="system-map-star-name">{{ t('galaxy.star') }} · {{ starName }} · {{ t(`galaxy.types.${star}`) }}</span>
                                         <span>{{ slot.planet ? (slot.planet.owned ? t('galaxy.own') : t('galaxy.owner', { name: slot.planet.owner })) : t('galaxy.unoccupied') }} · {{ slot.planet?.name ?? slot.generatedName }}</span>
+                                        <span v-if="slot.planet?.factionName">{{ t('factions.faction') }} · {{ slot.planet.factionName }}</span>
                                         <small v-if="slot.planet?.name && slot.planet.name !== slot.generatedName">{{ t('galaxy.generatedPlanet') }} · {{ slot.generatedName }}</small>
                                         <span>{{ t('galaxy.moons', { count: slot.moons }) }}</span>
                                         <ul v-if="slot.naturalMoons.length" class="system-map-moon-names"><li v-for="moon in slot.naturalMoons" :key="moon.orbit">{{ moon.name }} · {{ n(moon.diameter) }} km</li></ul>
@@ -288,6 +291,7 @@ function navigate(galaxy = targetGalaxy.value, system = targetSystem.value) {
                                 <h3 class="mt-2 font-semibold text-cyan-300">{{ slot.planet?.name ?? slot.generatedName }}</h3>
                                 <p v-if="slot.planet?.name && slot.planet.name !== slot.generatedName" class="mt-1 text-xs text-slate-400">{{ t('galaxy.generatedPlanet') }} · {{ slot.generatedName }}</p>
                                 <p class="mt-2 text-sm">{{ t('galaxy.planetType', { type: t(`galaxy.types.${slot.type}`) }) }} · {{ slot.planet ? (slot.planet.owned ? t('galaxy.own') : t('galaxy.owner', { name: slot.planet.owner })) : t('galaxy.unoccupied') }}</p>
+                                <p v-if="slot.planet?.factionName" class="mt-1 text-sm">{{ t('factions.faction') }} · {{ slot.planet.factionName }}</p>
                                 <p class="mt-2 text-sm text-slate-400">{{ t('galaxy.moons', { count: slot.moons }) }}</p>
                                 <p v-if="slot.naturalMoons.length" class="mt-1 text-xs text-slate-400">{{ t('galaxy.moonNames') }}</p>
                                         <ul v-if="slot.naturalMoons.length" class="mt-1 text-sm text-slate-400"><li v-for="moon in slot.naturalMoons" :key="moon.orbit"><Link v-if="slot.planet?.owned" class="text-cyan-300 underline" :href="route('moon.show', { planet: slot.planet.id, orbit: moon.orbit })">{{ moon.name }} · {{ n(moon.diameter, 'game') }} km</Link><template v-else>{{ moon.name }} · {{ n(moon.diameter, 'game') }} km</template></li></ul>

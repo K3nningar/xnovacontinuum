@@ -98,9 +98,9 @@ class CombatSimulatorService
     {
         $side = ['units' => [], 'alive' => [], 'positions' => []];
         $technologyBonuses = [
-            'attack' => 1 + ($input['technologies']['weapons'] / 10),
-            'shield' => 1 + ($input['technologies']['shields'] / 10),
-            'hull' => 1 + ($input['technologies']['armour'] / 10),
+            'attack' => (1 + ($input['technologies']['weapons'] / 10)) * ($input['factionStats']['attack'] ?? 1),
+            'shield' => (1 + ($input['technologies']['shields'] / 10)) * ($input['factionStats']['shield'] ?? 1),
+            'hull' => (1 + ($input['technologies']['armour'] / 10)) * ($input['factionStats']['hull'] ?? 1),
         ];
 
         foreach (config('combat.units') as $code => $definition) {

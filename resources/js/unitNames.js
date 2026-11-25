@@ -17,8 +17,9 @@ export const unitNameKeys = {
     217: 'planetary_destroyer',
 };
 
-export function translateUnitName(code, translate) {
+export function translateUnitName(code, translate, settings = {}) {
     const key = unitNameKeys[code];
 
-    return key ? translate(`unitNames.${key}`) : translate('fleet.ship', { code });
+    return settings.ships?.[code]?.name ?? settings.defences?.[code]?.name
+        ?? (key ? translate(`unitNames.${key}`) : translate('fleet.ship', { code }));
 }

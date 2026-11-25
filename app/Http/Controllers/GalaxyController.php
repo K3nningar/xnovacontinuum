@@ -74,7 +74,7 @@ class GalaxyController extends Controller
                 'targetTypes' => ['planet', 'moon', 'asteroid', 'debris', 'depot'],
                 'experimentalPlanetaryDestroyerEnabled' => (bool) config('combat.experimental_planetary_destroyer', false),
                 'planetaryDestroyerAvailable' => (bool) config('combat.experimental_planetary_destroyer', false) && (int) $user->officer_emperor_level > 0 && (int) $planet->unit_217 > 0,
-                'hasAlliance' => $user->alliance_id !== null,
+                'hasAlliance' => $user->alliance_id !== null || $user->faction_key !== '0',
             ],
             ...$map->system($universe, $user, $galaxy, $system, $planet->position),
         ]);

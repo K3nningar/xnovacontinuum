@@ -29,7 +29,7 @@ function paginationLabel(label, index, length) {
 <template>
     <Head :title="t('multiAccounts.title')" />
     <GameLayout>
-        <main class="command-layout">
+        <main class="command-layout admin-page">
             <section class="command-content flex flex-col gap-6">
                 <div class="command-heading"><div><h1>{{ t('multiAccounts.title') }}</h1><p class="command-subtitle">{{ t('multiAccounts.notice') }}</p></div></div>
                 <Link class="button button-outline self-start" :href="route('admin.index')">{{ t('multiAccounts.back') }}</Link>

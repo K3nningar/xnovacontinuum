@@ -273,6 +273,11 @@ class ExplorationMissions
             && (! $target || (int) $target->user_id === (int) $user->id || $target->destroyed_at)) {
             throw ValidationException::withMessages(['target' => 'La mission nécessite une planète appartenant à un autre commandant.']);
         }
+        if ($target && (int) $target->user_id !== (int) $user->id
+            && in_array($mission, ['attack', 'spy', 'destroy_moon', 'destroy_planet'], true)
+            && app(FactionDiplomacy::class)->relation($user, $target->user) === 'allied') {
+            throw ValidationException::withMessages(['target' => 'Une mission hostile ne peut pas viser une faction alliée.']);
+        }
         if (in_array($mission, ['attack', 'spy', 'destroy_moon', 'destroy_planet'], true) && $targetType === 'moon'
             && ! collect($this->map->system($universe, $user, $galaxy, $system, $origin->position)['slots'][$position - 2]['naturalMoons'] ?? [])->contains(fn (array $moon): bool => (int) $moon['orbit'] === (int) ($options['moon_orbit'] ?? 0))) {
             throw ValidationException::withMessages(['moon_orbit' => 'Cette orbite ne possède pas de lune ciblable.']);
@@ -285,10 +290,16 @@ class ExplorationMissions
         }
         if ($mission === 'station' && $targetType !== 'moon') {
             $recipient = $target?->user;
-            if (! $target || (int) $target->user_id === (int) $user->id || ! $recipient || ! $user->alliance_id || (int) $recipient->alliance_id !== (int) $user->alliance_id
+            if (! $target || (int) $target->user_id === (int) $user->id || ! $recipient || ! app(FactionDiplomacy::class)->canStation($user, $recipient)
                 || (int) $recipient->universe_id !== (int) $user->universe_id || (int) $target->alliance_depot_level < 1) {
-                throw ValidationException::withMessages(['target' => 'Le stationnement exige un dépôt actif sur une planète d’un allié de votre alliance.']);
+                throw ValidationException::withMessages(['target' => 'Le stationnement exige un dépôt actif sur une planète alliée.']);
             }
+        }
+        if ($mission === 'station' && $targetType === 'moon' && $target
+            && (int) $target->user_id !== (int) $user->id
+            && (($user->faction_key ?? '0') !== '0' || ($target->user->faction_key ?? '0') !== '0')
+            && (! app(FactionDiplomacy::class)->canStation($user, $target->user) || (int) $target->alliance_depot_level < 1)) {
+            throw ValidationException::withMessages(['target' => 'Le stationnement exige un dépôt actif sur une planète alliée.']);
         }
         if ($mission === 'colonize') {
             $slot = $this->map->system($universe, $user, $galaxy, $system, $position)['slots'][$position - 2];
@@ -323,13 +334,6 @@ class ExplorationMissions
             }
             if ($mission === 'spy' && array_sum($ships) !== (int) ($ships[210] ?? 0)) {
                 throw ValidationException::withMessages(['ships' => 'Une mission d’espionnage ne peut contenir que des sondes.']);
-            }
-        }
-        if ($mission === 'station' && $targetType !== 'moon') {
-            $recipient = $target?->user;
-            if (! $target || (int) $target->user_id === (int) $user->id || ! $recipient || ! $user->alliance_id || (int) $recipient->alliance_id !== (int) $user->alliance_id
-                || (int) $recipient->universe_id !== (int) $user->universe_id || (int) $target->alliance_depot_level < 1) {
-                throw ValidationException::withMessages(['target' => 'Le stationnement exige un dépôt actif sur une planète d’un allié de votre alliance.']);
             }
         }
 
@@ -565,7 +569,9 @@ class ExplorationMissions
                 $fleet->outcome = 'recycled';
             }
         } elseif ($fleet->mission === 'station') {
-            if ($fleet->target_type === 'moon' && $fleet->target_planet_id && $fleet->target_orbit) {
+            if ($fleet->target_type === 'moon' && $fleet->target_planet_id && $fleet->target_orbit
+                && ((int) $fleet->targetPlanet->user_id === (int) $fleet->user_id
+                    || (($fleet->user->faction_key ?? '0') === '0' && ($fleet->targetPlanet->user->faction_key ?? '0') === '0'))) {
                 $this->moonEconomy()->addShips($fleet->targetPlanet, (int) $fleet->target_orbit, $fleet->ships);
                 $fleet->ships = [];
                 $fleet->mission_report = ['stationedOnMoon' => true, 'orbit' => (int) $fleet->target_orbit];
@@ -674,8 +680,8 @@ class ExplorationMissions
         $simulatorDefender = $this->limitFleet($defender, (int) config('combat.max_units_per_side'));
         $profiles = config('combat.special_profiles', []);
         $result = $this->combat->simulate(
-            ['fleet' => $attacker, 'technologies' => $technology],
-            ['fleet' => $simulatorDefender, 'technologies' => $defenderTechnology],
+            ['fleet' => $attacker, 'technologies' => $technology, 'factionStats' => app(FactionCatalog::class)->settings($fleet->user)['statistics'] ?? []],
+            ['fleet' => $simulatorDefender, 'technologies' => $defenderTechnology, 'factionStats' => app(FactionCatalog::class)->settings($target->user)['statistics'] ?? []],
             null,
             $profiles,
         );
@@ -898,8 +904,8 @@ class ExplorationMissions
             throw ValidationException::withMessages(['ships' => 'La flotte dépasse la limite de combat de cet univers.']);
         }
         $result = $this->combat->simulate(
-            ['fleet' => $fleet->ships, 'technologies' => $this->technologies($fleet->user)],
-            ['fleet' => $limited, 'technologies' => $this->technologies($target->user)],
+            ['fleet' => $fleet->ships, 'technologies' => $this->technologies($fleet->user), 'factionStats' => app(FactionCatalog::class)->settings($fleet->user)['statistics'] ?? []],
+            ['fleet' => $limited, 'technologies' => $this->technologies($target->user), 'factionStats' => app(FactionCatalog::class)->settings($target->user)['statistics'] ?? []],
             null,
             config('combat.special_profiles', []),
         );
@@ -1062,7 +1068,7 @@ class ExplorationMissions
         $opponentTechnology = array_map(fn (int $level): int => max(0, $level + $modifier), $technology);
         $opponentCount = max(1, (int) ceil(array_sum($fleet->ships) * ($enemy === 'pirates' ? 0.3 : 0.5)));
         $result = $this->combat->simulate(
-            ['fleet' => $fleet->ships, 'technologies' => $technology],
+            ['fleet' => $fleet->ships, 'technologies' => $technology, 'factionStats' => app(FactionCatalog::class)->settings($user)['statistics'] ?? []],
             ['fleet' => [$enemy === 'pirates' ? 204 : 206 => $opponentCount], 'technologies' => $opponentTechnology],
         );
         $ships = [];

@@ -26,6 +26,7 @@ const props = defineProps({
     technologyEnergyLevel: { type: Number, default: 0 },
     technologyComputerLevel: { type: Number, default: 0 },
     buildingRarities: { type: Object, default: () => ({}) },
+    factionBuildings: { type: Object, default: () => ({}) },
     planets: { type: Array, default: () => [] },
     selectedPlanetId: { type: Number, required: true },
 });
@@ -43,15 +44,17 @@ const { start: startPolling, stop: stopPolling } = usePoll(5000, {
     autoStart: false,
     keepAlive: true,
 });
-const buildings = computed(() => buildingCatalog.map((building) => ({
+const buildings = computed(() => buildingCatalog.filter((building) => props.factionBuildings[building.key]?.available !== false).map((building) => ({
     ...building,
     rarity: props.buildingRarities[building.code],
-    name: t(`buildingCatalog.${building.key}.name`),
+    name: props.factionBuildings[building.key]?.name ?? t(`buildingCatalog.${building.key}.name`),
+    factionImage: props.factionBuildings[building.key]?.image,
     description: t(`buildingCatalog.${building.key}.description`),
     unit: t(`buildingCatalog.${building.key}.unit`),
     requirement: building.requirementKey ? t(`buildingCatalog.${building.key}.requirement`) : null,
 })));
 const visibleBuildings = computed(() => buildingsInCategory(buildings.value, selectedCategory.value));
+const buildingName = (key) => props.factionBuildings[key]?.name ?? t(`buildingCatalog.${key}.name`);
 
 function format(value) {
     return n(Number(value ?? 0), 'game');
@@ -164,7 +167,7 @@ function upgrade(building) {
                         <div class="queue-summary-copy">
                             <span class="panel-kicker">{{ t('buildings.planetarySite') }}</span>
                             <strong>{{ selectedPlanet.queue.length ? t('buildings.constructionCount', { count: selectedPlanet.queue.length }) : t('buildings.noConstruction') }}</strong>
-                            <small v-if="selectedPlanet.queue.length">{{ selectedPlanet.queue.find((item) => currentTime >= new Date(item.starts_at).getTime()) ? t('buildings.constructionRunning') : t('buildings.nextConstruction') }} · {{ selectedPlanet.queue[0] ? t(`buildingCatalog.${selectedPlanet.queue[0].building_key}.name`) : '' }}</small>
+                            <small v-if="selectedPlanet.queue.length">{{ selectedPlanet.queue.find((item) => currentTime >= new Date(item.starts_at).getTime()) ? t('buildings.constructionRunning') : t('buildings.nextConstruction') }} · {{ selectedPlanet.queue[0] ? buildingName(selectedPlanet.queue[0].building_key) : '' }}</small>
                             <small v-else>{{ t('buildings.constructionWillAppear') }}</small>
                         </div>
                         <button class="button button-outline queue-toggle" type="button" :aria-expanded="queuePanelOpen" aria-controls="building-queue-panel" @click="queuePanelOpen = !queuePanelOpen">
@@ -183,9 +186,9 @@ function upgrade(building) {
                             <article v-for="item in selectedPlanet.queue" :key="item.id" class="queue-row" :class="{ 'queue-row-active': currentTime >= new Date(item.starts_at).getTime() }">
                                 <span class="queue-position">{{ item.position }}</span>
                                 <div class="queue-details">
-                                    <div class="queue-title"><strong>{{ t(`buildingCatalog.${item.building_key}.name`) }} · {{ t('common.level').toLowerCase() }} {{ item.target_level }}</strong><span class="queue-state">{{ currentTime >= new Date(item.starts_at).getTime() ? t('buildings.inConstruction') : t('buildings.waiting') }}</span></div>
+                                    <div class="queue-title"><strong>{{ buildingName(item.building_key) }} · {{ t('common.level').toLowerCase() }} {{ item.target_level }}</strong><span class="queue-state">{{ currentTime >= new Date(item.starts_at).getTime() ? t('buildings.inConstruction') : t('buildings.waiting') }}</span></div>
                                     <small>{{ t('buildings.starts') }} {{ formatDate(item.starts_at) }} · {{ t('buildings.ends') }} {{ formatDate(item.completes_at) }}</small>
-                                    <div class="queue-progress" role="progressbar" :aria-valuenow="Math.floor(queueProgress(item))" aria-valuemin="0" aria-valuemax="100" :aria-label="t('buildingActions.progressLabel', { name: t(`buildingCatalog.${item.building_key}.name`), level: item.target_level })"><span :style="{ width: `${queueProgress(item)}%` }"></span></div>
+                                    <div class="queue-progress" role="progressbar" :aria-valuenow="Math.floor(queueProgress(item))" aria-valuemin="0" aria-valuemax="100" :aria-label="t('buildingActions.progressLabel', { name: buildingName(item.building_key), level: item.target_level })"><span :style="{ width: `${queueProgress(item)}%` }"></span></div>
                                 </div>
                                 <div class="queue-countdown"><span>{{ currentTime >= new Date(item.starts_at).getTime() ? t('buildings.remaining') : t('buildings.startsIn') }}</span><strong>{{ formatCountdown(currentTime >= new Date(item.starts_at).getTime() ? queueRemainingSeconds(item) : Math.max(0, Math.ceil((new Date(item.starts_at).getTime() - currentTime) / 1000))) }}</strong></div>
                             </article>
@@ -219,7 +222,7 @@ function upgrade(building) {
                                     <article v-for="building in visibleBuildings" :key="building.key" class="card building-pos-card" :class="`rarity-${building.rarity}`">
                                         <div class="pos-product">
                                             <div class="img building-pos-image" :class="`${building.key}-building-icon`">
-                                                <img :src="`/images/buildings/${building.code}.webp`" :alt="building.name" loading="lazy" @error="$event.currentTarget.hidden = true">
+                                                <img :src="building.factionImage ?? `/images/buildings/${building.code}.webp`" :alt="building.name" loading="lazy" @error="$event.currentTarget.hidden = true">
                                                 <span class="building-image-fallback" aria-hidden="true">{{ building.icon }}</span>
                                                 <RarityBadge class="building-rarity" :rarity="building.rarity" />
                                                 <span class="building-level">{{ t('common.level') }} {{ buildingLevel(building) }}</span>

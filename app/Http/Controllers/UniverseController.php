@@ -9,6 +9,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Faction;
 use App\Models\Planet;
 use App\Models\Universe;
 use App\Models\User;
@@ -34,6 +35,7 @@ class UniverseController extends Controller
         $attributes = $request->validate([
             'universe_id' => ['required', 'integer', Rule::exists('universes', 'id')->where('status', 'active')],
             'name' => ['required', 'string', 'min:2', 'max:80', 'regex:/^[\pL\pN][\pL\pN .\-\']*$/u'],
+            'faction_key' => ['sometimes', 'required', 'string', 'max:40'],
         ]);
 
         $account = User::query()->where('commander_id', $request->user()->commander_id)
@@ -60,6 +62,11 @@ class UniverseController extends Controller
                 throw ValidationException::withMessages([
                     'universe' => 'Aucun univers actif n’est disponible.',
                 ]);
+            }
+
+            $factionKey = $attributes['faction_key'] ?? '0';
+            if ($factionKey !== '0' && ! Faction::query()->where('universe_id', $universe->id)->where('key', $factionKey)->exists()) {
+                throw ValidationException::withMessages(['faction_key' => 'Cette faction n’est pas disponible dans cet univers.']);
             }
 
             $occupiedSystems = Planet::query()
@@ -112,6 +119,7 @@ class UniverseController extends Controller
             $profile->forceFill([
                 'commander_id' => $account->commander_id,
                 'universe_id' => $universe->id,
+                'faction_key' => $factionKey,
             ])->save();
             DB::table('commander_profiles')->insert([
                 'commander_id' => $account->commander_id,

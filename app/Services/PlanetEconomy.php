@@ -144,8 +144,8 @@ class PlanetEconomy
                 && (int) $planet->deuterium >= $cost['deuterium'];
         }
 
-            $snapshot['requirements']['fusion'] = 'Synthétiseur de deutérium niveau 5 · Technologie énergie niveau 3';
-            $snapshot['requirements']['alliance_depot'] = 'Rejoignez une alliance pour construire un dépôt qui accepte le stationnement des flottes alliées.';
+        $snapshot['requirements']['fusion'] = 'Synthétiseur de deutérium niveau 5 · Technologie énergie niveau 3';
+        $snapshot['requirements']['alliance_depot'] = 'Rejoignez une alliance pour construire un dépôt qui accepte le stationnement des flottes alliées.';
 
         $snapshot['queue'] = $planet->buildingQueue()->get()->map(fn (PlanetBuildingQueue $queuedBuilding) => [
             ...$queuedBuilding->only('id', 'building_key', 'building_code', 'target_level', 'position'),
@@ -208,6 +208,10 @@ class PlanetEconomy
                 ->firstOrFail();
             $this->completeBuildingQueue($lockedPlanet);
             $this->materializeLockedPlanet($lockedPlanet);
+
+            if (! app(FactionCatalog::class)->available($lockedPlanet->user, 'buildings', $resource)) {
+                throw ValidationException::withMessages(['building' => 'Ce bâtiment n’est pas disponible pour votre faction.']);
+            }
 
             $definition = self::BUILDINGS[$resource];
             $levelColumn = $definition['level'];
@@ -527,7 +531,11 @@ class PlanetEconomy
 
     private function hasAlliance(Planet $planet): bool
     {
-        return $planet->user()->whereNotNull('alliance_id')->whereHas('alliance', fn ($query) => $query->where('universe_id', $planet->universe_id))->exists();
+        return $planet->user()->where(fn ($query) => $query->where('faction_key', '!=', '0')
+            ->orWhere(fn ($query) => $query->whereNotNull('alliance_id')->whereHas('alliance', fn ($alliance) => $alliance->where('universe_id', $planet->universe_id))))->exists()
+            || ($planet->user()->where('faction_key', '0')->exists()
+                && DB::table('faction_diplomacy')->where('universe_id', $planet->universe_id)->where('status', 'allied')
+                    ->where(fn ($query) => $query->where('first_faction', '0')->orWhere('second_faction', '0'))->exists());
     }
 
     /**

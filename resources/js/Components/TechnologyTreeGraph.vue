@@ -8,12 +8,14 @@ Description : Renders the TechnologyTreeGraph Vue component.
 <script setup>
 import { computed, nextTick, onBeforeUnmount, ref } from 'vue';
 import { useI18n } from 'vue-i18n';
+import { usePage } from '@inertiajs/vue3';
 import infosFr from '../i18n/infos-fr.json';
 import RarityBadge from './RarityBadge.vue';
 import { dependencyPath, filterTechnologyTreeElements, getTechnologyTreeRelationships, layoutTechnologyTree, TECHNOLOGY_TREE_NODE_WIDTH } from '../technologyTreeLayout.js';
 
 const props = defineProps({ elements: { type: Array, default: () => [] }, activeResearch: { type: Object, default: null } });
 const { t } = useI18n();
+const page = usePage();
 const arrowId = `technology-tree-arrow-${Math.random().toString(36).slice(2)}`;
 const focusedElementId = ref(null);
 const selectedElement = ref(null);
@@ -75,7 +77,11 @@ function formatNumber(value) {
 }
 
 function name(element) {
-    if (element.kind === 'building') return t(`buildingCatalog.${element.key}.name`);
+    if (element.kind === 'building') return page.props.factionSettings?.buildings?.[element.key]?.name ?? t(`buildingCatalog.${element.key}.name`);
+    if (element.kind === 'ship' || element.kind === 'defence') {
+        const category = element.kind === 'ship' ? 'ships' : 'defences';
+        if (page.props.factionSettings?.[category]?.[element.code]?.name) return page.props.factionSettings[category][element.code].name;
+    }
 
     const prefix = element.kind === 'research' ? 'research' : element.kind === 'officer' ? 'officerNames' : 'unitNames';
     const key = element.key === 'hyperspace_drive' ? 'hyperspaceDrive' : element.key;

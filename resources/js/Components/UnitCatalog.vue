@@ -31,7 +31,7 @@ const officerKeys = { 609: 'bunker', 614: 'raider', 615: 'emperor' };
 const unitNames = { 202:'small_cargo',203:'large_cargo',204:'light_fighter',205:'heavy_fighter',206:'cruiser',207:'battleship',208:'colony_ship',209:'recycler',210:'espionage_probe',211:'bomber',212:'solar_satellite',213:'destroyer',214:'deathstar',215:'battlecruiser',216:'supernova',217:'planetary_destroyer',401:'rocket_launcher',402:'light_laser',403:'heavy_laser',404:'gauss_cannon',405:'ion_cannon',406:'plasma_turret',407:'small_shield_dome',408:'large_shield_dome',409:'planetary_protector',502:'anti_ballistic_missile',503:'interplanetary_missile' };
 const format = (value) => n(Number(value ?? 0), 'game');
 const formatDate = (value) => new Intl.DateTimeFormat(locale.value, { dateStyle: 'short', timeStyle: 'medium' }).format(new Date(value));
-function unitName(unit) { const key = unitNames[unit.code]; return key ? t(`unitNames.${key}`) : unit.name; }
+function unitName(unit) { const key = unitNames[unit.code]; return unit.factionName ?? page.props.factionSettings?.[props.unitType]?.[unit.code]?.name ?? (key ? t(`unitNames.${key}`) : unit.name); }
 function requirementName(code) {
     const research = researchKeys[code];
     const building = buildingKeys[code];
