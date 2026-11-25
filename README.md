@@ -2,7 +2,7 @@
 
 # XNova Continuum
 
-[![SemVer](https://img.shields.io/badge/SemVer-0.1.1.alpha-blue)](https://semver.org/)
+[![SemVer](https://img.shields.io/badge/SemVer-0.2.0--alpha-blue)](https://semver.org/)
 ![PHP](https://img.shields.io/badge/PHP-8.5-777BB4?logo=php&logoColor=white)
 ![Laravel](https://img.shields.io/badge/Laravel-13-FF2D20?logo=laravel&logoColor=white)
 ![Vue.js](https://img.shields.io/badge/Vue.js-3-4FC08D?logo=vuedotjs&logoColor=white)
@@ -10,7 +10,7 @@
 
 XNova Continuum is an in-development browser-based space strategy game forked from XNova Legacies project, ported using Laravel and PHP 8.5. It is built with Laravel 13, Inertia.js 3, Vue 3, and Vite. Players develop planets, research technologies, build fleets, and explore a shared universe.
 
-> **Status:** `0.1.1-alpha` is a pre-release. Features, balance, and database schema may change between versions. Back up your database before upgrading; do not deploy this version as a production game without reviewing its operational and security requirements.
+> **Status:** `0.2.0-alpha` is a pre-release. Features, balance, and database schema may change between versions. Back up your database before upgrading; do not deploy this version as a production game without reviewing its operational and security requirements.
 
 ## Contents
 
@@ -36,7 +36,7 @@ The current application includes:
 - A command center with planet resources, production, activity controls, and construction queues.
 - Planet building upgrades, resource production, storage limits, energy balance, and fusion power.
 - Research, technology prerequisites, research queues, and an interactive technology dependency graph.
-- Ship and defence catalogs, production queues, and officer recruitment.
+- Ship and defence catalogs, separate shipyard and defence center production requirements, production queues, and officer recruitment.
 - A galaxy view with coordinate-based exploration, expeditions, asteroid-field recycling, and fleet return processing.
 - Moons, moon resources, and orbital resource transfers.
 - A seeded combat simulator with configurable fleets and reproducible simulations when a seed is provided.
@@ -94,6 +94,8 @@ The default `.env.example` configures SQLite, database-backed sessions and cache
 6. Build frontend assets with `npm run build`.
 7. Clear or rebuild Laravel caches as appropriate for the deployment.
 
+The 0.2.0-alpha migrations add factions, universe-scoped staff roles, and the defence center. Existing planets start with a level-0 defence center, so players must build it before starting new defence production. Existing profiles remain in faction `0`. Review operator and moderator assignments after migration: legacy account-level roles are assigned automatically only when the account has exactly one universe profile. The role-normalization migration cannot be rolled back automatically; restore a backup if a rollback is required.
+
 Do **not** run `php artisan key:generate` on an existing installation. Changing `APP_KEY` can make existing encrypted data unreadable and invalidate encrypted cookies or sessions.
 
 ### Using another database
@@ -127,7 +129,7 @@ Game routes use English paths, such as `/commandcenter`. Previous French paths a
 3. Use the command center to review your planet and resources.
 4. Upgrade mines and energy buildings, manage building activity, and queue construction.
 5. Develop research to unlock further technologies and game elements; the technology graph displays prerequisite relationships.
-6. Build ships and defences, recruit officers, and manage their queues.
+6. Build a shipyard for ships and a defence center for defences, recruit officers, and manage their queues; production also requires a robot factory.
 7. Use the galaxy view to inspect coordinates and dispatch supported missions. Expeditions require expedition technology; recycling requires an eligible asteroid field and recycler ships.
 8. Review fleet status and use the combat simulator to experiment with fleet compositions.
 9. Manage moons and transfer resources where available.
@@ -153,12 +155,12 @@ The web panel cannot create or remove a level-4 founder. A founder can grant rol
 | Level | Role | Main access |
 | --- | --- | --- |
 | 0 | Player | No administration panel access; normal game access. |
-| 1 | Operator | Administration overview, player lookup, temporary suspensions, announcements, changelog publication, and multi-account declaration review. |
-| 2 | Moderator | Operator access, lifting suspensions, resource adjustments, and manual changelog entries. |
-| 3 | Administrator | Moderator access, item adjustments, and announcement revocation. |
-| 4 | Founder | Administrator access, role management, universe creation/reopening, and audit-log access. Level 4 is bootstrapped from the console. |
+| 1 | Operator | Universe-scoped player lookup, temporary suspensions and declaration review, plus announcements and changelog publication. |
+| 2 | Moderator | Universe-scoped operator access, lifting suspensions and resource adjustments, plus manual changelog entries. |
+| 3 | Administrator | Global moderator access, item adjustments, and announcement revocation. |
+| 4 | Founder | Global administrator access, role management, universe creation/reopening, and audit-log access. Level 4 is bootstrapped from the console. |
 
-Sensitive administration actions are recorded in the audit log. Founders can create active universes with bounded galaxy, system, and speed settings, or reopen a closed universe for new players; existing player assignments are unchanged. Resource grants respect storage capacity; item grants check relevant queues, requirements, and limits. The panel does not provide arbitrary SQL execution, account deletion, or universe resets.
+Operators and moderators are assigned to selected universes; administrators and founders have global access. Sensitive administration actions are recorded in the audit log. Founders can create active or closed universes with bounded galaxy, system, and speed settings, or reopen a closed universe for new players; existing player assignments are unchanged. Resource grants respect storage capacity; item grants check relevant queues, requirements, and limits. The panel does not provide arbitrary SQL execution, account deletion, or universe resets.
 
 ### Factions and diplomacy
 
@@ -302,7 +304,7 @@ php artisan config:show database
 
 ## Version and changelog
 
-The current pre-release version is **0.1.1-alpha**. Built-in releases are listed newest-first in `resources/js/changelog.json`; translated text is stored in the locale changelog modules. Keep the SemVer badge above and the current version in the code-file metadata headers in sync when preparing a release. The in-game changelog controls visibility separately from the version shown in the game UI.
+The current pre-release version is **0.2.0-alpha**. Built-in releases are listed newest-first in `resources/js/changelog.json`; translated text is stored in the locale changelog modules. Keep the SemVer badge above and the current version in the code-file metadata headers in sync when preparing a release. The in-game changelog controls visibility separately from the version shown in the game UI.
 
 ## License
 

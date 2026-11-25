@@ -1,6 +1,6 @@
 /*
  * Author / Contributor : K3nningar
- * Code Version : 0.1.1-alpha
+ * Code Version : 0.2.0-alpha
  * Revision : 34ddc84
  * Description : Tests the changelog.test JavaScript module.
  */
@@ -60,6 +60,33 @@ test('manual entry text is rendered as text rather than HTML', async () => {
 
         assert.ok(html.includes('&lt;script&gt;'));
         assert.ok(!html.includes('<script>'));
+    } finally {
+        await server.close();
+    }
+});
+
+test('current release entries render translated text in every supported locale', async () => {
+    const server = await createServer({
+        configFile: false,
+        plugins: [vue()],
+        server: { middlewareMode: true },
+        appType: 'custom',
+    });
+
+    try {
+        const { default: ChangelogEntries } = await server.ssrLoadModule('/resources/js/Components/ChangelogEntries.vue');
+
+        for (const [locale, messages] of Object.entries({ en, fr, de, es, it })) {
+            const app = createSSRApp(ChangelogEntries, { entries: releases[0].entries });
+            app.use(createI18n({ legacy: false, locale, messages: { [locale]: messages } }));
+
+            const html = await renderToString(app);
+
+            for (const entry of releases[0].entries) {
+                assert.ok(html.includes(messages.changelog.entries[entry.key]), `Missing rendered ${locale} text for ${entry.key}`);
+                assert.ok(!html.includes(`changelog.entries.${entry.key}`), `Untranslated ${locale} key: ${entry.key}`);
+            }
+        }
     } finally {
         await server.close();
     }

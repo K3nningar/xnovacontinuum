@@ -3,7 +3,7 @@
  *
  * @author GitHub Copilot (contributor)
  * @license MIT (declared in composer.json)
- * @version 0.1.1-alpha
+ * @version 0.2.0-alpha
  * @revision 1 (first documented revision)
  */
 import { createI18n } from 'vue-i18n';

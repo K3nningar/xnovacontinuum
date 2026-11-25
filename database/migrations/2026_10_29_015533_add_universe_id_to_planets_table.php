@@ -2,7 +2,7 @@
 
 /*
  * Author / Contributor : K3nningar
- * Code Version : 0.1.1-alpha
+ * Code Version : 0.2.0-alpha
  * Revision : 34ddc84
  * Description : Defines database schema changes for 2026_10_29_015533_add_universe_id_to_planets_table.
  */

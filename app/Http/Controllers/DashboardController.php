@@ -2,7 +2,7 @@
 
 /*
  * Author / Contributor : K3nningar
- * Code Version : 0.1.1-alpha
+ * Code Version : 0.2.0-alpha
  * Revision : 34ddc84
  * Description : Handles HTTP requests for DashboardController operations.
  */

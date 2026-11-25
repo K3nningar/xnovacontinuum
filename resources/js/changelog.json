@@ -1,5 +1,18 @@
 [
     {
+        "version": "0.2.0-alpha",
+        "entries": [
+            { "date": "2026-11-25", "type": "NEW", "key": "factionsPerUniverse" },
+            { "date": "2026-11-25", "type": "NEW", "key": "factionDiplomacyCatalogs" },
+            { "date": "2026-11-25", "type": "CHANGE", "key": "defenceCenterProduction" },
+            { "date": "2026-11-25", "type": "CHANGE", "key": "optimizedGameAssets" },
+            { "date": "2026-11-24", "type": "CHANGE", "key": "universeStaffRoles" },
+            { "date": "2026-11-24", "type": "HOTFIX", "key": "adminPanelAccess" },
+            { "date": "2026-11-24", "type": "HOTFIX", "key": "multiAccountPagination" },
+            { "date": "2026-11-23", "type": "HOTFIX", "key": "moonViewCorrection" }
+        ]
+    },
+    {
         "version": "0.1.1-alpha",
         "entries": [
             { "date": "2026-11-23", "type": "CHANGE", "key": "versionBumpAlpha6" },

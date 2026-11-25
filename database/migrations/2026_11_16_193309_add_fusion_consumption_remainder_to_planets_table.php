@@ -2,7 +2,7 @@
 
 /*
  * Author / Contributor : K3nningar
- * Code Version : 0.1.1-alpha
+ * Code Version : 0.2.0-alpha
  * Revision : 34ddc84
  * Description : Defines database schema changes for 2026_11_16_193309_add_fusion_consumption_remainder_to_planets_table.
  */
