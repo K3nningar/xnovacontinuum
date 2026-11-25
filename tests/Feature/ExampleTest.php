@@ -302,6 +302,7 @@ class ExampleTest extends TestCase
             'crystal' => 500,
         ]);
         $this->assertDatabaseCount('planets', 1);
+        $this->assertNotNull($profile->planets()->firstOrFail()->resources_updated_at);
 
         $profile = $profile->fresh();
 

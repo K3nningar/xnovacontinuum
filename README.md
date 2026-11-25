@@ -254,6 +254,23 @@ Run the PHP feature and unit suites (PHPUnit uses an in-memory SQLite database):
 composer test
 ```
 
+To run the same suite against MySQL/InnoDB, create a **dedicated, disposable** database
+named `xnovalaravel_test` and configure `DB_HOST`, `DB_PORT`, `DB_USERNAME` and
+`DB_PASSWORD` in `.env.testing` or the environment. The account needs permission to
+create, alter and drop tables in that database. Then run:
+
+```bash
+composer test:mysql
+```
+
+The test suite destroys and recreates tables in its configured database. Never use a
+database containing valuable data. `DB_DATABASE` can select another dedicated name
+ending in `_test` (or `_test_N` for parallel workers); other MySQL database names are
+rejected. The MySQL configuration ignores `DB_URL`. One isolated migration recovery
+test still uses an in-memory SQLite connection, so `pdo_sqlite` remains required.
+The MySQL suite checks row locking with two connections, but it is not a load test
+and does not prove that deadlocks cannot occur under concurrent player traffic.
+
 Run the JavaScript tests:
 
 ```bash

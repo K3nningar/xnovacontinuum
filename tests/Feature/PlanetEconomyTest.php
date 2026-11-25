@@ -84,6 +84,105 @@ class PlanetEconomyTest extends TestCase
         Carbon::setTestNow();
     }
 
+    public function test_planets_without_a_production_checkpoint_accrue_resources_across_pages(): void
+    {
+        $this->freezeSecond();
+        $planet = $this->createPlanet(['metal' => 40, 'resources_updated_at' => null]);
+
+        $this->actingAs($planet->user)->get('/commandcenter')->assertInertia(fn (Assert $page) => $page
+            ->where('planets.0.metal', 40)
+        );
+        $this->assertNotNull($planet->fresh()->resources_updated_at);
+
+        $this->travel(180)->seconds();
+        $this->get('/buildings')->assertInertia(fn (Assert $page) => $page
+            ->where('planets.0.metal', 41)
+        );
+
+        $this->travel(180)->seconds();
+        $this->get('/commandcenter')->assertInertia(fn (Assert $page) => $page
+            ->where('planets.0.metal', 42)
+        );
+        $this->assertSame(42, $planet->fresh()->metal);
+    }
+
+    public function test_production_uses_the_building_level_at_each_completion_time(): void
+    {
+        $this->freezeSecond();
+        $planet = $this->createPlanet([
+            'metal' => 0,
+            'metal_mine_level' => 0,
+            'solar_plant_level' => 1,
+        ]);
+        $planet->buildingQueue()->create([
+            'universe_id' => $planet->universe_id, 'building_key' => 'metal', 'building_code' => 1,
+            'target_level' => 1, 'position' => 1, 'cost_metal' => 0, 'cost_crystal' => 0,
+            'cost_deuterium' => 0, 'starts_at' => now(), 'completes_at' => now()->addMinutes(30),
+        ]);
+
+        $this->travel(1)->hour();
+        $economy = app(PlanetEconomy::class);
+        $economy->completeBuildingQueue($planet);
+        $economy->completeBuildingQueue($planet);
+
+        $this->assertSame(36, $planet->fresh()->metal);
+        $this->assertSame(1800, $planet->fresh()->metal_production_remainder);
+        $this->assertSame(1, (int) $planet->fresh()->metal_mine_level);
+        $this->assertDatabaseCount('planet_building_queues', 0);
+    }
+
+    public function test_buildings_and_satellites_apply_in_chronological_order(): void
+    {
+        $this->freezeSecond();
+        $planet = $this->createPlanet([
+            'metal' => 0,
+            'metal_mine_level' => 1,
+            'metal_mine_activity' => 10,
+            'solar_plant_level' => 0,
+            'max_temperature' => 40,
+        ]);
+        $planet->buildingQueue()->create([
+            'universe_id' => $planet->universe_id, 'building_key' => 'metal', 'building_code' => 1,
+            'target_level' => 2, 'position' => 1, 'cost_metal' => 0, 'cost_crystal' => 0,
+            'cost_deuterium' => 0, 'starts_at' => now(), 'completes_at' => now()->addMinutes(30),
+        ]);
+        $planet->unitQueue()->create([
+            'universe_id' => $planet->universe_id, 'unit_code' => 212, 'unit_type' => 'ships',
+            'quantity' => 1, 'quantity_completed' => 0, 'position' => 1,
+            'cost_metal' => 0, 'cost_crystal' => 0, 'cost_deuterium' => 0,
+            'starts_at' => now(), 'completes_at' => now()->addMinutes(15),
+        ]);
+
+        $this->travel(1)->hour();
+        app(PlanetEconomy::class)->materialize($planet);
+
+        $planet->refresh();
+        $this->assertSame(64, $planet->metal);
+        $this->assertSame(900, $planet->metal_production_remainder);
+        $this->assertSame(2, (int) $planet->metal_mine_level);
+        $this->assertSame(1, (int) $planet->unit_212);
+    }
+
+    public function test_upgrade_uses_a_just_completed_building_level(): void
+    {
+        $this->freezeSecond();
+        $planet = $this->createPlanet(['metal' => 10000, 'crystal' => 10000, 'metal_mine_level' => 1]);
+        $planet->buildingQueue()->create([
+            'universe_id' => $planet->universe_id, 'building_key' => 'metal', 'building_code' => 1,
+            'target_level' => 2, 'position' => 1, 'cost_metal' => 0, 'cost_crystal' => 0,
+            'cost_deuterium' => 0, 'starts_at' => now(), 'completes_at' => now()->addMinute(),
+        ]);
+
+        $this->travel(2)->minutes();
+        app(PlanetEconomy::class)->upgrade($planet, 'metal');
+
+        $this->assertSame(2, (int) $planet->fresh()->metal_mine_level);
+        $this->assertDatabaseHas('planet_building_queues', [
+            'planet_id' => $planet->id, 'building_key' => 'metal', 'target_level' => 3, 'position' => 1,
+        ]);
+        $this->assertDatabaseCount('planet_building_queues', 1);
+    }
+
     public function test_dashboard_materializes_production_and_returns_upgrade_costs(): void
     {
         $planet = $this->createPlanet([

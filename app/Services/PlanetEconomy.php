@@ -206,7 +206,6 @@ class PlanetEconomy
                 ->where('universe_id', $planet->universe_id)
                 ->lockForUpdate()
                 ->firstOrFail();
-            $this->completeBuildingQueue($lockedPlanet);
             $this->materializeLockedPlanet($lockedPlanet);
 
             if (! app(FactionCatalog::class)->available($lockedPlanet->user, 'buildings', $resource)) {
@@ -314,38 +313,10 @@ class PlanetEconomy
         return max(1, (int) floor($duration));
     }
 
-    /**
-     * Applies all due construction entries, grants terraformers five fields each, and compacts queue positions.
-     *
-     * This method persists completed levels and deletes completed queue rows; callers that need atomicity
-     * with other planet changes must provide the surrounding transaction and row lock.
-     */
     public function completeBuildingQueue(Planet $planet): void
     {
-        $now = now();
-
-        $planet = Planet::query()->whereKey($planet->id)->firstOrFail();
-        $completedBuildings = $planet->buildingQueue()->where('completes_at', '<=', $now)->get();
-
-        foreach ($completedBuildings as $queuedBuilding) {
-            $levelColumn = self::BUILDINGS[$queuedBuilding->building_key]['level'];
-            $planet->{$levelColumn} = max((int) $planet->{$levelColumn}, (int) $queuedBuilding->target_level);
-
-            if ($queuedBuilding->building_key === 'terraformer') {
-                $planet->fields = (int) $planet->fields + 5;
-            }
-
-            $queuedBuilding->delete();
-        }
-
-        if ($completedBuildings->isNotEmpty()) {
-            $planet->save();
-        }
-
-        $remaining = $planet->buildingQueue()->orderBy('position')->get();
-        foreach ($remaining as $index => $queuedBuilding) {
-            $queuedBuilding->position = $index + 1;
-            $queuedBuilding->save();
+        if ($planet->buildingQueue()->where('completes_at', '<=', now())->exists()) {
+            $this->materialize($planet);
         }
     }
 
@@ -551,15 +522,21 @@ class PlanetEconomy
     }
 
     /**
-     * Settles production around completed solar satellites so the new energy source affects only later time.
+     * Settles production around completed buildings and solar satellites in chronological order.
      *
-     * The caller must hold the planet lock inside a transaction. Completed satellite queue rows are locked,
-     * applied once, and removed; the timestamp and remaining queue positions are persisted as needed.
+     * The caller must hold the planet lock inside a transaction. Due queue rows are locked, applied once,
+     * and removed; the timestamp and remaining queue positions are persisted as needed.
      */
     private function materializeLockedPlanet(Planet $planet, ?Carbon $now = null): void
     {
-        $now ??= now();
+        $now = ($now ?? now())->copy()->startOfSecond();
         $lastUpdated = $planet->resources_updated_at ?? $now;
+        $completedBuildings = $planet->buildingQueue()
+            ->where('completes_at', '<=', $now)
+            ->reorder('completes_at')
+            ->orderBy('id')
+            ->lockForUpdate()
+            ->get();
         $completedSatellites = $planet->unitQueue()
             ->where('unit_type', 'ships')
             ->where('unit_code', 212)
@@ -568,13 +545,29 @@ class PlanetEconomy
             ->lockForUpdate()
             ->get();
 
-        foreach ($completedSatellites as $entry) {
+        $events = $completedBuildings->map(fn ($entry): array => ['type' => 'building', 'entry' => $entry])
+            ->concat($completedSatellites->map(fn ($entry): array => ['type' => 'satellite', 'entry' => $entry]))
+            ->sort(fn (array $first, array $second): int => $first['entry']->completes_at->getTimestamp() <=> $second['entry']->completes_at->getTimestamp()
+                ?: $first['type'] <=> $second['type']
+                ?: $first['entry']->id <=> $second['entry']->id);
+
+        foreach ($events as $event) {
+            $entry = $event['entry'];
             if ($entry->completes_at->greaterThan($lastUpdated)) {
                 $this->accrueProduction($planet, (int) $lastUpdated->diffInSeconds($entry->completes_at));
                 $lastUpdated = $entry->completes_at;
             }
 
-            $planet->unit_212 = (int) $planet->unit_212 + (int) $entry->quantity - (int) $entry->quantity_completed;
+            if ($event['type'] === 'building') {
+                $levelColumn = self::BUILDINGS[$entry->building_key]['level'];
+                $previousLevel = (int) $planet->{$levelColumn};
+                $planet->{$levelColumn} = max($previousLevel, (int) $entry->target_level);
+                if ($entry->building_key === 'terraformer' && (int) $entry->target_level > $previousLevel) {
+                    $planet->fields = (int) $planet->fields + 5;
+                }
+            } else {
+                $planet->unit_212 = (int) $planet->unit_212 + (int) $entry->quantity - (int) $entry->quantity_completed;
+            }
             $entry->delete();
         }
 
@@ -583,9 +576,16 @@ class PlanetEconomy
             $this->accrueProduction($planet, $elapsedSeconds);
         }
 
-        if ($elapsedSeconds > 0 || $completedSatellites->isNotEmpty()) {
+        if ($planet->resources_updated_at === null || $elapsedSeconds > 0 || $events->isNotEmpty()) {
             $planet->resources_updated_at = $now->greaterThan($lastUpdated) ? $now : $lastUpdated;
             $planet->save();
+        }
+
+        if ($completedBuildings->isNotEmpty()) {
+            foreach ($planet->buildingQueue()->orderBy('position')->get() as $position => $entry) {
+                $entry->position = $position + 1;
+                $entry->save();
+            }
         }
 
         if ($completedSatellites->isNotEmpty()) {
@@ -599,12 +599,11 @@ class PlanetEconomy
     /**
      * Accrues resources and fusion fuel for an elapsed interval, retaining sub-unit hourly remainders.
      *
-     * Production uses the energy balance after due buildings complete, caps stocks at 110% of storage,
+     * Production uses the current energy balance, caps stocks at 110% of storage,
      * clears remainders when capped or arithmetic would overflow, and never lets deuterium fall below zero.
      */
     private function accrueProduction(Planet $planet, int $elapsedSeconds): void
     {
-        $this->completeBuildingQueue($planet);
         $energy = $this->energyBalance($planet);
         $productionLevel = $energy['productionLevel'];
 

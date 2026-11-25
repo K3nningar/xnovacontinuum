@@ -190,6 +190,26 @@ class MoonLogisticsTest extends TestCase
         $this->assertSame(1, (int) $planet->fresh()->unit_202);
     }
 
+    public function test_jump_gate_transfers_work_in_both_orbit_directions(): void
+    {
+        $this->freezeSecond();
+        [$user, $planet] = $this->playerWithMoons();
+        $economy = app(MoonEconomy::class);
+        $economy->stock($planet, ['orbit' => 1]);
+        $economy->stock($planet, ['orbit' => 2]);
+        DB::table('moon_stocks')->where('planet_id', $planet->id)->update(['jump_gate_level' => 1]);
+        $economy->setShips($planet, 2, [202 => 3]);
+
+        $economy->moveShips($user, $planet, 2, 1, [202 => 2]);
+        $this->assertSame(2, $economy->ships($planet, 1)[202]);
+        $this->assertSame(1, $economy->ships($planet, 2)[202]);
+
+        $this->travel(1)->hour();
+        $economy->moveShips($user, $planet, 1, 2, [202 => 1]);
+        $this->assertSame(1, $economy->ships($planet, 1)[202]);
+        $this->assertSame(2, $economy->ships($planet, 2)[202]);
+    }
+
     private function playerWithMoons(): array
     {
         $universe = Universe::create(['name' => 'Test', 'slug' => fake()->unique()->slug()]);

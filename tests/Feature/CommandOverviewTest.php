@@ -53,7 +53,7 @@ class CommandOverviewTest extends TestCase
         $moons = [];
 
         foreach (range(2, 15) as $candidatePosition) {
-            $moons = $map->system($universe, $user, 1, 1, $candidatePosition)['slots'][$candidatePosition - 2]['naturalMoons'];
+            $moons = $map->system($universe, $user, 1, 1, $candidatePosition)['slots'][$candidatePosition - 2]['naturalMoons'] ?? [];
 
             if ($moons !== []) {
                 $position = $candidatePosition;
@@ -79,7 +79,7 @@ class CommandOverviewTest extends TestCase
         $position = null;
 
         for ($candidate = 2; $candidate <= 15; $candidate++) {
-            $moons = app(GalaxyMap::class)->system($universe, $user, 1, 2, $candidate)['slots'][$candidate - 2]['naturalMoons'];
+            $moons = app(GalaxyMap::class)->system($universe, $user, 1, 2, $candidate)['slots'][$candidate - 2]['naturalMoons'] ?? [];
             if (count($moons) >= 2) {
                 $position = $candidate;
                 break;

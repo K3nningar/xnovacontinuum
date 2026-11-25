@@ -22,6 +22,32 @@ class UnitProductionTest extends TestCase
 {
     use RefreshDatabase;
 
+    public function test_unit_completion_acquires_the_user_before_the_planet(): void
+    {
+        $planet = $this->createPlanet();
+        $connection = DB::connection();
+        $connection->flushQueryLog();
+        $connection->enableQueryLog();
+
+        app(UnitProductionService::class)->complete($planet);
+
+        $queries = collect($connection->getQueryLog())
+            ->pluck('query')
+            ->map(fn (string $query): string => str_replace(['"', '`'], '', strtolower($query)))
+            ->filter(fn (string $query): bool => str_starts_with($query, 'select')
+                && (str_contains($query, 'from users') || str_contains($query, 'from planets')))
+            ->values();
+        $connection->disableQueryLog();
+        $connection->flushQueryLog();
+
+        $this->assertStringContainsString('from users', $queries[0]);
+        $this->assertStringContainsString('from planets', $queries[1]);
+        if ($connection->getDriverName() === 'mysql') {
+            $this->assertStringContainsString('for update', $queries[0]);
+            $this->assertStringContainsString('for update', $queries[1]);
+        }
+    }
+
     public function test_shipyard_and_defence_pages_render_their_catalogs_for_owned_planets(): void
     {
         $planet = $this->createPlanet(['hangar_level' => 2, 'defence_center_level' => 2, 'robot_factory_level' => 2, 'metal' => 10000, 'crystal' => 10000]);

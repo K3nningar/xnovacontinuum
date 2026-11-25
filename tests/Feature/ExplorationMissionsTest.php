@@ -286,6 +286,33 @@ class ExplorationMissionsTest extends TestCase
         return [$user, $planet];
     }
 
+    public function test_fleet_dispatch_locks_both_planets_in_id_order(): void
+    {
+        [$user, $target] = $this->player();
+        $origin = $this->planetAt($user, 7, 'Outpost');
+        $origin->forceFill(['unit_202' => 1, 'metal' => 100, 'deuterium' => 10000])->save();
+        $connection = DB::connection();
+        $connection->flushQueryLog();
+        $connection->enableQueryLog();
+
+        app(ExplorationMissions::class)->send($user, $origin, 'transport', 1, 1, 8, [202 => 1], ['cargo' => ['metal' => 1]]);
+
+        $lockedQueries = collect($connection->getQueryLog())->filter(function (array $query): bool {
+            $sql = str_replace(['"', '`'], '', strtolower($query['query']));
+
+            return str_starts_with($sql, 'select * from planets where planets.id = ?')
+                && count($query['bindings']) === 1;
+        })->values();
+        $connection->disableQueryLog();
+        $connection->flushQueryLog();
+
+        $this->assertSame([$target->id, $origin->id], $lockedQueries->pluck('bindings.0')->take(2)->all());
+        if ($connection->getDriverName() === 'mysql') {
+            $this->assertStringContainsString('for update', strtolower($lockedQueries[0]['query']));
+            $this->assertStringContainsString('for update', strtolower($lockedQueries[1]['query']));
+        }
+    }
+
     public function test_transport_delivers_cargo_and_returns_ships_once(): void
     {
         [$user, $origin] = $this->player();

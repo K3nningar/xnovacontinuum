@@ -339,7 +339,8 @@ class UnitProductionService
     public function complete(Planet $planet): void
     {
         DB::transaction(function () use ($planet): void {
-            $lockedPlanet = Planet::query()->whereKey($planet->id)->lockForUpdate()->firstOrFail();
+            $lockedUser = User::query()->whereKey($planet->user_id)->lockForUpdate()->firstOrFail();
+            $lockedPlanet = Planet::query()->whereKey($planet->id)->where('user_id', $lockedUser->id)->lockForUpdate()->firstOrFail();
             $now = now();
             $ready = $lockedPlanet->unitQueue()->where('completes_at', '<=', $now)->orderBy('position')->get();
 

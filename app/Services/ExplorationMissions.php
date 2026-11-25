@@ -61,6 +61,14 @@ class ExplorationMissions
 
         return DB::transaction(function () use ($user, $planet, $mission, $galaxy, $system, $position, $ships, $options): Fleet {
             $user = User::query()->whereKey($user->id)->lockForUpdate()->firstOrFail();
+            $targetId = Planet::query()->where('universe_id', $user->universe_id)
+                ->where('galaxy', $galaxy)->where('system', $system)->where('position', $position)
+                ->whereNull('destroyed_at')->value('id');
+            $planetIds = array_unique(array_filter([(int) $planet->id, $targetId ? (int) $targetId : null]));
+            sort($planetIds);
+            foreach ($planetIds as $planetId) {
+                Planet::query()->whereKey($planetId)->lockForUpdate()->first();
+            }
             $planet = Planet::query()->whereKey($planet->id)->where('user_id', $user->id)
                 ->where('universe_id', $user->universe_id)->lockForUpdate()->firstOrFail();
             $this->economy->materialize($planet);

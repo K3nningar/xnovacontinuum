@@ -6,6 +6,7 @@ use App\Models\Fleet;
 use App\Models\MoonBuildingQueue;
 use App\Models\Planet;
 use App\Models\User;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 
@@ -301,8 +302,14 @@ class MoonEconomy
         DB::transaction(function () use ($user, $planet, $originOrbit, $destinationOrbit, $ships): void {
             $sourceMoon = app(GalaxyMap::class)->ownedMoon($user, $planet, $originOrbit);
             $targetMoon = app(GalaxyMap::class)->ownedMoon($user, $planet, $destinationOrbit);
-            $source = DB::table('moon_stocks')->where('planet_id', $planet->id)->where('orbit', $sourceMoon['orbit'])->lockForUpdate()->first();
-            $target = DB::table('moon_stocks')->where('planet_id', $planet->id)->where('orbit', $targetMoon['orbit'])->lockForUpdate()->first();
+            $orbits = [(int) $sourceMoon['orbit'], (int) $targetMoon['orbit']];
+            sort($orbits);
+            $stocks = [];
+            foreach ($orbits as $orbit) {
+                $stocks[$orbit] = DB::table('moon_stocks')->where('planet_id', $planet->id)->where('orbit', $orbit)->lockForUpdate()->first();
+            }
+            $source = $stocks[(int) $sourceMoon['orbit']];
+            $target = $stocks[(int) $targetMoon['orbit']];
             if (! $source || ! $target || (int) $source->jump_gate_level < 1 || (int) $target->jump_gate_level < 1) {
                 throw ValidationException::withMessages(['target_planet_id' => 'Les deux lunes doivent posséder une porte de saut.']);
             }

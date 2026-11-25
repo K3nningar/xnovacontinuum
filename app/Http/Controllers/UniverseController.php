@@ -142,6 +142,7 @@ class UniverseController extends Controller
             $planet->deuterium = 500;
             $planet->fields = 163;
             $planet->max_temperature = 40;
+            $planet->resources_updated_at = now();
             $planet->user()->associate($profile);
             $planet->universe()->associate($universe);
             $planet->save();
