@@ -24,6 +24,20 @@ class PlanetEconomyTest extends TestCase
 {
     use RefreshDatabase;
 
+    public function test_defence_center_can_be_built_and_completed(): void
+    {
+        $planet = $this->createPlanet(['metal' => 1000, 'crystal' => 1000, 'deuterium' => 1000]);
+        $this->actingAs($planet->user)->post(route('planet.buildings.upgrade', $planet), ['building' => 'defence_center'])
+            ->assertRedirect();
+        $this->assertDatabaseHas('planet_building_queues', [
+            'planet_id' => $planet->id, 'building_key' => 'defence_center', 'building_code' => 20, 'target_level' => 1,
+        ]);
+        $planet->buildingQueue()->update(['completes_at' => now()->subSecond()]);
+        app(PlanetEconomy::class)->completeBuildingQueue($planet->fresh());
+        $this->assertSame(1, (int) $planet->fresh()->defence_center_level);
+        $this->assertSame(1, app(PlanetEconomy::class)->snapshot($planet->fresh())['defence_center_level']);
+    }
+
     public function test_planet_resources_accrue_from_mine_levels_with_hourly_fractions(): void
     {
         Carbon::setTestNow(Carbon::parse('2026-01-01 00:00:00', 'UTC'));

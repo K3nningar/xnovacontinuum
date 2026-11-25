@@ -51,13 +51,13 @@ function cancel() { router.delete(route('researches.destroy'), { preserveScroll:
                     <article v-for="item in researches" v-show="matchesCatalogCategory(item, selectedCategory, categories)" :key="item.key" class="card building-pos-card" :class="`rarity-${item.rarity}`">
                         <div class="pos-product">
                             <div class="img building-pos-image">
-                                <img :src="`/images/laboratory/${item.code}.png`" :alt="details[item.key].name" loading="lazy" @error="$event.currentTarget.hidden = true">
+                                <img :src="`/images/laboratory/${item.code}.webp`" :alt="details[item.key].name" loading="lazy" @error="$event.currentTarget.hidden = true">
                                 <span class="building-image-fallback" aria-hidden="true">{{ details[item.key].icon }}</span>
                                 <RarityBadge class="building-rarity" :rarity="item.rarity" />
                                 <span class="building-level">{{ t('common.level') }} {{ item.level }}</span>
                             </div>
                             <div class="building-pos-body">
-                                <div class="building-title"><span class="building-code">{{ item.code }}</span><h3>{{ details[item.key].name }}</h3><ElementInfoButton :id="'research_' + item.code" :name="details[item.key].name" :description="item.key === 'spy' ? infosFr['research_106'].description + ' ' + t('galaxy.sensorsDesc') : infosFr['research_' + item.code]?.description" :image-src="`/images/laboratory/${item.code}.png`" /></div>
+                                <div class="building-title"><span class="building-code">{{ item.code }}</span><h3>{{ details[item.key].name }}</h3><ElementInfoButton :id="'research_' + item.code" :name="details[item.key].name" :description="item.key === 'spy' ? infosFr['research_106'].description + ' ' + t('galaxy.sensorsDesc') : infosFr['research_' + item.code]?.description" :image-src="`/images/laboratory/${item.code}.webp`" /></div>
                                 <div class="building-main">
                                     <p>{{ details[item.key].description }}</p>
                                     <div class="research-requirements"><span v-for="req in item.requirements" :key="req.key" :class="{ 'requirement-met': req.current >= req.required }">{{ t('researchLabels.' + req.key) }} {{ req.current }}/{{ req.required }}</span><span v-if="!item.requirements.length" class="requirement-met">{{ t('common.none') }}</span></div>

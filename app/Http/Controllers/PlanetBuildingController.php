@@ -26,7 +26,7 @@ class PlanetBuildingController extends Controller
     public function upgrade(Request $request, Planet $planet, PlanetEconomy $economy): RedirectResponse
     {
         $attributes = $request->validate([
-            'building' => ['required', 'string', Rule::in(['metal', 'crystal', 'deuterium', 'solar', 'fusion', 'laboratory', 'robot_factory', 'nano_factory', 'hangar', 'missile_silo', 'metal_storage', 'crystal_storage', 'deuterium_storage', 'terraformer', 'alliance_depot'])],
+            'building' => ['required', 'string', Rule::in(['metal', 'crystal', 'deuterium', 'solar', 'fusion', 'laboratory', 'robot_factory', 'nano_factory', 'hangar', 'defence_center', 'missile_silo', 'metal_storage', 'crystal_storage', 'deuterium_storage', 'terraformer', 'alliance_depot'])],
             'activity' => ['sometimes', 'integer', 'min:0', 'max:10'],
         ]);
 

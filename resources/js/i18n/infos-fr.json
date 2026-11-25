@@ -27,9 +27,13 @@
     "name": "Usine de Nanites",
     "description": "Une amélioration deux fois plus puissante de l'usine de robot qui divise en deux le temps de construction des bâtiments ainsi que des vaisseaux à chaque niveau."
   },
+  "building_20": {
+    "name": "Centre de Défense",
+    "description": "Le Centre de Défense débloque les défenses planétaires et accélère leur production à chaque niveau."
+  },
   "building_21": {
     "name": "Centre spatial",
-    "description": "L'investissement dans un centre spatial plus développé vous permettra de construire des vaisseaux et de la défense plus conséquente."
+    "description": "L'investissement dans un centre spatial plus développé vous permettra de construire des vaisseaux plus performants."
   },
   "building_22": {
     "name": "Silo de Metal",

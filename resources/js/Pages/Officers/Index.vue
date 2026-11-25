@@ -45,13 +45,13 @@ function recruit(officer){router.post(route('officers.store'),{code:officer.code
     <article v-for="officer in officers" v-show="matchesCatalogCategory(officer, selectedCategory, categories)" :key="officer.code" class="card building-pos-card" :class="`rarity-${officer.rarity}`">
         <div class="pos-product">
             <div class="img building-pos-image">
-                <img :src="`/images/officers/${officer.code}.png`" :alt="officerName(officer.code)" loading="lazy" @error="$event.currentTarget.hidden = true">
+                <img :src="`/images/officers/${officer.code}.webp`" :alt="officerName(officer.code)" loading="lazy" @error="$event.currentTarget.hidden = true">
                 <span class="building-image-fallback" aria-hidden="true">{{ officer.code }}</span>
                 <RarityBadge class="building-rarity" :rarity="officer.rarity" />
                 <span class="building-level">{{ t('production.officerLevel', { level: officer.level, max: officer.max }) }}</span>
             </div>
             <div class="building-pos-body">
-                <div class="building-title"><span class="building-code">{{ officer.code }}</span><h3>{{ officerName(officer.code) }}</h3><ElementInfoButton :id="`officer_${officer.code}`" :name="officerName(officer.code)" :image-src="`/images/officers/${officer.code}.png`" /></div>
+                <div class="building-title"><span class="building-code">{{ officer.code }}</span><h3>{{ officerName(officer.code) }}</h3><ElementInfoButton :id="`officer_${officer.code}`" :name="officerName(officer.code)" :image-src="`/images/officers/${officer.code}.webp`" /></div>
                 <div class="building-main">
                     <p>{{ t(`officers.${officer.key}`) }}</p>
                     <div class="unit-requirements"><span v-for="req in officer.requirements" :key="req.code" :class="{'requirement-met':req.current>=req.level}">{{ t('production.officerRequirement', { name: requirementName(req), level: req.level, current: req.current }) }}</span><span v-if="!officer.requirements.length" class="requirement-met">{{ t('units.noRequirement') }}</span></div>

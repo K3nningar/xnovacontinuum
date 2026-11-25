@@ -93,7 +93,7 @@ function canUpgrade(building) {
             : building.key === 'terraformer'
                 ? props.technologyEnergyLevel >= 12 && selectedPlanet.value.energy.supply >= 1000
                 : true;
-    const uniqueBuildings = ['laboratory', 'robot_factory', 'nano_factory', 'hangar', 'missile_silo'];
+    const uniqueBuildings = ['laboratory', 'robot_factory', 'nano_factory', 'hangar', 'defence_center', 'missile_silo'];
     const queueIsUnique = !uniqueBuildings.includes(building.key)
         || !selectedPlanet.value.queue.some((item) => item.building_key === building.key);
     const maximumLevel = building.maxLevel ?? 30;
@@ -219,13 +219,13 @@ function upgrade(building) {
                                     <article v-for="building in visibleBuildings" :key="building.key" class="card building-pos-card" :class="`rarity-${building.rarity}`">
                                         <div class="pos-product">
                                             <div class="img building-pos-image" :class="`${building.key}-building-icon`">
-                                                <img :src="`images/buildings/${building.code}.png`" :alt="building.name" loading="lazy" @error="$event.currentTarget.hidden = true">
+                                                <img :src="`/images/buildings/${building.code}.webp`" :alt="building.name" loading="lazy" @error="$event.currentTarget.hidden = true">
                                                 <span class="building-image-fallback" aria-hidden="true">{{ building.icon }}</span>
                                                 <RarityBadge class="building-rarity" :rarity="building.rarity" />
                                                 <span class="building-level">{{ t('common.level') }} {{ buildingLevel(building) }}</span>
                                             </div>
                                             <div class="building-pos-body">
-                                                <div class="building-title"><span class="building-code">{{ String(building.code).padStart(2, '0') }}</span><h3>{{ building.name }}</h3><ElementInfoButton :id="`building_${building.code}`" :name="building.name" :description="infosFr[`building_${building.code}`]?.description" :image-src="`/images/buildings/${building.code}.png`" /></div>
+                                                <div class="building-title"><span class="building-code">{{ String(building.code).padStart(2, '0') }}</span><h3>{{ building.name }}</h3><ElementInfoButton :id="`building_${building.code}`" :name="building.name" :description="infosFr[`building_${building.code}`]?.description" :image-src="`/images/buildings/${building.code}.webp`" /></div>
                                                 <div class="building-main">
                                                     <p>{{ building.description }}</p>
                                                     <p v-if="building.requirement" class="building-requirement">{{ building.requirement }}</p>

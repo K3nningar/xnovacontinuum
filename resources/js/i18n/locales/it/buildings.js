@@ -101,7 +101,7 @@ export default {
     "nanoDescription": "Naniti specializzati accelerano i lavori planetari.",
     "nanoRequirement": "Richiede fabbrica di robot livello 10 e tecnologia informatica livello 10.",
     "shipyard": "Cantiere spaziale",
-    "shipyardDescription": "Costruisce navi e strutture difensive per il tuo impero.",
+    "shipyardDescription": "Costruisce navi per il tuo impero.",
     "shipyardRequirement": "Necessario per produrre unità spaziali.",
     "metalStorage": "Deposito di metallo",
     "metalStorageDescription": "Aumenta la capacità massima di stoccaggio del metallo sul pianeta.",
@@ -163,9 +163,15 @@ export default {
       "unit": "tempo di costruzione",
       "requirement": "Richiede fabbrica di robot livello 10 e tecnologia informatica livello 10."
     },
+    "defence_center": {
+      "name": "Centro di Difesa",
+      "description": "Costruisce difese planetarie e ne accelera la produzione.",
+      "unit": "produzione difese",
+      "requirement": "Necessario per produrre difese."
+    },
     "hangar": {
       "name": "Cantiere spaziale",
-      "description": "Costruisce navi e strutture difensive per il tuo impero.",
+      "description": "Costruisce navi per il tuo impero.",
       "unit": "produzione",
       "requirement": "Necessario per produrre unità spaziali."
     },

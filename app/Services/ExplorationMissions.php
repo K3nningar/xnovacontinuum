@@ -766,7 +766,7 @@ class ExplorationMissions
         if ($level >= 4) {
             $details['buildings'] = $moonTarget
                 ? ['moon_base_level' => (int) $this->moonEconomy()->stock($target, ['orbit' => (int) $fleet->target_orbit])->moon_base_level, 'phalanx_level' => (int) $this->moonEconomy()->stock($target, ['orbit' => (int) $fleet->target_orbit])->phalanx_level, 'jump_gate_level' => (int) $this->moonEconomy()->stock($target, ['orbit' => (int) $fleet->target_orbit])->jump_gate_level]
-                : $target->only('metal_mine_level', 'crystal_mine_level', 'deuterium_synthesizer_level', 'solar_plant_level', 'fusion_plant_level', 'laboratory_level', 'robot_factory_level', 'nano_factory_level', 'hangar_level', 'missile_silo_level', 'alliance_depot_level');
+                : $target->only('metal_mine_level', 'crystal_mine_level', 'deuterium_synthesizer_level', 'solar_plant_level', 'fusion_plant_level', 'laboratory_level', 'robot_factory_level', 'nano_factory_level', 'hangar_level', 'defence_center_level', 'missile_silo_level', 'alliance_depot_level');
         }
         if ($level >= 5) {
             $details['research'] = $targetUser->only('spy_technology_level', 'military_technology_level', 'defence_technology_level', 'shield_technology_level', 'combustion_technology_level', 'impulse_technology_level', 'hyperspace_drive_level');

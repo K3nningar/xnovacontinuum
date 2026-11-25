@@ -36,6 +36,17 @@ export default defineConfig({
             checks: {
                 bundlerTimings: false,
             },
+            output: {
+                codeSplitting: {
+                    groups: [
+                        {
+                            name: 'vendor',
+                            test: /[\\/]node_modules[\\/]/,
+                            tags: ['$initial'],
+                        },
+                    ],
+                },
+            },
         },
     },
 });

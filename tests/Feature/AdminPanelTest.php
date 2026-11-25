@@ -171,6 +171,11 @@ class AdminPanelTest extends TestCase
             'actor_id' => $founder->id,
             'action' => 'universe_created',
         ]);
+        $this->get(route('admin.universes'))->assertInertia(fn (Assert $page) => $page
+            ->where('universes.0.id', $universe->id)
+            ->where('universes.0.galaxies', 2)
+            ->where('universes.0.systems_per_galaxy', 3)
+            ->where('universes.0.named_systems', 6));
 
         $newPlayer = User::factory()->create();
         $this->actingAs($newPlayer)->get(route('dashboard'))->assertInertia(fn (Assert $page) => $page
@@ -414,6 +419,95 @@ class AdminPanelTest extends TestCase
         $this->assertDatabaseCount('admin_audit_logs', 0);
     }
 
+    public function test_founder_can_grant_resources_and_elements_to_their_own_empire(): void
+    {
+        $this->freezeTime();
+        $planet = $this->createPlanet();
+        $profile = $planet->user;
+        $account = User::query()->where('commander_id', $profile->commander_id)->whereNull('universe_id')->firstOrFail();
+        $account->forceFill(['admin_level' => 4])->save();
+        $planet->forceFill(['hangar_level' => 2, 'robot_factory_level' => 2])->save();
+        $profile->forceFill(['combustion_technology_level' => 2])->save();
+
+        $this->actingAs($profile)->get(route('admin.elements', ['player' => $account->id, 'planet' => $planet->id]))
+            ->assertOk()->assertInertia(fn (Assert $page) => $page->where('selectedPlayer.id', $account->id)
+            ->where('selectedPlanetId', $planet->id));
+
+        $this->post(route('admin.resources.store'), [
+            'player_id' => $account->id, 'planet_id' => $planet->id,
+            'metal' => 100, 'crystal' => 50, 'deuterium' => 20,
+        ])->assertRedirect()->assertSessionHasNoErrors();
+
+        foreach ([['buildings', 'metal', 1], ['buildings', 'defence_center', 1], ['research', 'computer', 1], ['officers', '601', 1], ['ships', '202', 2], ['defences', '401', 1]] as [$category, $key, $amount]) {
+            $this->post(route('admin.elements.store'), [
+                'player_id' => $account->id, 'planet_id' => $planet->id,
+                'category' => $category, 'key' => $key, 'amount' => $amount,
+            ])->assertRedirect()->assertSessionHasNoErrors();
+        }
+        $this->post(route('admin.resources.store'), [
+            'player_id' => $account->id, 'planet_id' => $planet->id,
+            'metal' => 1000000000, 'crystal' => 0, 'deuterium' => 0,
+        ])->assertSessionHasErrors('metal');
+
+        $this->assertDatabaseHas('planets', ['id' => $planet->id, 'metal' => 600, 'crystal' => 550, 'deuterium' => 20, 'metal_mine_level' => 1, 'defence_center_level' => 1, 'unit_202' => 2, 'unit_401' => 1]);
+        $this->assertDatabaseHas('users', ['id' => $profile->id, 'computer_technology_level' => 1, 'officer_geologist_level' => 1]);
+        $this->assertDatabaseHas('users', ['id' => $account->id, 'computer_technology_level' => 0, 'officer_geologist_level' => 0]);
+        $this->assertDatabaseHas('admin_audit_logs', ['actor_id' => $profile->id, 'target_user_id' => $account->id, 'planet_id' => $planet->id, 'action' => 'resources_added']);
+        $this->assertDatabaseCount('admin_audit_logs', 7);
+    }
+
+    public function test_self_grants_remain_forbidden_for_administrators_and_other_founders_are_protected(): void
+    {
+        $planet = $this->createPlanet();
+        $profile = $planet->user;
+        $account = User::query()->where('commander_id', $profile->commander_id)->whereNull('universe_id')->firstOrFail();
+        $account->forceFill(['admin_level' => 3])->save();
+        $resources = ['player_id' => $account->id, 'planet_id' => $planet->id, 'metal' => 1, 'crystal' => 0, 'deuterium' => 0];
+        $element = ['player_id' => $account->id, 'planet_id' => $planet->id, 'category' => 'buildings', 'key' => 'metal', 'amount' => 1];
+
+        $this->actingAs($profile)->post(route('admin.resources.store'), $resources)->assertSessionHasErrors('player_id');
+        $this->post(route('admin.elements.store'), $element)->assertSessionHasErrors('player_id');
+
+        $account->forceFill(['admin_level' => 4])->save();
+        $this->actingAs($profile)->post(route('admin.suspend'), [
+            'player_id' => $account->id, 'days' => 1, 'reason' => 'Test',
+        ])->assertSessionHasErrors('player_id');
+
+        $otherFounder = User::factory()->create(['admin_level' => 4]);
+        $this->actingAs($otherFounder)->post(route('admin.resources.store'), $resources)->assertSessionHasErrors('player_id');
+        $this->post(route('admin.elements.store'), $element)->assertSessionHasErrors('player_id');
+        $this->assertDatabaseCount('admin_audit_logs', 0);
+    }
+
+    public function test_founder_can_grant_elements_to_an_unmapped_legacy_profile_in_another_universe(): void
+    {
+        $planet = $this->createPlanet();
+        $profile = $planet->user;
+        $account = User::query()->where('commander_id', $profile->commander_id)->whereNull('universe_id')->firstOrFail();
+        $account->forceFill(['admin_level' => 4])->save();
+        $universe = Universe::query()->create(['name' => 'Second', 'slug' => 'second']);
+        $otherProfile = User::factory()->create(['commander_id' => $account->commander_id, 'universe_id' => $universe->id]);
+        $otherPlanet = new Planet;
+        $otherPlanet->forceFill(['universe_id' => $universe->id, 'user_id' => $otherProfile->id, 'name' => 'Second',
+            'galaxy' => 1, 'system' => 1, 'position' => 8, 'resources_updated_at' => now()])->save();
+
+        $this->actingAs($account)->get(route('admin.elements', ['player' => $account->id, 'planet' => $otherPlanet->id]))
+            ->assertInertia(fn (Assert $page) => $page->where('selectedPlanetId', $otherPlanet->id));
+        $this->post(route('admin.elements.store'), [
+            'player_id' => $account->id, 'planet_id' => $otherPlanet->id,
+            'category' => 'research', 'key' => 'computer', 'amount' => 1,
+        ])->assertRedirect()->assertSessionHasNoErrors();
+        $this->post(route('admin.resources.store'), [
+            'player_id' => $account->id, 'planet_id' => $otherPlanet->id,
+            'metal' => 10, 'crystal' => 0, 'deuterium' => 0,
+        ])->assertRedirect()->assertSessionHasNoErrors();
+
+        $this->assertDatabaseHas('users', ['id' => $otherProfile->id, 'computer_technology_level' => 1]);
+        $this->assertDatabaseHas('planets', ['id' => $otherPlanet->id, 'metal' => 510]);
+        $this->assertDatabaseHas('users', ['id' => $profile->id, 'computer_technology_level' => 0]);
+        $this->assertDatabaseHas('users', ['id' => $account->id, 'computer_technology_level' => 0]);
+    }
+
     public function test_administrator_can_add_a_building_and_terraformer_fields(): void
     {
         $this->freezeTime();
@@ -438,7 +532,8 @@ class AdminPanelTest extends TestCase
         $administrator = User::factory()->create();
         $administrator->forceFill(['admin_level' => 3])->save();
         $planet = $this->createPlanet();
-        $payload = ['player_id' => $planet->user_id, 'planet_id' => $planet->id, 'amount' => 1];
+        $account = User::query()->where('commander_id', $planet->user->commander_id)->whereNull('universe_id')->firstOrFail();
+        $payload = ['player_id' => $account->id, 'planet_id' => $planet->id, 'amount' => 1];
 
         $this->actingAs($administrator)->post(route('admin.elements.store'), [
             ...$payload, 'category' => 'research', 'key' => 'computer',
@@ -502,7 +597,7 @@ class AdminPanelTest extends TestCase
         $administrator = User::factory()->create();
         $administrator->forceFill(['admin_level' => 3])->save();
         $planet = $this->createPlanet();
-        $planet->forceFill(['hangar_level' => 1, 'robot_factory_level' => 1, 'unit_407' => 1])->save();
+        $planet->forceFill(['defence_center_level' => 1, 'robot_factory_level' => 1, 'unit_407' => 1])->save();
         $planet->user->forceFill(['defence_technology_level' => 2])->save();
 
         $this->actingAs($administrator)->post(route('admin.elements.store'), [
@@ -519,7 +614,7 @@ class AdminPanelTest extends TestCase
         $administrator = User::factory()->create();
         $administrator->forceFill(['admin_level' => 3])->save();
         $planet = $this->createPlanet();
-        $planet->forceFill(['hangar_level' => 1, 'robot_factory_level' => 1, 'missile_silo_level' => 4, 'unit_502' => 36])->save();
+        $planet->forceFill(['defence_center_level' => 1, 'robot_factory_level' => 1, 'missile_silo_level' => 4, 'unit_502' => 36])->save();
         DB::table('planet_unit_queues')->insert([
             'universe_id' => $planet->universe_id, 'planet_id' => $planet->id,
             'unit_code' => 503, 'unit_type' => 'defences', 'quantity' => 1, 'quantity_completed' => 0, 'position' => 1,
@@ -600,7 +695,8 @@ class AdminPanelTest extends TestCase
             'starts_at' => now(), 'completes_at' => now()->addHour(),
             'created_at' => now(), 'updated_at' => now(),
         ]);
-        $payload = ['player_id' => $planet->user_id, 'planet_id' => $planet->id, 'amount' => 1];
+        $account = User::query()->where('commander_id', $planet->user->commander_id)->whereNull('universe_id')->firstOrFail();
+        $payload = ['player_id' => $account->id, 'planet_id' => $planet->id, 'amount' => 1];
 
         $this->actingAs($administrator)->post(route('admin.elements.store'), [...$payload, 'category' => 'research', 'key' => 'computer'])
             ->assertSessionHasErrors('key');

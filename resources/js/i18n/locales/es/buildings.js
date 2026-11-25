@@ -101,7 +101,7 @@ export default {
     "nanoDescription": "Nanitos especializados aceleran los trabajos planetarios.",
     "nanoRequirement": "Requiere fábrica de robots nivel 10 y tecnología informática nivel 10.",
     "shipyard": "Astillero",
-    "shipyardDescription": "Construye naves e instalaciones defensivas para tu imperio.",
+    "shipyardDescription": "Construye naves para tu imperio.",
     "shipyardRequirement": "Necesario para producir unidades espaciales.",
     "metalStorage": "Almacén de metal",
     "metalStorageDescription": "Aumenta la capacidad máxima de almacenamiento de metal del planeta.",
@@ -163,9 +163,15 @@ export default {
       "unit": "tiempo de construcción",
       "requirement": "Requiere fábrica de robots nivel 10 y tecnología informática nivel 10."
     },
+    "defence_center": {
+      "name": "Centro de Defensa",
+      "description": "Construye defensas planetarias y acelera su producción.",
+      "unit": "producción de defensas",
+      "requirement": "Necesario para producir defensas."
+    },
     "hangar": {
       "name": "Astillero",
-      "description": "Construye naves e instalaciones defensivas para tu imperio.",
+      "description": "Construye naves para tu imperio.",
       "unit": "producción",
       "requirement": "Necesario para producir unidades espaciales."
     },

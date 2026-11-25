@@ -24,6 +24,7 @@ export const buildingCatalog = [
     { key: 'robot_factory', category: 'industry', level: 'robot_factory_level', activity: null, code: 14, icon: 'R', requirementKey: 'robotEffect', maxLevel: 30 },
     { key: 'nano_factory', category: 'industry', level: 'nano_factory_level', activity: null, code: 15, icon: 'N', requirementKey: 'nanoRequirement', maxLevel: 30 },
     { key: 'hangar', category: 'industry', level: 'hangar_level', activity: null, code: 21, icon: 'H', requirementKey: 'shipyardRequirement' },
+    { key: 'defence_center', category: 'defence', level: 'defence_center_level', activity: null, code: 20, icon: 'D', requirementKey: 'defenceCenterRequirement' },
     { key: 'metal_storage', category: 'storage', level: 'metal_storage_level', activity: null, code: 22, icon: 'M', resource: 'metal', maxLevel: 30 },
     { key: 'crystal_storage', category: 'storage', level: 'crystal_storage_level', activity: null, code: 23, icon: 'C', resource: 'crystal', maxLevel: 30 },
     { key: 'deuterium_storage', category: 'storage', level: 'deuterium_storage_level', activity: null, code: 24, icon: 'D', resource: 'deuterium', maxLevel: 30 },

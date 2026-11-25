@@ -82,14 +82,14 @@ class UnitProductionService
     ];
 
     private const DEFENCES = [
-        401 => ['key' => 'rocket_launcher', 'name' => 'Lanceur de missiles', 'rarity' => 'ordinary', 'cost' => [2000, 0, 0], 'requirements' => [21 => 1]],
-        402 => ['key' => 'light_laser', 'name' => 'Artillerie laser légère', 'rarity' => 'remarkable', 'cost' => [1500, 500, 0], 'requirements' => [113 => 1, 21 => 2, 120 => 3]],
-        403 => ['key' => 'heavy_laser', 'name' => 'Artillerie laser lourde', 'rarity' => 'remarkable', 'cost' => [6000, 2000, 0], 'requirements' => [113 => 3, 21 => 4, 120 => 6]],
-        404 => ['key' => 'gauss_cannon', 'name' => 'Canon de Gauss', 'rarity' => 'exceptional', 'cost' => [20000, 15000, 2000], 'requirements' => [21 => 6, 113 => 6, 109 => 3, 110 => 1]],
-        405 => ['key' => 'ion_cannon', 'name' => 'Canon à ions', 'rarity' => 'epic', 'cost' => [2000, 6000, 0], 'requirements' => [21 => 4, 121 => 4]],
-        406 => ['key' => 'plasma_turret', 'name' => 'Lanceur de plasma', 'rarity' => 'legendary', 'cost' => [50000, 50000, 30000], 'requirements' => [21 => 8, 122 => 7]],
-        407 => ['key' => 'small_shield_dome', 'name' => 'Petit bouclier', 'rarity' => 'epic', 'cost' => [10000, 10000, 0], 'requirements' => [110 => 2, 21 => 1], 'unique' => true],
-        408 => ['key' => 'large_shield_dome', 'name' => 'Grand bouclier', 'rarity' => 'legendary', 'cost' => [50000, 50000, 0], 'requirements' => [110 => 6, 21 => 6], 'unique' => true],
+        401 => ['key' => 'rocket_launcher', 'name' => 'Lanceur de missiles', 'rarity' => 'ordinary', 'cost' => [2000, 0, 0], 'requirements' => [20 => 1]],
+        402 => ['key' => 'light_laser', 'name' => 'Artillerie laser légère', 'rarity' => 'remarkable', 'cost' => [1500, 500, 0], 'requirements' => [113 => 1, 20 => 2, 120 => 3]],
+        403 => ['key' => 'heavy_laser', 'name' => 'Artillerie laser lourde', 'rarity' => 'remarkable', 'cost' => [6000, 2000, 0], 'requirements' => [113 => 3, 20 => 4, 120 => 6]],
+        404 => ['key' => 'gauss_cannon', 'name' => 'Canon de Gauss', 'rarity' => 'exceptional', 'cost' => [20000, 15000, 2000], 'requirements' => [20 => 6, 113 => 6, 109 => 3, 110 => 1]],
+        405 => ['key' => 'ion_cannon', 'name' => 'Canon à ions', 'rarity' => 'epic', 'cost' => [2000, 6000, 0], 'requirements' => [20 => 4, 121 => 4]],
+        406 => ['key' => 'plasma_turret', 'name' => 'Lanceur de plasma', 'rarity' => 'legendary', 'cost' => [50000, 50000, 30000], 'requirements' => [20 => 8, 122 => 7]],
+        407 => ['key' => 'small_shield_dome', 'name' => 'Petit bouclier', 'rarity' => 'epic', 'cost' => [10000, 10000, 0], 'requirements' => [110 => 2, 20 => 1], 'unique' => true],
+        408 => ['key' => 'large_shield_dome', 'name' => 'Grand bouclier', 'rarity' => 'legendary', 'cost' => [50000, 50000, 0], 'requirements' => [110 => 6, 20 => 6], 'unique' => true],
         409 => ['key' => 'planetary_protector', 'name' => 'Protecteur planétaire', 'rarity' => 'mythic', 'cost' => [250000, 100000, 25000], 'requirements' => [609 => 1], 'unique' => true],
         502 => ['key' => 'anti_ballistic_missile', 'name' => 'Missile d’interception', 'rarity' => 'exceptional', 'cost' => [8000, 2000, 0], 'requirements' => [44 => 2]],
         503 => ['key' => 'interplanetary_missile', 'name' => 'Missile interplanétaire', 'rarity' => 'exceptional', 'cost' => [12500, 2500, 10000], 'requirements' => [44 => 4]],
@@ -113,7 +113,7 @@ class UnitProductionService
         199 => 'graviton_technology_level',
     ];
 
-    private const BUILDING_COLUMNS = [14 => 'robot_factory_level', 15 => 'nano_factory_level', 21 => 'hangar_level', 31 => 'laboratory_level', 44 => 'missile_silo_level'];
+    private const BUILDING_COLUMNS = [14 => 'robot_factory_level', 15 => 'nano_factory_level', 20 => 'defence_center_level', 21 => 'hangar_level', 31 => 'laboratory_level', 44 => 'missile_silo_level'];
 
     private const OFFICER_COLUMNS = [
         601 => 'officer_geologist_level', 602 => 'officer_admiral_level', 603 => 'officer_engineer_level',
@@ -177,12 +177,17 @@ class UnitProductionService
                 $requirementsMet = $requirementsMet && $currentLevel >= $requiredLevel;
             }
 
-            $hangarLevel = (int) $planet->hangar_level;
+            $productionCode = $type === 'ships' ? 21 : 20;
+            $productionLevel = $this->requirementLevel($productionCode, $planet, $user);
             $robotFactoryLevel = (int) $planet->robot_factory_level;
-            $requiredHangarLevel = (int) ($definition['requirements'][21] ?? 0);
-            $requirements[] = ['code' => 21, 'level' => max(1, $requiredHangarLevel), 'current' => $hangarLevel];
-            $requirements[] = ['code' => 14, 'level' => 1, 'current' => $robotFactoryLevel];
-            $requirementsMet = $requirementsMet && $hangarLevel >= max(1, $requiredHangarLevel) && $robotFactoryLevel >= 1;
+            $requiredProductionLevel = (int) ($definition['requirements'][$productionCode] ?? 0);
+            if ($requiredProductionLevel === 0) {
+                $requirements[] = ['code' => $productionCode, 'level' => 1, 'current' => $productionLevel];
+            }
+            if (! isset($definition['requirements'][14])) {
+                $requirements[] = ['code' => 14, 'level' => 1, 'current' => $robotFactoryLevel];
+            }
+            $requirementsMet = $requirementsMet && $productionLevel >= max(1, $requiredProductionLevel) && $robotFactoryLevel >= 1;
 
             $unitCost = $this->costFor($definition, $user);
             $cost = ['metal' => $unitCost[0], 'crystal' => $unitCost[1], 'deuterium' => $unitCost[2]];
@@ -243,10 +248,13 @@ class UnitProductionService
             $lockedPlanet->refresh();
             $definition = $definitions[$code];
 
-            $requiredHangarLevel = (int) ($definition['requirements'][21] ?? 1);
-            if ((int) $lockedPlanet->hangar_level < max(1, $requiredHangarLevel)
+            $productionCode = $type === 'ships' ? 21 : 20;
+            $requiredProductionLevel = (int) ($definition['requirements'][$productionCode] ?? 1);
+            if ($this->requirementLevel($productionCode, $lockedPlanet, $lockedUser) < max(1, $requiredProductionLevel)
                 || (int) $lockedPlanet->robot_factory_level < 1) {
-                throw ValidationException::withMessages(['unit' => 'Le chantier spatial et l’usine de robots sont requis pour produire.']);
+                throw ValidationException::withMessages(['unit' => $type === 'ships'
+                    ? 'Le chantier spatial et l’usine de robots sont requis pour produire.'
+                    : 'Le centre de défense et l’usine de robots sont requis pour produire.']);
             }
 
             foreach ($definition['requirements'] as $requirementCode => $requiredLevel) {
@@ -631,7 +639,8 @@ class UnitProductionService
      */
     private function duration(array $unitCost, Planet $planet, User $user, string $type): int
     {
-        $baseSeconds = (int) floor((($unitCost[0] + $unitCost[1]) / 2500) / (((int) $planet->hangar_level + 1) * (2 ** (int) $planet->nano_factory_level) * ((int) $planet->robot_factory_level + 1)) * 3600);
+        $productionLevel = $type === 'ships' ? (int) $planet->hangar_level : (int) $planet->defence_center_level;
+        $baseSeconds = (int) floor((($unitCost[0] + $unitCost[1]) / 2500) / (($productionLevel + 1) * (2 ** (int) $planet->nano_factory_level) * ((int) $planet->robot_factory_level + 1)) * 3600);
         $officerDiscount = $type === 'ships' ? (int) $user->officer_technocrat_level * 5 : (int) $user->officer_defender_level * 37.5;
 
         return max(1, (int) floor($baseSeconds * max(0.1, 1 - ($officerDiscount / 100))));

@@ -51,6 +51,7 @@ use Illuminate\Support\Carbon;
  * @property int $laboratory_level
  * @property int $laboratory_activity
  * @property int $hangar_level
+ * @property int $defence_center_level
  * @property int $robot_factory_level
  * @property int $nano_factory_level
  * @property int $missile_silo_level
@@ -93,7 +94,7 @@ use Illuminate\Support\Carbon;
  * @property-read Collection<int, PlanetBuildingQueue> $buildingQueue
  * @property-read Collection<int, PlanetUnitQueue> $unitQueue
  */
-#[Fillable(['name', 'metal_mine_level', 'crystal_mine_level', 'deuterium_synthesizer_level', 'solar_plant_level', 'fusion_plant_level', 'laboratory_level', 'laboratory_activity', 'hangar_level', 'robot_factory_level', 'nano_factory_level', 'missile_silo_level', 'terraformer_level', 'unit_202', 'unit_203', 'unit_204', 'unit_205', 'unit_206', 'unit_207', 'unit_208', 'unit_209', 'unit_210', 'unit_211', 'unit_212', 'unit_213', 'unit_214', 'unit_215', 'unit_216', 'unit_217', 'unit_401', 'unit_402', 'unit_403', 'unit_404', 'unit_405', 'unit_406', 'unit_407', 'unit_408', 'unit_409', 'unit_502', 'unit_503', 'metal_storage_level', 'crystal_storage_level', 'deuterium_storage_level', 'metal_mine_activity', 'crystal_mine_activity', 'deuterium_synthesizer_activity', 'solar_plant_activity', 'fusion_plant_activity', 'metal', 'crystal', 'deuterium', 'metal_production_remainder', 'crystal_production_remainder', 'deuterium_production_remainder', 'resources_updated_at', 'alliance_depot_level'])]
+#[Fillable(['name', 'metal_mine_level', 'crystal_mine_level', 'deuterium_synthesizer_level', 'solar_plant_level', 'fusion_plant_level', 'laboratory_level', 'laboratory_activity', 'hangar_level', 'defence_center_level', 'robot_factory_level', 'nano_factory_level', 'missile_silo_level', 'terraformer_level', 'unit_202', 'unit_203', 'unit_204', 'unit_205', 'unit_206', 'unit_207', 'unit_208', 'unit_209', 'unit_210', 'unit_211', 'unit_212', 'unit_213', 'unit_214', 'unit_215', 'unit_216', 'unit_217', 'unit_401', 'unit_402', 'unit_403', 'unit_404', 'unit_405', 'unit_406', 'unit_407', 'unit_408', 'unit_409', 'unit_502', 'unit_503', 'metal_storage_level', 'crystal_storage_level', 'deuterium_storage_level', 'metal_mine_activity', 'crystal_mine_activity', 'deuterium_synthesizer_activity', 'solar_plant_activity', 'fusion_plant_activity', 'metal', 'crystal', 'deuterium', 'metal_production_remainder', 'crystal_production_remainder', 'deuterium_production_remainder', 'resources_updated_at', 'alliance_depot_level'])]
 class Planet extends Model
 {
     /**

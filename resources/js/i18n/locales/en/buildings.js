@@ -101,7 +101,7 @@ export default {
     "nanoDescription": "Specialized nanites speed up planetary work.",
     "nanoRequirement": "Requires robotics factory level 10 and computer technology level 10.",
     "shipyard": "Shipyard",
-    "shipyardDescription": "Builds ships and defensive installations for your empire.",
+    "shipyardDescription": "Builds ships for your empire.",
     "shipyardRequirement": "Required to produce space units.",
     "metalStorage": "Metal storage",
     "metalStorageDescription": "Increases the planet’s maximum metal storage.",
@@ -163,9 +163,15 @@ export default {
       "unit": "construction time",
       "requirement": "Requires robotics factory level 10 and computer technology level 10."
     },
+    "defence_center": {
+      "name": "Defense Center",
+      "description": "Builds planetary defenses and speeds up their production.",
+      "unit": "defense production",
+      "requirement": "Required to produce defenses."
+    },
     "hangar": {
       "name": "Shipyard",
-      "description": "Builds ships and defensive installations for your empire.",
+      "description": "Builds ships for your empire.",
       "unit": "production",
       "requirement": "Required to produce space units."
     },

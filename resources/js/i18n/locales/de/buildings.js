@@ -101,7 +101,7 @@ export default {
     "nanoDescription": "Spezialisierte Naniten beschleunigen planetare Arbeiten.",
     "nanoRequirement": "Benötigt Roboterfabrik Stufe 10 und Computertechnik Stufe 10.",
     "shipyard": "Raumschiffwerft",
-    "shipyardDescription": "Baut Schiffe und Verteidigungsanlagen für dein Imperium.",
+    "shipyardDescription": "Baut Schiffe für dein Imperium.",
     "shipyardRequirement": "Für die Produktion von Raumeinheiten erforderlich.",
     "metalStorage": "Metallspeicher",
     "metalStorageDescription": "Erhöht die maximale Metalllagerkapazität des Planeten.",
@@ -163,9 +163,15 @@ export default {
       "unit": "Bauzeit",
       "requirement": "Benötigt Roboterfabrik Stufe 10 und Computertechnik Stufe 10."
     },
+    "defence_center": {
+      "name": "Verteidigungszentrum",
+      "description": "Baut planetare Verteidigungsanlagen und beschleunigt ihre Produktion.",
+      "unit": "Verteidigungsproduktion",
+      "requirement": "Zur Produktion von Verteidigungsanlagen erforderlich."
+    },
     "hangar": {
       "name": "Raumschiffwerft",
-      "description": "Baut Schiffe und Verteidigungsanlagen für dein Imperium.",
+      "description": "Baut Schiffe für dein Imperium.",
       "unit": "Produktion",
       "requirement": "Für die Produktion von Raumeinheiten erforderlich."
     },

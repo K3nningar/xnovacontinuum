@@ -82,7 +82,7 @@ function unitImage(code) {
     }
 
     return unit.type === 'ships'
-        ? `/images/ships/${unit.code}.png`
+        ? `/images/ships/${unit.code}.webp`
         : `/legacy-assets/skins/xnova/gebaeude/${unit.code}.gif`;
 }
 

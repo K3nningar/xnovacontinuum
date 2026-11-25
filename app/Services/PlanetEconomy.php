@@ -61,6 +61,7 @@ class PlanetEconomy
         'fusion' => ['level' => 'fusion_plant_level', 'activity' => 'fusion_plant_activity', 'resource' => 'energy', 'label' => 'Centrale de fusion', 'code' => 12],
         'robot_factory' => ['level' => 'robot_factory_level', 'activity' => null, 'resource' => null, 'label' => 'Usine de robots', 'code' => 14],
         'nano_factory' => ['level' => 'nano_factory_level', 'activity' => null, 'resource' => null, 'label' => 'Usine de nanites', 'code' => 15],
+        'defence_center' => ['level' => 'defence_center_level', 'activity' => null, 'resource' => null, 'label' => 'Centre de Défense', 'code' => 20],
         'hangar' => ['level' => 'hangar_level', 'activity' => null, 'resource' => null, 'label' => 'Chantier spatial', 'code' => 21],
         'missile_silo' => ['level' => 'missile_silo_level', 'activity' => null, 'resource' => null, 'label' => 'Silo de missiles', 'code' => 44],
         'laboratory' => ['level' => 'laboratory_level', 'activity' => 'laboratory_activity', 'resource' => null, 'label' => 'Laboratoire de recherche', 'code' => 31],
@@ -79,6 +80,7 @@ class PlanetEconomy
         'fusion' => ['cost' => ['metal' => 900, 'crystal' => 360, 'deuterium' => 180], 'factor' => 1.8],
         'robot_factory' => ['cost' => ['metal' => 400, 'crystal' => 120, 'deuterium' => 200], 'factor' => 2],
         'nano_factory' => ['cost' => ['metal' => 1_000_000, 'crystal' => 500_000, 'deuterium' => 100_000], 'factor' => 2],
+        'defence_center' => ['cost' => ['metal' => 400, 'crystal' => 200, 'deuterium' => 100], 'factor' => 2],
         'hangar' => ['cost' => ['metal' => 400, 'crystal' => 200, 'deuterium' => 100], 'factor' => 2],
         'missile_silo' => ['cost' => ['metal' => 20_000, 'crystal' => 20_000, 'deuterium' => 1_000], 'factor' => 2],
         'laboratory' => ['cost' => ['metal' => 200, 'crystal' => 400, 'deuterium' => 200], 'factor' => 2],
@@ -115,7 +117,7 @@ class PlanetEconomy
      */
     public function snapshot(Planet $planet, int $energyTechnologyLevel = 0, int $computerTechnologyLevel = 0): array
     {
-        $snapshot = $planet->only('metal', 'crystal', 'deuterium', 'metal_mine_level', 'crystal_mine_level', 'deuterium_synthesizer_level', 'solar_plant_level', 'fusion_plant_level', 'laboratory_level', 'robot_factory_level', 'nano_factory_level', 'hangar_level', 'missile_silo_level', 'metal_storage_level', 'crystal_storage_level', 'deuterium_storage_level', 'terraformer_level', 'alliance_depot_level', 'fields', 'laboratory_activity', 'metal_mine_activity', 'crystal_mine_activity', 'deuterium_synthesizer_activity', 'solar_plant_activity', 'fusion_plant_activity');
+        $snapshot = $planet->only('metal', 'crystal', 'deuterium', 'metal_mine_level', 'crystal_mine_level', 'deuterium_synthesizer_level', 'solar_plant_level', 'fusion_plant_level', 'laboratory_level', 'robot_factory_level', 'nano_factory_level', 'hangar_level', 'defence_center_level', 'missile_silo_level', 'metal_storage_level', 'crystal_storage_level', 'deuterium_storage_level', 'terraformer_level', 'alliance_depot_level', 'fields', 'laboratory_activity', 'metal_mine_activity', 'crystal_mine_activity', 'deuterium_synthesizer_activity', 'solar_plant_activity', 'fusion_plant_activity');
         $snapshot['production'] = [];
         $snapshot['nextCosts'] = [];
         $snapshot['canUpgrade'] = [];
@@ -245,7 +247,7 @@ class PlanetEconomy
                 throw ValidationException::withMessages(['building' => 'La file de construction est pleine.']);
             }
 
-            if (in_array($resource, ['laboratory', 'robot_factory', 'nano_factory', 'hangar', 'missile_silo'], true)
+            if (in_array($resource, ['laboratory', 'robot_factory', 'nano_factory', 'hangar', 'defence_center', 'missile_silo'], true)
                 && $lockedPlanet->buildingQueue()->where('building_key', $resource)->exists()) {
                 throw ValidationException::withMessages(['building' => 'Ce bâtiment est déjà en cours de construction.']);
             }

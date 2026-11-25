@@ -87,7 +87,7 @@ export default {
     "nanoDescription": "Des nanites spécialisées accélèrent les travaux planétaires.",
     "nanoRequirement": "Prérequis : usine de robots niveau 10 et technologie ordinateur niveau 10.",
     "shipyard": "Chantier spatial",
-    "shipyardDescription": "Assemble les vaisseaux et installations de défense de votre empire.",
+    "shipyardDescription": "Assemble les vaisseaux de votre empire.",
     "shipyardRequirement": "Indispensable pour produire les unités spatiales.",
     "metalStorage": "Hangar à métal",
     "metalStorageDescription": "Augmente la quantité maximale de métal stockable sur la planète.",
@@ -151,9 +151,15 @@ export default {
       "unit": "durée de construction",
       "requirement": "Prérequis : usine de robots niveau 10 et technologie ordinateur niveau 10."
     },
+    "defence_center": {
+      "name": "Centre défensif",
+      "description": "Construit les défenses de la planète et accélère leur production.",
+      "unit": "production des défenses",
+      "requirement": "Nécessaire pour produire des défenses."
+    },
     "hangar": {
       "name": "Chantier spatial",
-      "description": "Assemble les vaisseaux et installations de défense de votre empire.",
+      "description": "Assemble les vaisseaux de votre empire.",
       "unit": "production",
       "requirement": "Indispensable pour produire les unités spatiales."
     },

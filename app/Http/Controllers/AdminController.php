@@ -21,6 +21,7 @@ use App\Services\UnitProductionService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Pagination\LengthAwarePaginator;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
@@ -164,10 +165,11 @@ class AdminController extends Controller
                 ->whereIn('user_id', $this->profileIds($target))
                 ->lockForUpdate()->firstOrFail();
             $this->ensureEligibleTarget($request, $target, (int) $planet->universe_id);
+            $empire = User::query()->lockForUpdate()->findOrFail($planet->user_id);
             $amount = (int) $data['amount'];
             $category = $data['category'];
             $column = $definition['column'];
-            $owner = in_array($category, ['research', 'officers'], true) ? $target : $planet;
+            $owner = in_array($category, ['research', 'officers'], true) ? $empire : $planet;
 
             if ($category === 'buildings') {
                 if ($planet->buildingQueue()->exists()) {
@@ -177,12 +179,12 @@ class AdminController extends Controller
                 $owner = $planet;
                 $maximum = $this->economy->maximumBuildingLevel();
             } elseif ($category === 'research') {
-                if ($target->researchQueues()->exists()) {
+                if ($empire->researchQueues()->exists()) {
                     throw ValidationException::withMessages(['key' => 'Une recherche est déjà en cours.']);
                 }
                 $maximum = 30;
             } elseif ($category === 'officers') {
-                if (DB::table('planet_unit_queues')->whereIn('planet_id', $target->planets()->select('id'))
+                if (DB::table('planet_unit_queues')->whereIn('planet_id', $empire->planets()->select('id'))
                     ->where('unit_type', 'officers')->where('unit_code', $definition['code'])->exists()) {
                     throw ValidationException::withMessages(['key' => 'Cet officier est déjà en cours de recrutement.']);
                 }
@@ -191,8 +193,8 @@ class AdminController extends Controller
                 $queued = DB::table('planet_unit_queues')->where('unit_code', $definition['code'])
                     ->where('unit_type', $category);
                 if (! empty($definition['uniqueEmpire'])) {
-                    $queued->whereIn('planet_id', $target->planets()->select('id'));
-                    if ($target->planets()->where($column, '>', 0)->exists() || $target->fleets()->exists()) {
+                    $queued->whereIn('planet_id', $empire->planets()->select('id'));
+                    if ($empire->planets()->where($column, '>', 0)->exists() || $empire->fleets()->exists()) {
                         throw ValidationException::withMessages(['key' => 'Cette unité unique ne peut pas être ajoutée tant qu’elle existe ou qu’une flotte est présente.']);
                     }
                 } else {
@@ -201,7 +203,7 @@ class AdminController extends Controller
                 if ($queued->exists()) {
                     throw ValidationException::withMessages(['key' => 'Cet élément est déjà dans une file de production.']);
                 }
-                $unitCatalog = $this->production->catalog($planet, $target, $category)['units'];
+                $unitCatalog = $this->production->catalog($planet, $empire, $category)['units'];
                 $entry = collect($unitCatalog)->firstWhere('code', $definition['code']);
                 if (! $entry || ! $entry['requirementsMet']) {
                     throw ValidationException::withMessages(['key' => 'Les prérequis de cette unité ne sont pas remplis.']);
@@ -500,9 +502,10 @@ class AdminController extends Controller
      * Builds the player, selected-player, and selected-planet props shared by administration pages.
      *
      * @param  array<string, mixed>  $data
+     * @param  Collection<int, int>|null  $allowedUniverses
      * @return array{players: LengthAwarePaginator, selectedPlayer: ?User, selectedPlanetId: ?int}
      */
-    private function playerSelectionProps(array $data, $allowedUniverses): array
+    private function playerSelectionProps(array $data, ?Collection $allowedUniverses): array
     {
         /** @var \Illuminate\Database\Eloquent\Collection<int, User> $accounts */
         $accounts = User::query()->whereNull('universe_id')
@@ -522,20 +525,9 @@ class AdminController extends Controller
         $profiles = User::query()->whereIn('id', $profileIds)
             ->with(['universe:id,name', 'planets' => fn ($query) => $query->select(['id', 'user_id', 'universe_id', 'name', 'galaxy', 'system', 'position'])])
             ->get()->keyBy('id');
-        $players = $accounts->map(function (User $account) use ($profiles, $profilesByAccount, $legacyProfiles, $allowedUniverses): User {
-            $ownedProfiles = $profilesByAccount->get($account->commander_id, collect())
-                ->map(fn ($mapping) => $profiles->get($mapping->profile_user_id));
-            $ownedProfiles = $ownedProfiles->merge($legacyProfiles->get($account->commander_id, collect())
-                ->map(fn (User $profile) => $profiles->get($profile->id)))->filter();
-            $account->setAttribute('planets', $ownedProfiles->flatMap->planets
-                ->filter(fn (Planet $planet) => $allowedUniverses === null || $allowedUniverses->contains((int) $planet->universe_id))->values());
-            $account->setAttribute('profiles', $ownedProfiles->map(fn (User $profile) => [
-                'id' => $profile->id, 'universe_id' => $profile->universe_id,
-                'universe_name' => $profile->universe?->name, 'name' => $profile->name,
-            ])->values());
-
-            return $account;
-        });
+        $players = $accounts->map(fn (User $account): User => $this->attachPlayerProfiles(
+            $account, $profiles, $profilesByAccount, $legacyProfiles, $allowedUniverses,
+        ));
         $players = new LengthAwarePaginator(
             $players->forPage((int) request()->query('page', 1), 20)->values(),
             $players->count(), 20, (int) request()->query('page', 1),
@@ -555,16 +547,7 @@ class AdminController extends Controller
                 ->orderBy('universes.name')->get(['universes.id', 'universes.name', 'universe_staff.level']));
         }
         if ($selectedPlayer && ! $selectedPlayer->hasAttribute('planets')) {
-            $ownedProfiles = $profilesByAccount->get($selectedPlayer->commander_id, collect())
-                ->map(fn ($mapping) => $profiles->get($mapping->profile_user_id));
-            $ownedProfiles = $ownedProfiles->merge($legacyProfiles->get($selectedPlayer->commander_id, collect())
-                ->map(fn (User $profile) => $profiles->get($profile->id)))->filter();
-            $selectedPlayer->setAttribute('planets', $ownedProfiles->flatMap->planets
-                ->filter(fn (Planet $planet) => $allowedUniverses === null || $allowedUniverses->contains((int) $planet->universe_id))->values());
-            $selectedPlayer->setAttribute('profiles', $ownedProfiles->map(fn (User $profile) => [
-                'id' => $profile->id, 'universe_id' => $profile->universe_id,
-                'universe_name' => $profile->universe?->name, 'name' => $profile->name,
-            ])->values());
+            $this->attachPlayerProfiles($selectedPlayer, $profiles, $profilesByAccount, $legacyProfiles, $allowedUniverses);
         }
         $selectedPlanetId = isset($data['planet']) && $selectedPlayer?->planets->contains('id', (int) $data['planet'])
             ? (int) $data['planet']
@@ -578,11 +561,34 @@ class AdminController extends Controller
     }
 
     /**
+     * @param  Collection<int, User>  $profiles
+     * @param  Collection<string, Collection<int, \stdClass>>  $profilesByAccount
+     * @param  Collection<string, Collection<int, User>>  $legacyProfiles
+     * @param  Collection<int, int>|null  $allowedUniverses
+     */
+    private function attachPlayerProfiles(User $account, Collection $profiles, Collection $profilesByAccount, Collection $legacyProfiles, ?Collection $allowedUniverses): User
+    {
+        $ownedProfiles = $profilesByAccount->get($account->commander_id, collect())
+            ->map(fn ($mapping) => $profiles->get($mapping->profile_user_id));
+        $ownedProfiles = $ownedProfiles->merge($legacyProfiles->get($account->commander_id, collect())
+            ->map(fn (User $profile) => $profiles->get($profile->id)))->filter();
+        $account->setAttribute('planets', $ownedProfiles->flatMap->planets
+            ->filter(fn (Planet $planet) => $allowedUniverses === null || $allowedUniverses->contains((int) $planet->universe_id))->values());
+        $account->setAttribute('profiles', $ownedProfiles->map(fn (User $profile) => [
+            'id' => $profile->id, 'universe_id' => $profile->universe_id,
+            'universe_name' => $profile->universe?->name, 'name' => $profile->name,
+        ])->values());
+
+        return $account;
+    }
+
+    /**
      * Builds the props specific to the requested administration page mode.
      *
+     * @param  Collection<int, int>|null  $allowedUniverses
      * @return array<string, mixed>
      */
-    private function modeSpecificProps(string $mode, $allowedUniverses): array
+    private function modeSpecificProps(string $mode, ?Collection $allowedUniverses): array
     {
         return [
             'overview' => $mode === 'overview' ? [
@@ -602,21 +608,29 @@ class AdminController extends Controller
                 ->withQueryString() : null,
             'auditLogs' => $mode === 'roles' ? DB::table('admin_audit_logs')->orderByDesc('id')->limit(50)
                 ->get(['id', 'actor_id', 'actor_level', 'target_user_id', 'planet_id', 'action', 'details', 'created_at']) : [],
-            'universes' => $mode === 'universes' ? Universe::query()->orderBy('id')->get([
-                'id', 'name', 'slug', 'status', 'galaxies', 'systems_per_galaxy', 'economy_speed', 'fleet_speed',
-            ])->map(function (Universe $universe): array {
-                $universe->named_systems = min(
-                    (int) $universe->galaxies * (int) $universe->systems_per_galaxy,
-                    DB::table('universe_system_names')->where('universe_id', $universe->id)->count(),
-                );
-
-                return $universe->toArray();
-            })->values() : [],
+            'universes' => $mode === 'universes' ? $this->universeProps() : [],
             'catalog' => $mode === 'elements' ? collect($this->elementDefinitions())
                 ->flatMap(fn ($items, $category) => collect($items)->map(fn ($item, $key) => [
                     'category' => $category, 'key' => (string) $key, 'label' => $item['label'],
                 ])->values())->values() : [],
         ];
+    }
+
+    /** @return Collection<int, array<string, mixed>> */
+    private function universeProps(): Collection
+    {
+        /** @var \Illuminate\Database\Eloquent\Collection<int, Universe> $universes */
+        $universes = Universe::query()->orderBy('id')->get([
+            'id', 'name', 'slug', 'status', 'galaxies', 'systems_per_galaxy', 'economy_speed', 'fleet_speed',
+        ]);
+
+        return $universes->map(fn (Universe $universe): array => [
+            ...$universe->toArray(),
+            'named_systems' => min(
+                (int) $universe->galaxies * (int) $universe->systems_per_galaxy,
+                DB::table('universe_system_names')->where('universe_id', $universe->id)->count(),
+            ),
+        ])->values();
     }
 
     /**
@@ -676,11 +690,6 @@ class AdminController extends Controller
     }
 
     /**
-     * Enforces the hierarchy rule that administrators may modify only other users below their own level.
-     *
-     * Self-targeting and equal/higher-level targets raise a validation exception.
-     */
-    /**
      * Returns the game-profile ids linked to an account, including its legacy direct profile during migration rollout.
      *
      * @return array<int>
@@ -688,6 +697,8 @@ class AdminController extends Controller
     private function profileIds(User $account): array
     {
         $ids = DB::table('commander_profiles')->where('commander_id', $account->commander_id)->pluck('profile_user_id')->all();
+        $ids = array_merge($ids, User::query()->where('commander_id', $account->commander_id)
+            ->whereNotNull('universe_id')->pluck('id')->all());
 
         if ($account->universe_id !== null) {
             $ids[] = $account->id;
@@ -702,6 +713,9 @@ class AdminController extends Controller
         $actorLevel = $universeId === null ? $access->globalLevel($request->user()) : $access->levelFor($request->user(), $universeId);
         $targetLevel = $universeId === null ? $access->highestLevel($target) : $access->levelFor($target, $universeId);
         abort_if($actorLevel < ($universeId === null ? 3 : 2), 403);
+        if ($universeId !== null && $actorLevel === 4 && $target->commander_id === $request->user()->commander_id) {
+            return;
+        }
         if ($target->id === $request->user()->id || $target->commander_id === $request->user()->commander_id
             || $targetLevel >= $actorLevel) {
             throw ValidationException::withMessages(['player_id' => 'Vous ne pouvez pas modifier votre propre compte ou un compte de niveau égal ou supérieur.']);

@@ -24,7 +24,7 @@ class UnitProductionTest extends TestCase
 
     public function test_shipyard_and_defence_pages_render_their_catalogs_for_owned_planets(): void
     {
-        $planet = $this->createPlanet(['hangar_level' => 2, 'robot_factory_level' => 2, 'metal' => 10000, 'crystal' => 10000]);
+        $planet = $this->createPlanet(['hangar_level' => 2, 'defence_center_level' => 2, 'robot_factory_level' => 2, 'metal' => 10000, 'crystal' => 10000]);
         $planet->user->forceFill(['combustion_technology_level' => 2])->save();
         $otherPlanet = $this->createPlanet(['hangar_level' => 2, 'robot_factory_level' => 2]);
 
@@ -46,7 +46,7 @@ class UnitProductionTest extends TestCase
     public function test_bunker_unlocks_the_unique_planetary_protector(): void
     {
         $planet = $this->createPlanet([
-            'hangar_level' => 1, 'robot_factory_level' => 1,
+            'defence_center_level' => 1, 'robot_factory_level' => 1,
             'metal' => 1000000, 'crystal' => 500000, 'deuterium' => 100000,
         ]);
         $user = $planet->user;
@@ -193,6 +193,50 @@ class UnitProductionTest extends TestCase
             'planet_id' => $planet->id, 'unit_code' => 202, 'unit_type' => 'ships',
             'quantity' => 2, 'quantity_completed' => 0, 'cost_metal' => 4000, 'cost_crystal' => 4000,
         ]);
+    }
+
+    public function test_defences_require_the_defence_center_instead_of_the_shipyard(): void
+    {
+        $planet = $this->createPlanet(['hangar_level' => 8, 'robot_factory_level' => 1, 'metal' => 10000, 'crystal' => 10000]);
+        $user = $planet->user;
+        $production = app(UnitProductionService::class);
+
+        $rocket = collect($production->defenceCatalog($planet, $user)['units'])->firstWhere('code', 401);
+        $this->assertFalse($rocket['requirementsMet']);
+        $this->actingAs($user)->from(route('defences.index'))->post(route('planet.defences.store', $planet), ['code' => 401, 'quantity' => 1])
+            ->assertSessionHasErrors('unit');
+
+        $planet->forceFill(['hangar_level' => 0, 'defence_center_level' => 1])->save();
+        $rocket = collect($production->defenceCatalog($planet->fresh(), $user)['units'])->firstWhere('code', 401);
+        $this->assertTrue($rocket['requirementsMet']);
+        $this->assertSame(20, $rocket['requirements'][0]['code']);
+        $this->assertSame(720, $rocket['durationSeconds']);
+        $ship = collect($production->catalog($planet->fresh(), $user, 'ships')['units'])->firstWhere('code', 204);
+        $this->assertFalse($ship['requirementsMet']);
+
+        $planet->forceFill(['defence_center_level' => 3])->save();
+        $fasterRocket = collect($production->defenceCatalog($planet->fresh(), $user)['units'])->firstWhere('code', 401);
+        $this->assertSame(360, $fasterRocket['durationSeconds']);
+        $this->assertSame($ship['durationSeconds'], collect($production->catalog($planet->fresh(), $user, 'ships')['units'])->firstWhere('code', 204)['durationSeconds']);
+
+        $this->actingAs($user)->post(route('planet.defences.store', $planet), ['code' => 401, 'quantity' => 1])
+            ->assertRedirect(route('defences.index', ['planet' => $planet->id]));
+        $this->assertDatabaseHas('planet_unit_queues', ['planet_id' => $planet->id, 'unit_code' => 401, 'unit_type' => 'defences']);
+    }
+
+    public function test_all_defences_require_the_center_without_changing_other_requirements(): void
+    {
+        $planet = $this->createPlanet(['defence_center_level' => 8, 'robot_factory_level' => 1, 'missile_silo_level' => 4]);
+        $units = app(UnitProductionService::class)->defenceCatalog($planet, $planet->user)['units'];
+
+        foreach ($units as $unit) {
+            $requirements = collect($unit['requirements']);
+            $this->assertTrue($requirements->contains('code', 20));
+            $this->assertFalse($requirements->contains('code', 21));
+        }
+        $this->assertSame(8, collect($units)->firstWhere('code', 406)['requirements'][0]['level']);
+        $this->assertTrue(collect(collect($units)->firstWhere('code', 405)['requirements'])->contains('code', 121));
+        $this->assertTrue(collect(collect($units)->firstWhere('code', 503)['requirements'])->contains('code', 44));
     }
 
     public function test_production_rejects_missing_prerequisites_and_insufficient_resources(): void

@@ -15,7 +15,7 @@ test('filters the catalog into its real facility categories', () => {
     assert.deepEqual(buildingsInCategory(buildingCatalog, 'storage').map((building) => building.key), ['metal_storage', 'crystal_storage', 'deuterium_storage']);
     assert.deepEqual(buildingsInCategory(buildingCatalog, 'industry').map((building) => building.key), ['robot_factory', 'nano_factory', 'hangar']);
     assert.deepEqual(buildingsInCategory(buildingCatalog, 'research').map((building) => building.key), ['laboratory']);
-    assert.deepEqual(buildingsInCategory(buildingCatalog, 'defence').map((building) => building.key), ['missile_silo']);
+    assert.deepEqual(buildingsInCategory(buildingCatalog, 'defence').map((building) => building.key), ['defence_center', 'missile_silo']);
     assert.deepEqual(buildingsInCategory(buildingCatalog, 'special').map((building) => building.key), ['terraformer']);
     assert.deepEqual(buildingsInCategory(buildingCatalog, 'unknown'), []);
 });

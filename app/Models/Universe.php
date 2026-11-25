@@ -13,7 +13,11 @@ use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
-/** @property int $id */
+/**
+ * @property int $id
+ * @property int $galaxies
+ * @property int $systems_per_galaxy
+ */
 #[Fillable(['name', 'slug', 'status', 'galaxies', 'systems_per_galaxy', 'economy_speed', 'fleet_speed'])]
 class Universe extends Model
 {
