@@ -209,30 +209,6 @@ function researchName(key) {
                     </section>
                     <p class="overview-resource-heading"><i class="bi bi-bar-chart" aria-hidden="true"></i> {{ t('dashboard.yourEmpire') }} · {{ t('common.resources') }}</p>
                     <div class="resource-grid"><article v-for="resourceCard in [{ key: 'metal', icon: '▰', detail: 'dashboard.primaryResource' }, { key: 'crystal', icon: '◇', detail: 'dashboard.researchTechnology' }, { key: 'deuterium', icon: '⬡', detail: 'dashboard.fleetFuel' }]" :key="resourceCard.key" class="resource-card"><span class="resource-symbol" :class="`${resourceCard.key}-symbol`">{{ resourceCard.icon }}</span><span class="resource-label">{{ resourceLabel(resourceCard.key) }}</span><strong>{{ formatResource(empireResources[resourceCard.key]) }}</strong><small>{{ t(resourceCard.detail) }}</small><div class="empire-storage"><div class="empire-storage-meta"><span>{{ formatResource(empireCapacities[resourceCard.key]) }} {{ t('buildings.storage').toLowerCase() }}</span><strong>{{ empireResourcePercentage(resourceCard.key) }}%</strong></div><div class="empire-storage-bar" role="progressbar" :aria-label="`${resourceLabel(resourceCard.key)} ${t('buildings.storage')}`" :aria-valuenow="empireResourcePercentage(resourceCard.key)" aria-valuemin="0" aria-valuemax="100"><span :class="`storage-${resourceCard.key}`" :style="{ width: `${empireResourcePercentage(resourceCard.key)}%` }"></span></div></div></article><article class="resource-card"><span class="resource-symbol fleet-symbol">➤</span><span class="resource-label">{{ t('dashboard.fleetInFlight') }}</span><strong>{{ fleetCount }}</strong><small>{{ t('dashboard.activeMissions') }}</small></article></div>
-                    <section v-if="activePlanet" class="overview-defences">
-                        <div class="overview-defences-heading">
-                            <div><span class="panel-kicker">{{ t('overviewDefences.subtitle') }} · {{ activePlanet.name }}</span><h2>{{ t('overviewDefences.title') }}</h2></div>
-                            <Link class="button button-outline" :href="route('defences.index', { planet: activePlanet.id })">{{ t('overviewDefences.open') }}</Link>
-                        </div>
-                        <div class="overview-shield-grid">
-                            <article v-for="shield in shieldTypes" :key="shield.key" class="data-panel overview-shield-card">
-                                <h3 class="text-sm font-semibold text-slate-200">{{ t(shield.name) }}</h3>
-                                <p class="mt-3 flex items-center gap-2 font-semibold" :class="activePlanet.shields[shield.key] ? 'text-emerald-400' : 'text-slate-400'">
-                                    <span aria-hidden="true">{{ activePlanet.shields[shield.key] ? '●' : '○' }}</span>
-                                    {{ t(activePlanet.shields[shield.key] ? 'overviewDefences.installed' : 'overviewDefences.absent') }}
-                                </p>
-                            </article>
-                        </div>
-                        <p class="overview-defences-detail">{{ t('overviewDefences.detail') }}</p>
-                    </section>
-                    <section class="data-panel overview-colonisation">
-                        <div class="panel-heading"><div><span class="panel-kicker">{{ t('dashboard.yourEmpire') }}</span><h2>{{ t('overviewDefences.colonies') }}</h2></div></div>
-                        <div class="overview-panel-body flex flex-wrap items-center gap-x-8 gap-y-3">
-                            <p>{{ t('overviewDefences.owned') }} : <strong>{{ formatResource(planets.length) }}</strong></p>
-                            <p>{{ t('overviewDefences.available') }} : <strong>0</strong></p>
-                            <p class="text-sm text-slate-400">{{ t('overviewDefences.unavailable') }}</p>
-                        </div>
-                    </section>
                     <div class="command-panels overview-main-panels">
                         <section v-if="activePlanet" class="data-panel">
                             <div class="panel-heading">
@@ -290,8 +266,31 @@ function researchName(key) {
                             </div>
                         </section>
                     </div>
-                    <div class="command-panels">
-                        <section v-if="faction" class="data-panel faction-link-panel"><div class="panel-heading"><div><span class="panel-kicker">{{ t('factions.faction') }}</span><h2>{{ faction.name }}</h2></div></div><Link class="faction-link-body" :href="route('factions.index')"><img v-if="faction.image" :src="faction.image" :alt="faction.name"><p>{{ faction.description || t('factions.directoryDescription') }}</p><span class="button button-outline">{{ t('factions.viewDirectory') }} →</span></Link></section>
+                    <section v-if="activePlanet" class="overview-defences">
+                        <div class="overview-defences-heading">
+                            <div><span class="panel-kicker">{{ t('overviewDefences.subtitle') }} · {{ activePlanet.name }}</span><h2>{{ t('overviewDefences.title') }}</h2></div>
+                            <Link class="button button-outline" :href="route('defences.index', { planet: activePlanet.id })">{{ t('overviewDefences.open') }}</Link>
+                        </div>
+                        <div class="overview-shield-grid">
+                            <article v-for="shield in shieldTypes" :key="shield.key" class="data-panel overview-shield-card">
+                                <h3 class="text-sm font-semibold text-slate-200">{{ t(shield.name) }}</h3>
+                                <p class="mt-3 flex items-center gap-2 font-semibold" :class="activePlanet.shields[shield.key] ? 'text-emerald-400' : 'text-slate-400'">
+                                    <span aria-hidden="true">{{ activePlanet.shields[shield.key] ? '●' : '○' }}</span>
+                                    {{ t(activePlanet.shields[shield.key] ? 'overviewDefences.installed' : 'overviewDefences.absent') }}
+                                </p>
+                            </article>
+                        </div>
+                        <p class="overview-defences-detail">{{ t('overviewDefences.detail') }}</p>
+                    </section>
+                    <section class="data-panel overview-colonisation">
+                        <div class="panel-heading"><div><span class="panel-kicker">{{ t('dashboard.yourEmpire') }}</span><h2>{{ t('overviewDefences.colonies') }}</h2></div></div>
+                        <div class="overview-panel-body flex flex-wrap items-center gap-x-8 gap-y-3">
+                            <p>{{ t('overviewDefences.owned') }} : <strong>{{ formatResource(planets.length) }}</strong></p>
+                            <p>{{ t('overviewDefences.available') }} : <strong>0</strong></p>
+                            <p class="text-sm text-slate-400">{{ t('overviewDefences.unavailable') }}</p>
+                        </div>
+                    </section>
+                    <div class="overview-worlds">
                         <section id="planetes" class="data-panel">
                             <div class="panel-heading"><div><span class="panel-kicker">{{ t('dashboard.yourEmpire') }}</span><h2>{{ t('dashboard.planets') }}</h2></div><span class="panel-count">{{ planets.length }}</span></div>
                             <article v-for="planet in planets" :key="planet.id" class="planet-row">
@@ -316,28 +315,31 @@ function researchName(key) {
                             </article>
                             <div v-if="!planets.length" class="empty-state"><span class="empty-orb">◉</span><strong>{{ t('dashboard.empireAwaits') }}</strong><p>{{ t('dashboard.noPlanet') }}</p></div>
                         </section>
-                        <section id="alliance" class="data-panel"><div class="panel-heading"><div><span class="panel-kicker">{{ t('dashboard.community') }}</span><h2>{{ t('dashboard.alliance') }}</h2></div><span class="panel-count">⌖</span></div><div v-if="alliance" class="alliance-state"><span class="alliance-emblem">{{ alliance.tag }}</span><strong>{{ alliance.name }}</strong><p>{{ alliance.description || t('dashboard.allianceDefault') }}</p></div><div v-else class="empty-state compact"><span class="empty-orb">◈</span><strong>{{ t('dashboard.ownStrategy') }}</strong><p>{{ t('dashboard.allianceSoon') }}</p></div></section>
-                    </div>
-                    <section class="data-panel overview-moons">
-                        <div class="panel-heading"><div><span class="panel-kicker">{{ t('dashboard.yourEmpire') }}</span><h2>{{ t('overview.moons') }}</h2></div><span class="panel-count">{{ ownedMoons.length }}</span></div>
-                        <article v-for="moon in ownedMoons" :key="`${moon.planet.id}:${moon.orbit}`" class="planet-row overview-moon-row">
-                            <span class="planet-orb moon-orb"></span>
-                            <span class="planet-details"><strong>{{ moon.name }}</strong><small v-if="moon.name !== moon.generatedName">{{ moon.generatedName }}</small><small>{{ moon.planet.generatedName ?? moon.planet.name }} · {{ moon.planet.coordinates }}</small></span>
-                            <div class="overview-storage-grid overview-moon-storage">
-                                <div v-for="resource in ['metal', 'crystal', 'deuterium']" :key="resource" class="overview-storage-resource">
-                                    <div class="overview-storage-label"><span :class="`${resource}-symbol`">{{ resourceLabel(resource) }}</span><strong>{{ resourcePercentage(moon, resource) }}%</strong></div>
-                                    <div class="overview-storage-values">{{ formatResource(resourceAmount(moon, resource)) }} / {{ formatResource(moon.capacity[resource]) }}</div>
-                                    <div class="overview-storage-bar" role="progressbar" :aria-label="`${resourceLabel(resource)} ${moon.name}`" :aria-valuenow="resourcePercentage(moon, resource)" aria-valuemin="0" aria-valuemax="100"><span :class="`storage-${resource}`" :style="{ width: `${resourcePercentage(moon, resource)}%` }"></span></div>
+                        <section class="data-panel overview-moons">
+                            <div class="panel-heading"><div><span class="panel-kicker">{{ t('dashboard.yourEmpire') }}</span><h2>{{ t('overview.moons') }}</h2></div><span class="panel-count">{{ ownedMoons.length }}</span></div>
+                            <article v-for="moon in ownedMoons" :key="`${moon.planet.id}:${moon.orbit}`" class="planet-row overview-moon-row">
+                                <span class="planet-orb moon-orb"></span>
+                                <span class="planet-details"><strong>{{ moon.name }}</strong><small v-if="moon.name !== moon.generatedName">{{ moon.generatedName }}</small><small>{{ moon.planet.generatedName ?? moon.planet.name }} · {{ moon.planet.coordinates }}</small></span>
+                                <div class="overview-storage-grid overview-moon-storage">
+                                    <div v-for="resource in ['metal', 'crystal', 'deuterium']" :key="resource" class="overview-storage-resource">
+                                        <div class="overview-storage-label"><span :class="`${resource}-symbol`">{{ resourceLabel(resource) }}</span><strong>{{ resourcePercentage(moon, resource) }}%</strong></div>
+                                        <div class="overview-storage-values">{{ formatResource(resourceAmount(moon, resource)) }} / {{ formatResource(moon.capacity[resource]) }}</div>
+                                        <div class="overview-storage-bar" role="progressbar" :aria-label="`${resourceLabel(resource)} ${moon.name}`" :aria-valuenow="resourcePercentage(moon, resource)" aria-valuemin="0" aria-valuemax="100"><span :class="`storage-${resource}`" :style="{ width: `${resourcePercentage(moon, resource)}%` }"></span></div>
+                                    </div>
                                 </div>
-                            </div>
-                            <div class="planet-links"><Link class="button button-quiet" :href="route('moon.show', { planet: moon.planet.id, orbit: moon.orbit })">{{ t('overviewView') }}</Link><Link class="button button-outline" :href="route('moon.buildings', { planet: moon.planet.id, orbit: moon.orbit })">{{ t('nav.moonBuildings') }}</Link></div>
-                        </article>
-                        <div v-if="!ownedMoons.length" class="overview-panel-body text-sm text-slate-400">{{ t('overview.noMoons') }}</div>
-                    </section>
+                                <div class="planet-links"><Link class="button button-quiet" :href="route('moon.show', { planet: moon.planet.id, orbit: moon.orbit })">{{ t('overviewView') }}</Link><Link class="button button-outline" :href="route('moon.buildings', { planet: moon.planet.id, orbit: moon.orbit })">{{ t('nav.moonBuildings') }}</Link></div>
+                            </article>
+                            <div v-if="!ownedMoons.length" class="overview-panel-body text-sm text-slate-400">{{ t('overview.noMoons') }}</div>
+                        </section>
+                    </div>
+                    <div class="command-panels overview-community">
+                        <section id="alliance" class="data-panel"><div class="panel-heading"><div><span class="panel-kicker">{{ t('dashboard.community') }}</span><h2>{{ t('dashboard.alliance') }}</h2></div><span class="panel-count">⌖</span></div><div v-if="alliance" class="alliance-state"><span class="alliance-emblem">{{ alliance.tag }}</span><strong>{{ alliance.name }}</strong><p>{{ alliance.description || t('dashboard.allianceDefault') }}</p></div><div v-else class="empty-state compact"><span class="empty-orb">◈</span><strong>{{ t('dashboard.ownStrategy') }}</strong><p>{{ t('dashboard.allianceSoon') }}</p></div></section>
+                        <section v-if="faction" class="data-panel faction-link-panel"><div class="panel-heading"><div><span class="panel-kicker">{{ t('factions.faction') }}</span><h2>{{ faction.name }}</h2></div></div><Link class="faction-link-body" :href="route('factions.index')"><img v-if="faction.image" :src="faction.image" :alt="faction.name"><p>{{ faction.description || t('factions.directoryDescription') }}</p><span class="button button-outline">{{ t('factions.viewDirectory') }} →</span></Link></section>
+                    </div>
                     <div class="notice-bar"><span>✦</span><p>{{ t('dashboard.established', { name: universe.name }) }}</p><Link class="intel-discover" :href="route('buildings.index')">{{ t('dashboard.developBuildings') }} →</Link></div>
                 </template>
 
-                <section v-else class="onboarding-panel"><p class="eyebrow"><span class="eyebrow-line"></span> {{ t('dashboard.firstDirective') }}</p><h2>{{ t('dashboard.chooseStart') }}<br><span>{{ t('dashboard.startPoint') }}</span></h2><p class="command-subtitle">{{ t('dashboard.joinUniverse') }}</p><label v-if="availableUniverses.length > 1" class="universe-picker" for="universe-id">{{ t('dashboard.chooseUniverse') }}<select id="universe-id" v-model="form.universe_id"><option v-for="item in availableUniverses" :key="item.id" :value="item.id">{{ item.name }} · {{ item.galaxies }} galaxies</option></select></label><div v-if="availableUniverses.length" class="universe-choice"><div class="universe-emblem">⌖</div><div><span class="panel-kicker">{{ t('dashboard.selectedUniverse') }}</span><h3>{{ availableUniverses.find((item) => item.id === Number(form.universe_id))?.name }}</h3><p>{{ t('dashboard.galaxiesSystems', { galaxies: availableUniverses.find((item) => item.id === Number(form.universe_id))?.galaxies, systems: availableUniverses.find((item) => item.id === Number(form.universe_id))?.systems_per_galaxy }) }}</p></div></div><form v-if="availableUniverses.length" class="auth-form onboarding-form" @submit.prevent="joinUniverse"><label for="faction-key">Faction</label><select id="faction-key" v-model="form.faction_key"><option v-for="item in availableFactions" :key="item.key" :value="item.key">{{ item.name }}</option></select><p>{{ availableFactions.find(item => item.key === form.faction_key)?.description }}</p><img v-if="availableFactions.find(item => item.key === form.faction_key)?.image" :src="availableFactions.find(item => item.key === form.faction_key).image" :alt="availableFactions.find(item => item.key === form.faction_key).name"><span v-if="form.errors.faction_key" class="field-error">{{ form.errors.faction_key }}</span><label for="planet-name">{{ t('dashboard.startingPlanetName') }}</label><input id="planet-name" v-model="form.name" type="text" maxlength="80" required><span v-if="form.errors.name" class="field-error">{{ form.errors.name }}</span><span v-if="form.errors.universe_id || form.errors.universe" class="field-error">{{ form.errors.universe_id || form.errors.universe }}</span><button class="button button-primary button-large" type="submit" :disabled="form.processing">{{ form.processing ? t('dashboard.initializing') : t('dashboard.foundEmpire') }} <span aria-hidden="true">→</span></button></form><div v-else class="empty-state"><span class="empty-orb">◈</span><strong>{{ t('dashboard.noUniverses') }}</strong><p>{{ t('dashboard.returnSoon') }}</p></div></section>
+                <section v-else class="onboarding-panel"><p class="eyebrow"><span class="eyebrow-line"></span> {{ t('dashboard.firstDirective') }}</p><h2>{{ t('dashboard.chooseStart') }}<br><span>{{ t('dashboard.startPoint') }}</span></h2><p class="command-subtitle">{{ t('dashboard.joinUniverse') }}</p><label v-if="availableUniverses.length > 1" class="universe-picker" for="universe-id">{{ t('dashboard.chooseUniverse') }}<select id="universe-id" v-model="form.universe_id"><option v-for="item in availableUniverses" :key="item.id" :value="item.id">{{ item.name }} · {{ item.galaxies }} galaxies</option></select></label><div v-if="availableUniverses.length" class="universe-choice"><div class="universe-emblem">⌖</div><div><span class="panel-kicker">{{ t('dashboard.selectedUniverse') }}</span><h3>{{ availableUniverses.find((item) => item.id === Number(form.universe_id))?.name }}</h3><p>{{ t('dashboard.galaxiesSystems', { galaxies: availableUniverses.find((item) => item.id === Number(form.universe_id))?.galaxies, systems: availableUniverses.find((item) => item.id === Number(form.universe_id))?.systems_per_galaxy }) }}</p></div></div><form v-if="availableUniverses.length" class="auth-form onboarding-form" @submit.prevent="joinUniverse"><template v-if="page.props.factionsEnabled"><label for="faction-key">Faction</label><select id="faction-key" v-model="form.faction_key"><option v-for="item in availableFactions" :key="item.key" :value="item.key">{{ item.name }}</option></select><p>{{ availableFactions.find(item => item.key === form.faction_key)?.description }}</p><img v-if="availableFactions.find(item => item.key === form.faction_key)?.image" :src="availableFactions.find(item => item.key === form.faction_key).image" :alt="availableFactions.find(item => item.key === form.faction_key).name"><span v-if="form.errors.faction_key" class="field-error">{{ form.errors.faction_key }}</span></template><label for="planet-name">{{ t('dashboard.startingPlanetName') }}</label><input id="planet-name" v-model="form.name" type="text" maxlength="80" required><span v-if="form.errors.name" class="field-error">{{ form.errors.name }}</span><span v-if="form.errors.universe_id || form.errors.universe" class="field-error">{{ form.errors.universe_id || form.errors.universe }}</span><button class="button button-primary button-large" type="submit" :disabled="form.processing">{{ form.processing ? t('dashboard.initializing') : t('dashboard.foundEmpire') }} <span aria-hidden="true">→</span></button></form><div v-else class="empty-state"><span class="empty-orb">◈</span><strong>{{ t('dashboard.noUniverses') }}</strong><p>{{ t('dashboard.returnSoon') }}</p></div></section>
             </section>
         </main>
     </GameLayout>

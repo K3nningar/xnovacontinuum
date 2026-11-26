@@ -244,7 +244,7 @@ class AdminController extends Controller
                 }
                 $planet->fields = $newFields;
             }
-            $owner->{$column} = $before + $amount;
+            $owner->{$column} = ($category === 'research' ? $empire->rawResearchLevel($column) : $before) + $amount;
             $owner->save();
             $this->audit($request, 'element_added', $target->id, $planet->id, [
                 'category' => $category, 'key' => $data['key'], 'amount' => $amount,

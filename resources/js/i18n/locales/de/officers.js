@@ -11,6 +11,7 @@ export default {
     "eyebrow": "OBERKOMMANDO",
     "heading": "Offizierskorps.",
     "subtitle": "Rekrutiere Spezialisten zur Stärkung deines Imperiums.",
+    "moduleDisabled": "Das Offiziersmodul ist derzeit deaktiviert.",
     "points": "VERFÜGBARE PUNKTE",
     "staff": "GENERALSTAB",
     "orders": "REKRUTIERUNGSAUFTRÄGE",

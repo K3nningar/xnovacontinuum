@@ -6,6 +6,7 @@
  */
 
 export default {
+  "adminModules": { "title": "Modules", "enableFactions": "Enable factions", "factionsHelp": "Disabling factions suspends their bonuses, restrictions and diplomatic relations without deleting their settings.", "global": "These settings apply to all universes.", "enableOfficers": "Enable officers", "individual": "Available officers", "help": "Disabled officers cannot be recruited and their prerequisites are ignored. Pending recruitments are refunded when due. Individual selections are retained when the module is disabled.", "warning": "Spy and Commander research bonuses are suspended when these officers are disabled.", "save": "Save", "saved": "Module settings saved." },
   "changelogManual": {
     "title": "Manual changelog",
     "hint": "This text is identical in all languages and is immediately visible when the version is public.",

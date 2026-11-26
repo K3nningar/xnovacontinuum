@@ -36,7 +36,7 @@ export const pageTranslationPaths = {
     profile: ['profile'],
     changelog: ['changelog', 'admin.previous', 'admin.next'],
     dashboard: ['dashboard', 'overviewClock', 'overviewIncoming', 'overviewView', 'overviewDefences', 'overview', 'galaxyMoon', 'factions'],
-    admin: ['admin', 'adminFlights', 'adminStats', 'adminLevels', 'adminAudit', 'adminModeration', 'adminUniverses', 'changelogManual', 'changelogPublication', 'factions', 'factionEditor', 'buildingCatalog', 'unitNames'],
+    admin: ['admin', 'adminModules', 'adminFlights', 'adminStats', 'adminLevels', 'adminAudit', 'adminModeration', 'adminUniverses', 'changelogManual', 'changelogPublication', 'factions', 'factionEditor', 'buildingCatalog', 'unitNames', 'officerNames'],
     announcements: ['announcements', 'admin.previous', 'admin.next'],
     declarations: ['multiAccounts', 'admin.previous', 'admin.next'],
     galaxy: ['galaxyLegacySensors', 'galaxyMap', 'galaxyCombatLimit', 'galaxyEncounter', 'galaxyEarlyReturn', 'galaxyMoon', 'galaxyShipsFound', 'galaxyMissions', 'galaxyConcentrationNote', 'galaxy', 'unitNames', 'fleet.ship', 'common.select', 'factions'],

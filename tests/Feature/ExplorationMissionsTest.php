@@ -568,6 +568,22 @@ class ExplorationMissionsTest extends TestCase
         $this->assertArrayNotHasKey('moons', $slot);
     }
 
+    public function test_destroyer_mission_ignores_disabled_emperor_prerequisite(): void
+    {
+        [$attacker, $home] = $this->player();
+        $this->opponent($attacker);
+        $home->forceFill(['unit_217' => 1])->save();
+        config(['combat.experimental_planetary_destroyer' => true]);
+        $payload = ['mission' => 'destroy_planet', 'galaxy' => 1, 'system' => 1, 'position' => 9, 'ships' => [217 => 1]];
+
+        $this->actingAs($attacker)->from(route('galaxy.index'))
+            ->post(route('planet.missions.store', $home), $payload)->assertSessionHasErrors('mission');
+        config(['modules.officers.disabled' => ['615']]);
+        $this->get(route('galaxy.index'))->assertInertia(fn ($page) => $page->where('missionConfig.planetaryDestroyerAvailable', true));
+        $this->post(route('planet.missions.store', $home), $payload)->assertSessionHasNoErrors();
+        $this->assertDatabaseHas('fleets', ['user_id' => $attacker->id, 'mission' => 'destroy_planet']);
+    }
+
     private function moonOrbit(User $viewer, Planet $planet): int
     {
         for ($system = 1; $system <= 499; $system++) {

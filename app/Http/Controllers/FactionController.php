@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Faction;
 use App\Services\AdminAccess;
+use App\Services\GameModules;
 use App\Services\PlanetEconomy;
 use App\Services\UnitProductionService;
 use Illuminate\Http\Request;
@@ -17,15 +18,27 @@ class FactionController extends Controller
         abort_if($user->universe_id === null, 404);
 
         $universe = $user->universe;
+        if (! app(GameModules::class)->enabled('factions')) {
+            return inertia('Factions/Index', [
+                'universe' => $universe->only('id', 'name'),
+                'factionsEnabled' => false,
+                'factions' => [],
+                'currentFactionKey' => null,
+                'canEdit' => false,
+            ]);
+        }
         $catalog = $this->catalog($economy, $production);
         $members = $universe->users()->selectRaw('faction_key, COUNT(*) as total')->groupBy('faction_key')->pluck('total', 'faction_key');
         $planetCounts = $universe->planets()->whereNull('destroyed_at')->join('users', 'users.id', '=', 'planets.user_id')
             ->selectRaw('users.faction_key, COUNT(planets.id) as total')->groupBy('users.faction_key')->pluck('total', 'faction_key');
         $factions = $universe->factions()->get()->map(fn (Faction $faction): array => $this->presentFaction($faction, $catalog, $members, $planetCounts))->values();
-        if (! $factions->contains('key', '0')) $factions->prepend($this->presentFallbackFaction($members));
+        if (! $factions->contains('key', '0')) {
+            $factions->prepend($this->presentFallbackFaction($members));
+        }
 
         return inertia('Factions/Index', [
             'universe' => $universe->only('id', 'name'),
+            'factionsEnabled' => true,
             'currentFactionKey' => (string) ($user->faction_key ?? '0'),
             'factions' => $factions->sortBy(fn (array $faction): int => $faction['key'] === '0' ? 0 : 1)->values(),
             'canEdit' => $admin->levelFor($user, $universe->id) >= 4,
@@ -35,6 +48,7 @@ class FactionController extends Controller
     private function presentFaction(Faction $faction, array $catalog, object $members, object $planetCounts): array
     {
         $settings = is_array($faction->settings) ? $faction->settings : [];
+
         return [
             ...$faction->only('id', 'key', 'name', 'description', 'image'),
             'members' => (int) ($members[$faction->key] ?? 0),
@@ -55,10 +69,13 @@ class FactionController extends Controller
         foreach (['buildings', 'ships', 'defences'] as $category) {
             foreach ($catalog[$category] as $item) {
                 $override = $settings[$category][$item['key']] ?? null;
-                if (! is_array($override) || (($override['available'] ?? true) === true && empty($override['name']) && empty($override['image']))) continue;
+                if (! is_array($override) || (($override['available'] ?? true) === true && empty($override['name']) && empty($override['image']))) {
+                    continue;
+                }
                 $elements[] = ['category' => $category, 'name' => $override['name'] ?: $item['name'], 'image' => $override['image'] ?: null, 'available' => ($override['available'] ?? true) !== false];
             }
         }
+
         return $elements;
     }
 

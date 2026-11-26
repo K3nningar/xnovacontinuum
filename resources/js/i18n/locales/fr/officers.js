@@ -11,6 +11,7 @@ export default {
     "eyebrow": "HAUT COMMANDEMENT",
     "heading": "Corps des officiers.",
     "subtitle": "Recrutez des spécialistes pour renforcer votre empire.",
+    "moduleDisabled": "Le module des officiers est actuellement désactivé.",
     "points": "POINTS DISPONIBLES",
     "staff": "ÉTAT-MAJOR",
     "orders": "ORDRES DE RECRUTEMENT",

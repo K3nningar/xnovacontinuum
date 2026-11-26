@@ -15,6 +15,7 @@ use App\Models\Faction;
 use App\Services\AdminAccess;
 use App\Services\Changelog;
 use App\Services\FactionCatalog;
+use App\Services\GameModules;
 use App\Services\PublicAvatarUrl;
 use Closure;
 use Illuminate\Http\Request;
@@ -79,7 +80,7 @@ class HandleInertiaRequests extends Middleware
             ? $authenticatedUser->account
             : $authenticatedUser;
         $faction = match (true) {
-            $authenticatedUser?->universe_id === null => null,
+            $authenticatedUser?->universe_id === null || ! app(GameModules::class)->enabled('factions') => null,
             default => Faction::query()->where('universe_id', $authenticatedUser->universe_id)
                 ->where('key', $authenticatedUser->faction_key ?? '0')->first(['key', 'name'])?->only('key', 'name')
                 ?? (($authenticatedUser->faction_key ?? '0') === '0' ? ['key' => '0', 'name' => 'Faction 0'] : null),
@@ -99,6 +100,7 @@ class HandleInertiaRequests extends Middleware
                 ] : null,
             ],
             'locale' => app()->getLocale(),
+            'factionsEnabled' => fn () => app(GameModules::class)->enabled('factions'),
             'factionSettings' => fn () => $request->user() ? app(FactionCatalog::class)->settings($request->user()) : [],
             'gameVersion' => fn () => $request->user() ? $this->changelog->currentVersion() : null,
             'flash' => [

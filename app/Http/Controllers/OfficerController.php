@@ -9,6 +9,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Services\GameModules;
 use App\Services\UnitProductionService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -20,7 +21,7 @@ class OfficerController extends Controller
     /**
      * Applies due officer/unit production on an available planet and renders empire officer progress and queue.
      */
-    public function index(Request $request, UnitProductionService $production): Response
+    public function index(Request $request, UnitProductionService $production, GameModules $modules): Response
     {
         $user = $request->user();
         $planet = $user->planets()->where('universe_id', $user->universe_id)->first();
@@ -32,6 +33,7 @@ class OfficerController extends Controller
         return inertia('Officers/Index', [
             'user' => $user->only('id', 'name'),
             'queue' => $queue,
+            'officersEnabled' => $modules->enabled('officers'),
             ...$production->officerCatalog($user),
         ]);
     }

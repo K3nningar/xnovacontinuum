@@ -4,7 +4,7 @@ import { route as ziggyRoute } from 'ziggy-js';
 import { useI18n } from 'vue-i18n';
 import GameLayout from '../../Layouts/GameLayout.vue';
 
-defineProps({ universe: Object, factions: Array, currentFactionKey: String, canEdit: Boolean });
+defineProps({ universe: Object, factions: Array, currentFactionKey: String, canEdit: Boolean, factionsEnabled: Boolean });
 const page = usePage();
 const { t } = useI18n();
 const route = (name, params) => ziggyRoute(name, params, true, page.props.ziggy);
@@ -17,7 +17,8 @@ const formatMultiplier = (value) => `${Number(value).toLocaleString(undefined, {
     <GameLayout>
         <main class="command-layout faction-directory-page"><section class="command-content">
             <div class="command-heading"><div><p class="eyebrow"><span class="eyebrow-line"></span>{{ t('factions.directoryEyebrow') }}</p><h1>{{ t('factions.directoryTitle') }}</h1><p class="command-subtitle">{{ universe.name }} · {{ t('factions.directorySubtitle') }}</p></div><Link class="button button-outline" :href="route('dashboard')">{{ t('nav.command') }}</Link></div>
-            <div class="faction-directory-grid">
+            <div v-if="!factionsEnabled" class="rounded border border-amber-500 bg-amber-950 p-4 text-amber-200" role="alert">{{ t('factions.moduleDisabled') }}</div>
+            <div v-else class="faction-directory-grid">
                 <article v-for="faction in factions" :key="faction.key" class="data-panel faction-directory-card" :class="{ 'is-current': faction.key === currentFactionKey }">
                     <div class="faction-banner"><img v-if="faction.image" :src="faction.image" :alt="faction.name"><span v-else class="faction-banner-placeholder">⌖</span><span v-if="faction.key === currentFactionKey" class="faction-current-badge">{{ t('factions.current') }}</span></div>
                     <div class="faction-card-content"><div class="faction-card-heading"><div><span class="panel-kicker">{{ t('factions.faction') }} · {{ faction.key }}</span><h2>{{ faction.name }}</h2></div><span class="faction-members">{{ t('factions.membersPlanets', { members: faction.members, planets: faction.planets }) }}</span></div><p class="faction-description">{{ faction.description || t('factions.noDescription') }}</p>
@@ -26,7 +27,7 @@ const formatMultiplier = (value) => `${Number(value).toLocaleString(undefined, {
                     </div>
                 </article>
             </div>
-            <div v-if="canEdit" class="faction-admin-link"><span>{{ t('factions.adminHint') }}</span><Link class="button button-primary" :href="route('admin.factions.index', { universe: universe.id })">{{ t('factions.manage') }}</Link></div>
+            <div v-if="factionsEnabled && canEdit" class="faction-admin-link"><span>{{ t('factions.adminHint') }}</span><Link class="button button-primary" :href="route('admin.factions.index', { universe: universe.id })">{{ t('factions.manage') }}</Link></div>
         </section></main>
     </GameLayout>
 </template>

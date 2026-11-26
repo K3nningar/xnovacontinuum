@@ -9,7 +9,7 @@ class FactionCatalog
 {
     public function settings(User $user): array
     {
-        if ($user->universe_id === null) {
+        if ($user->universe_id === null || ! app(GameModules::class)->enabled('factions')) {
             return [];
         }
 

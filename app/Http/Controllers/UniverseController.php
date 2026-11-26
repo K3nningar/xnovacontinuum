@@ -14,6 +14,7 @@ use App\Models\Planet;
 use App\Models\Universe;
 use App\Models\User;
 use App\Services\GalaxyMap;
+use App\Services\GameModules;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -65,6 +66,9 @@ class UniverseController extends Controller
             }
 
             $factionKey = $attributes['faction_key'] ?? '0';
+            if ($factionKey !== '0' && ! app(GameModules::class)->enabled('factions')) {
+                throw ValidationException::withMessages(['faction_key' => 'Le module des factions est désactivé.']);
+            }
             if ($factionKey !== '0' && ! Faction::query()->where('universe_id', $universe->id)->where('key', $factionKey)->exists()) {
                 throw ValidationException::withMessages(['faction_key' => 'Cette faction n’est pas disponible dans cet univers.']);
             }

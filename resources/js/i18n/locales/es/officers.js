@@ -11,6 +11,7 @@ export default {
     "eyebrow": "ALTO MANDO",
     "heading": "Cuerpo de oficiales.",
     "subtitle": "Recluta especialistas para fortalecer tu imperio.",
+    "moduleDisabled": "El módulo de oficiales está desactivado actualmente.",
     "points": "PUNTOS DISPONIBLES",
     "staff": "ESTADO MAYOR",
     "orders": "ÓRDENES DE RECLUTAMIENTO",

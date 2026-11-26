@@ -10,8 +10,10 @@
 namespace Tests\Feature;
 
 use App\Models\Planet;
+use App\Models\ResearchQueue;
 use App\Models\Universe;
 use App\Models\User;
+use App\Services\ResearchService;
 use App\Services\UnitProductionService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
@@ -320,8 +322,190 @@ class UnitProductionTest extends TestCase
 
         $this->actingAs($planet->user)->get(route('officers.index'))
             ->assertInertia(fn (Assert $page) => $page->component('Officers/Index')
-                ->where('points', 7)->has('officers', 15)->where('officers.0.code', 601)
+                ->where('officersEnabled', true)->where('points', 7)->has('officers', 15)->where('officers.0.code', 601)
                 ->where('officers.0.rarity', 'remarkable')->where('officers.14.rarity', 'signature'));
+    }
+
+    public function test_officer_page_reflects_the_saved_module_setting(): void
+    {
+        config()->set('modules.officers.enabled', true);
+        $planet = $this->createPlanet();
+        DB::table('game_module_settings')->insert(['key' => 'module.officers', 'enabled' => false]);
+
+        $this->actingAs($planet->user)->get(route('officers.index'))
+            ->assertOk()->assertInertia(fn (Assert $page) => $page->component('Officers/Index')
+            ->where('officersEnabled', false)->has('officers', 0));
+
+        DB::table('game_module_settings')->where('key', 'module.officers')->update(['enabled' => true]);
+        $this->get(route('officers.index'))
+            ->assertOk()->assertInertia(fn (Assert $page) => $page->component('Officers/Index')
+            ->where('officersEnabled', true)->has('officers', 15));
+    }
+
+    public function test_disabled_officer_is_not_recruitable_or_required_by_another_officer(): void
+    {
+        config()->set('modules.officers.disabled', ['601']);
+        $planet = $this->createPlanet();
+        $planet->user->forceFill(['officer_points' => 2])->save();
+        $production = app(UnitProductionService::class);
+
+        $officers = collect($production->officerCatalog($planet->user)['officers']);
+        $this->assertNull($officers->firstWhere('code', 601));
+        $this->assertTrue($officers->firstWhere('code', 603)['requirementsMet']);
+        $this->actingAs($planet->user)->from(route('officers.index'))
+            ->post(route('officers.store'), ['code' => 601])->assertSessionHasErrors('officer');
+        $this->assertSame(2, (int) $planet->user->fresh()->officer_points);
+        $this->post(route('officers.store'), ['code' => 603])->assertSessionHasNoErrors();
+        DB::table('planet_unit_queues')->where('planet_id', $planet->id)->where('unit_code', 603)
+            ->update(['completes_at' => now()->subSecond()]);
+        $production->complete($planet);
+        $this->assertSame(1, (int) $planet->user->fresh()->officer_engineer_level);
+    }
+
+    public function test_disabled_officer_prerequisite_is_ignored_for_unit_catalog_and_build(): void
+    {
+        config()->set('modules.officers.disabled', ['609']);
+        $planet = $this->createPlanet([
+            'defence_center_level' => 1, 'robot_factory_level' => 1,
+            'metal' => 1000000, 'crystal' => 500000, 'deuterium' => 100000,
+        ]);
+        $unit = collect(app(UnitProductionService::class)->defenceCatalog($planet, $planet->user)['units'])->firstWhere('code', 409);
+
+        $this->assertTrue($unit['requirementsMet']);
+        $this->assertNotContains(609, array_column($unit['requirements'], 'code'));
+        $this->actingAs($planet->user)->post(route('planet.defences.store', $planet), ['code' => 409, 'quantity' => 1])
+            ->assertSessionHasNoErrors();
+        $this->assertDatabaseHas('planet_unit_queues', ['planet_id' => $planet->id, 'unit_code' => 409]);
+    }
+
+    public function test_disabled_officer_module_removes_officer_prerequisites(): void
+    {
+        config()->set('modules.officers.enabled', false);
+        $planet = $this->createPlanet(['defence_center_level' => 1, 'robot_factory_level' => 1]);
+        $production = app(UnitProductionService::class);
+
+        $this->assertSame([], $production->officerCatalog($planet->user)['officers']);
+        $unit = collect($production->defenceCatalog($planet, $planet->user)['units'])->firstWhere('code', 409);
+        $this->assertTrue($unit['requirementsMet']);
+        $this->actingAs($planet->user)->from(route('officers.index'))
+            ->post(route('officers.store'), ['code' => 601])->assertSessionHasErrors('officer');
+    }
+
+    public function test_disabled_officer_production_bonuses_are_suspended_without_losing_levels(): void
+    {
+        $planet = $this->createPlanet(['hangar_level' => 1, 'defence_center_level' => 1, 'robot_factory_level' => 1]);
+        $user = $planet->user;
+        $user->forceFill(['officer_technocrat_level' => 2, 'officer_defender_level' => 1])->save();
+        $production = app(UnitProductionService::class);
+        $ship = fn () => collect($production->catalog($planet, $user, 'ships')['units'])->firstWhere('code', 202)['durationSeconds'];
+        $defence = fn () => collect($production->defenceCatalog($planet, $user)['units'])->firstWhere('code', 401)['durationSeconds'];
+        $enabledShipDuration = $ship();
+        $enabledDefenceDuration = $defence();
+
+        config()->set('modules.officers.disabled', ['604', '608']);
+        $this->assertGreaterThan($enabledShipDuration, $ship());
+        $this->assertGreaterThan($enabledDefenceDuration, $defence());
+        $this->assertSame(2, (int) $user->fresh()->officer_technocrat_level);
+        $this->assertSame(1, (int) $user->fresh()->officer_defender_level);
+        config()->set('modules.officers.disabled', []);
+        $this->assertSame($enabledShipDuration, $ship());
+        $this->assertSame($enabledDefenceDuration, $defence());
+    }
+
+    public function test_disabling_a_queued_officer_refunds_the_point_on_completion(): void
+    {
+        $planet = $this->createPlanet();
+        $planet->user->forceFill(['officer_points' => 1])->save();
+        $production = app(UnitProductionService::class);
+        $production->recruit($planet->user, $planet, 601);
+        config()->set('modules.officers.disabled', ['601']);
+        DB::table('planet_unit_queues')->where('planet_id', $planet->id)->where('unit_code', 601)
+            ->update(['completes_at' => now()->subSecond()]);
+        $production->complete($planet);
+
+        $this->assertSame(1, (int) $planet->user->fresh()->officer_points);
+        $this->assertSame(0, (int) $planet->user->fresh()->officer_geologist_level);
+        $this->assertDatabaseMissing('planet_unit_queues', ['planet_id' => $planet->id, 'unit_code' => 601]);
+    }
+
+    public function test_spy_and_commander_bonuses_are_suspended_and_restored_independently(): void
+    {
+        $planet = $this->createPlanet();
+        $user = $planet->user;
+        $user->forceFill([
+            'spy_technology_level' => 2, 'computer_technology_level' => 4,
+            'officer_points' => 2, 'officer_admiral_level' => 10, 'officer_technocrat_level' => 5,
+        ])->save();
+        $production = app(UnitProductionService::class);
+
+        foreach ([610, 611] as $code) {
+            $production->recruit($user->fresh(), $planet, $code);
+            DB::table('planet_unit_queues')->where('planet_id', $planet->id)->where('unit_code', $code)
+                ->update(['completes_at' => now()->subSecond()]);
+            $production->complete($planet);
+        }
+
+        $user = $user->fresh();
+        $this->assertSame(7, $user->spy_technology_level);
+        $this->assertSame(7, $user->computer_technology_level);
+        $this->assertDatabaseHas('users', ['id' => $user->id, 'officer_spy_research_bonus' => 5, 'officer_commander_research_bonus' => 3]);
+
+        config()->set('modules.officers.disabled', ['610']);
+        $this->assertSame(2, $user->spy_technology_level);
+        $this->assertSame(7, $user->computer_technology_level);
+        config()->set('modules.officers.disabled', ['611']);
+        $this->assertSame(7, $user->spy_technology_level);
+        $this->assertSame(4, $user->computer_technology_level);
+        config()->set('modules.officers.enabled', false);
+        $this->assertSame(2, $user->spy_technology_level);
+        $this->assertSame(4, $user->computer_technology_level);
+        config()->set('modules.officers.enabled', true);
+        config()->set('modules.officers.disabled', []);
+        $this->assertSame(7, $user->spy_technology_level);
+        $this->assertSame(7, $user->computer_technology_level);
+        $this->assertDatabaseHas('users', ['id' => $user->id, 'spy_technology_level' => 7, 'computer_technology_level' => 7]);
+    }
+
+    public function test_recruiting_spy_preserves_a_research_already_in_progress(): void
+    {
+        $planet = $this->createPlanet();
+        $user = $planet->user;
+        $user->forceFill(['spy_technology_level' => 2, 'officer_points' => 1, 'officer_admiral_level' => 10, 'officer_technocrat_level' => 5])->save();
+        $research = ResearchQueue::create([
+            'user_id' => $user->id, 'universe_id' => $planet->universe_id, 'planet_id' => $planet->id,
+            'technology_key' => 'spy', 'technology_code' => 106, 'target_level' => 3,
+            'cost_metal' => 0, 'cost_crystal' => 0, 'cost_deuterium' => 0, 'completes_at' => now()->addHour(),
+        ]);
+        $production = app(UnitProductionService::class);
+        $production->recruit($user, $planet, 610);
+        DB::table('planet_unit_queues')->where('planet_id', $planet->id)->where('unit_code', 610)->update(['completes_at' => now()->subSecond()]);
+        $production->complete($planet);
+        $this->assertSame(8, (int) $research->fresh()->target_level);
+        $research->update(['completes_at' => now()->subSecond()]);
+        app(ResearchService::class)->complete($user);
+        $this->assertSame(8, $user->fresh()->spy_technology_level);
+    }
+
+    public function test_bonus_migration_preserves_research_and_excludes_audited_admin_officer_levels(): void
+    {
+        $planet = $this->createPlanet();
+        $user = $planet->user;
+        $user->forceFill(['spy_technology_level' => 12, 'computer_technology_level' => 10, 'officer_spy_level' => 2, 'officer_commander_level' => 1])->save();
+        DB::table('admin_audit_logs')->insert([
+            'actor_id' => $user->id, 'actor_level' => 4, 'target_user_id' => $user->id, 'planet_id' => $planet->id,
+            'action' => 'element_added', 'details' => json_encode(['category' => 'officers', 'key' => '610', 'amount' => 1]),
+        ]);
+        $migration = require database_path('migrations/2026_11_26_000002_track_officer_research_bonuses.php');
+        $migration->down();
+        $migration->up();
+
+        $this->assertDatabaseHas('users', [
+            'id' => $user->id, 'spy_technology_level' => 12, 'computer_technology_level' => 10,
+            'officer_spy_research_bonus' => 5, 'officer_commander_research_bonus' => 3,
+        ]);
+        config()->set('modules.officers.enabled', false);
+        $this->assertSame(7, $user->fresh()->spy_technology_level);
+        $this->assertSame(7, $user->fresh()->computer_technology_level);
     }
 
     private function createPlanet(array $attributes = []): Planet

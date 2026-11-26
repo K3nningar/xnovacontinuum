@@ -11,6 +11,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Planet;
 use App\Services\GalaxyMap;
+use App\Services\GameModules;
 use App\Services\MoonEconomy;
 use App\Services\PlanetEconomy;
 use App\Services\UnitProductionService;
@@ -108,10 +109,10 @@ class ProductionController extends Controller
                 'missions' => ['transport', 'attack', 'station', 'spy', 'colonize', 'recycle', 'destroy_moon', 'destroy_planet', 'expedition'],
                 'targetTypes' => ['planet', 'moon', 'asteroid', 'debris', 'depot'],
                 'experimentalPlanetaryDestroyerEnabled' => (bool) config('combat.experimental_planetary_destroyer', false),
-                'planetaryDestroyerAvailable' => (bool) config('combat.experimental_planetary_destroyer', false) && (int) $user->officer_emperor_level > 0 && (int) $selectedPlanet->unit_217 > 0,
-                'hasAlliance' => $user->alliance_id !== null || $user->faction_key !== '0'
+                'planetaryDestroyerAvailable' => (bool) config('combat.experimental_planetary_destroyer', false) && app(GameModules::class)->officerRequirementMet(615, (int) $user->officer_emperor_level) && (int) $selectedPlanet->unit_217 > 0,
+                'hasAlliance' => $user->alliance_id !== null || (app(GameModules::class)->enabled('factions') && ($user->faction_key !== '0'
                     || DB::table('faction_diplomacy')->where('universe_id', $user->universe_id)->where('status', 'allied')
-                        ->where(fn ($query) => $query->where('first_faction', '0')->orWhere('second_faction', '0'))->exists(),
+                        ->where(fn ($query) => $query->where('first_faction', '0')->orWhere('second_faction', '0'))->exists())),
                 'stationing' => ['requiresSameAlliance' => true, 'requiresRecipientDepotLevel' => 1, 'retainsFleet' => true],
             ],
             'selectedPlanetId' => $selectedPlanet->id, 'ships' => $ships,

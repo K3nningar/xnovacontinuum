@@ -13,6 +13,10 @@ class FactionDiplomacy
             return 'neutral';
         }
 
+        if (! app(GameModules::class)->enabled('factions')) {
+            return 'legacy';
+        }
+
         $firstKey = $first->faction_key ?? '0';
         $secondKey = $second->faction_key ?? '0';
         if ($firstKey === $secondKey) {

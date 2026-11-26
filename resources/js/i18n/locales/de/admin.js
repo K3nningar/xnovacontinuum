@@ -6,6 +6,7 @@
  */
 
 export default {
+  "adminModules": { "title": "Module", "enableFactions": "Fraktionen aktivieren", "factionsHelp": "Deaktivierte Fraktionen verlieren vorübergehend ihre Boni, Einschränkungen und diplomatischen Beziehungen. Ihre Einstellungen bleiben erhalten.", "global": "Diese Einstellungen gelten für alle Universen.", "enableOfficers": "Offiziere aktivieren", "individual": "Verfügbare Offiziere", "help": "Deaktivierte Offiziere können nicht rekrutiert werden; ihre Voraussetzungen entfallen. Ausstehende Rekrutierungen werden bei Fälligkeit erstattet. Die Einzelauswahl bleibt erhalten.", "warning": "Forschungsboni von Spion und Kommandant werden bei Deaktivierung dieser Offiziere ausgesetzt.", "save": "Speichern", "saved": "Moduleinstellungen gespeichert." },
   "changelogManual": {
     "title": "Manuelles Änderungsprotokoll",
     "hint": "Dieser Text ist in allen Sprachen identisch und sofort sichtbar, wenn die Version öffentlich ist.",

@@ -11,15 +11,17 @@ declare(strict_types=1);
 
 namespace App\Models;
 
+use App\Services\GameModules;
 // use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Database\Factories\UserFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Attributes\Hidden;
+use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
-use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Illuminate\Support\Carbon;
@@ -84,6 +86,36 @@ class User extends Authenticatable
 {
     /** @use HasFactory<UserFactory> */
     use HasFactory, Notifiable;
+
+    public function rawResearchLevel(string $column): int
+    {
+        return (int) ($this->getAttributes()[$column] ?? 0);
+    }
+
+    public function effectiveResearchLevel(string $column, int $level): int
+    {
+        $bonus = match ($column) {
+            'spy_technology_level' => ['officer_spy_research_bonus', 610],
+            'computer_technology_level' => ['officer_commander_research_bonus', 611],
+            default => null,
+        };
+
+        if ($bonus === null || (int) ($this->getAttributes()[$bonus[0]] ?? 0) === 0 || app(GameModules::class)->officerEnabled($bonus[1])) {
+            return $level;
+        }
+
+        return max(0, $level - (int) $this->getAttributes()[$bonus[0]]);
+    }
+
+    protected function spyTechnologyLevel(): Attribute
+    {
+        return Attribute::make(get: fn ($value): int => $this->effectiveResearchLevel('spy_technology_level', (int) $value));
+    }
+
+    protected function computerTechnologyLevel(): Attribute
+    {
+        return Attribute::make(get: fn ($value): int => $this->effectiveResearchLevel('computer_technology_level', (int) $value));
+    }
 
     protected static function booted(): void
     {

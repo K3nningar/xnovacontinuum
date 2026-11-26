@@ -141,7 +141,7 @@ class GalaxyMap
                 'planet' => $planet ? [
                     'name' => $planet->name,
                     'owner' => $planet->user->name,
-                    'factionName' => $factionNames[$planet->user->faction_key] ?? null,
+                    'factionName' => app(GameModules::class)->enabled('factions') ? ($factionNames[$planet->user->faction_key] ?? null) : null,
                     'owned' => (int) $planet->user_id === (int) $viewer->id,
                     'hostileAllowed' => app(FactionDiplomacy::class)->relation($viewer, $planet->user) !== 'allied',
                     'alliedDepot' => (int) $planet->user_id !== (int) $viewer->id && (int) $planet->alliance_depot_level > 0 && app(FactionDiplomacy::class)->canStation($viewer, $planet->user),

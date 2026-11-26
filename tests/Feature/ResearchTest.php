@@ -250,6 +250,29 @@ class ResearchTest extends TestCase
         $this->assertDatabaseCount('planet_building_queues', 1);
     }
 
+    public function test_research_started_without_a_suspended_bonus_keeps_its_progress_when_reenabled(): void
+    {
+        $planet = $this->createPlanet(['laboratory_level' => 3, 'metal' => 100000, 'crystal' => 100000, 'deuterium' => 100000]);
+        $user = $planet->user;
+        $user->forceFill(['spy_technology_level' => 7, 'officer_spy_level' => 1, 'officer_spy_research_bonus' => 5])->save();
+        config()->set('modules.officers.disabled', ['610']);
+        $service = app(ResearchService::class);
+        $queue = $service->start($user, $planet, 'spy');
+
+        $this->assertSame(8, (int) $queue->target_level);
+        $this->assertSame(3, $service->effectiveQueueTarget($user, $queue));
+        $this->actingAs($user)->get(route('research.index'))->assertInertia(fn (Assert $page) => $page
+            ->where('activeResearch.targetLevel', 3)->where('researches.0.level', 2));
+        $this->get(route('dashboard'))->assertInertia(fn (Assert $page) => $page->where('researchQueue.target_level', 3));
+
+        $queue->update(['completes_at' => now()->subSecond()]);
+        $service->complete($user);
+        $this->assertSame(3, $user->fresh()->spy_technology_level);
+        $this->assertDatabaseHas('users', ['id' => $user->id, 'spy_technology_level' => 8, 'officer_spy_research_bonus' => 5]);
+        config()->set('modules.officers.disabled', []);
+        $this->assertSame(8, $user->fresh()->spy_technology_level);
+    }
+
     private function createPlanet(array $attributes = []): Planet
     {
         $universe = Universe::create(['name' => 'Andromède', 'slug' => fake()->unique()->slug()]);

@@ -22,6 +22,7 @@ use App\Http\Controllers\ExplorationMissionController;
 use App\Http\Controllers\FactionAdminController;
 use App\Http\Controllers\FactionController;
 use App\Http\Controllers\GalaxyController;
+use App\Http\Controllers\ModuleAdminController;
 use App\Http\Controllers\MoonController;
 use App\Http\Controllers\MultiAccountDeclarationController;
 use App\Http\Controllers\OfficerController;
@@ -61,6 +62,8 @@ Route::middleware(['auth', EnsureAccountIsActive::class, ProcessExplorationMissi
         Route::get('/resources', [AdminController::class, 'resources'])->middleware('admin:2')->name('resources');
         Route::post('/resources', [AdminController::class, 'storeResources'])->middleware(['admin:2', 'throttle:game-action'])->name('resources.store');
         Route::get('/universes', [AdminController::class, 'universes'])->middleware('admin:4')->name('universes');
+        Route::get('/modules', [ModuleAdminController::class, 'index'])->middleware('admin:4')->name('modules');
+        Route::patch('/modules', [ModuleAdminController::class, 'update'])->middleware(['admin:4', 'throttle:game-action'])->name('modules.update');
         Route::get('/universes/{universe}/factions', [FactionAdminController::class, 'index'])->whereNumber('universe')->middleware('admin:4')->name('factions.index');
         Route::post('/universes/{universe}/factions', [FactionAdminController::class, 'store'])->whereNumber('universe')->middleware(['admin:4', 'throttle:game-action'])->name('factions.store');
         Route::patch('/universes/{universe}/factions/template', [FactionAdminController::class, 'updateTemplate'])->whereNumber('universe')->middleware(['admin:4', 'throttle:game-action'])->name('factions.template.update');

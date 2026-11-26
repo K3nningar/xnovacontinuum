@@ -866,6 +866,7 @@ body { background: transparent; }
 .hud-sidebar .menu-item.active .menu-link { border-left-color: var(--accent); background: linear-gradient(90deg, rgba(68, 217, 173, .13), transparent); }
 .hud-sidebar .menu-item .menu-link:focus-visible, .hud-menu-toggle:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
 .hud-content { min-width: 0; }
+.hud-content > .flash-message { margin-left: 0; }
 .hud-content .header-resources { width: fit-content; max-width: 100%; flex-wrap: wrap; gap: 14px; padding: 10px 14px; border-color: rgba(68, 217, 173, .24); background: rgba(6, 20, 23, .86); }
 .hud-content .header-resource-scope { max-width: 200px; font-size: 10px; }
 .hud-content .header-resource { font-size: 12px; }
@@ -1260,10 +1261,36 @@ body { background: transparent; }
 .overview-world-visual .planet-orb { display: none; }
 .overview-world-visual small { color: #d3e2e8; }
 
+.overview-page .resource-grid { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+.overview-page .resource-card, .overview-page .overview-worlds > .data-panel, .overview-page .overview-community > .data-panel { min-width: 0; }
+.overview-page .resource-card strong, .overview-page .empire-storage-meta, .overview-page .overview-panel-body, .overview-page .alliance-state, .overview-page .faction-link-body { overflow-wrap: anywhere; }
+.overview-page .empire-storage-meta { flex-wrap: wrap; }
+.overview-page .overview-worlds { display: grid; gap: 12px; }
+.overview-page .overview-worlds > .data-panel { min-height: 0; }
+.overview-page .overview-worlds .planet-row { flex-wrap: wrap; }
+.overview-page .overview-worlds .planet-orb { flex: 0 0 27px; }
+.overview-page .overview-worlds .planet-details { flex: 1 1 150px; }
+.overview-page .overview-storage-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); min-width: 0; }
+.overview-page .overview-storage-values { overflow: visible; white-space: normal; overflow-wrap: anywhere; }
+.overview-page .planet-links { flex-wrap: wrap; }
+.overview-page .overview-community { grid-template-columns: repeat(auto-fit, minmax(min(100%, 300px), 1fr)); margin: 12px 0 0; }
+.overview-page .overview-community > .data-panel { min-height: 0; }
+.overview-page .overview-commander-identity > div { min-width: 0; overflow-wrap: anywhere; }
+.overview-page .overview-panel-body input { max-width: 100%; }
+
+@media (max-width: 1100px) and (min-width: 701px) {
+    .overview-page .overview-main-panels > .data-panel:nth-child(3) { grid-column: 1 / -1; }
+}
 @media (max-width: 700px) {
+    .overview-page .resource-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
     .overview-shield-grid { grid-template-columns: minmax(0, 1fr); }
     .overview-page .overview-shield-card { min-height: 0; }
     .hud-app { background-attachment: scroll; }
+}
+@media (max-width: 400px) {
+    .overview-page .overview-storage-grid { grid-template-columns: minmax(0, 1fr); }
+    .overview-page .resource-card { padding: 12px; }
+    .overview-page .resource-card > strong { font-size: 18px; }
 }
 
 .building-pos { height: auto; background: transparent; }

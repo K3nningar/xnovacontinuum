@@ -11,6 +11,7 @@ export default {
     "eyebrow": "HIGH COMMAND",
     "heading": "Officer corps.",
     "subtitle": "Recruit specialists to strengthen your empire.",
+    "moduleDisabled": "The officers module is currently disabled.",
     "points": "AVAILABLE POINTS",
     "staff": "STAFF",
     "orders": "RECRUITMENT ORDERS",

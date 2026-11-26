@@ -177,6 +177,7 @@ function categoryLabel(category) {
                         {{ t(section.mode === 'declarations' ? 'multiAccounts.title' : `admin.${section.mode}`) }}
                     </Link>
                     <Link v-if="page.props.auth?.user?.admin_global" class="button button-outline" :href="route('admin.changelog')">{{ t('changelog.title') }}</Link>
+                    <Link v-if="adminLevel === 4 && page.props.auth?.user?.admin_global" class="button button-outline" :href="route('admin.modules')">{{ t('adminModules.title') }}</Link>
                 </nav>
 
                 <section v-if="mode === 'universes' && page.props.auth?.user?.admin_global" class="rounded border border-slate-700 bg-slate-900/70 p-4 sm:p-6">

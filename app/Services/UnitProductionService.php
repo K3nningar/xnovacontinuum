@@ -177,6 +177,9 @@ class UnitProductionService
             $requirementsMet = true;
 
             foreach ($definition['requirements'] as $requirementCode => $requiredLevel) {
+                if (! $this->requirementEnabled($requirementCode)) {
+                    continue;
+                }
                 $currentLevel = $this->requirementLevel($requirementCode, $planet, $user);
                 $requirements[] = ['code' => $requirementCode, 'level' => $requiredLevel, 'current' => $currentLevel];
                 $requirementsMet = $requirementsMet && $currentLevel >= $requiredLevel;
@@ -267,6 +270,9 @@ class UnitProductionService
             }
 
             foreach ($definition['requirements'] as $requirementCode => $requiredLevel) {
+                if (! $this->requirementEnabled($requirementCode)) {
+                    continue;
+                }
                 $currentLevel = $this->requirementLevel($requirementCode, $lockedPlanet, $lockedUser);
                 if ($currentLevel < $requiredLevel) {
                     throw ValidationException::withMessages(['unit' => 'Les prérequis de cette unité ne sont pas remplis.']);
@@ -409,10 +415,16 @@ class UnitProductionService
     {
         $officers = [];
         foreach (self::OFFICERS as $code => $officer) {
+            if (! app(GameModules::class)->officerEnabled($code)) {
+                continue;
+            }
             $column = $this->officerColumn($code);
             $requirementsMet = true;
             $requirements = [];
             foreach ($officer['requirements'] as $requiredCode => $requiredLevel) {
+                if (! $this->requirementEnabled($requiredCode)) {
+                    continue;
+                }
                 $requiredColumn = self::OFFICER_COLUMNS[$requiredCode];
                 $current = (int) $user->{$requiredColumn};
                 $requirements[] = ['code' => $requiredCode, 'name' => self::OFFICERS[$requiredCode]['name'], 'level' => $requiredLevel, 'current' => $current];
@@ -443,6 +455,10 @@ class UnitProductionService
             throw ValidationException::withMessages(['officer' => 'Cet officier est inconnu.']);
         }
 
+        if (! app(GameModules::class)->officerEnabled($code)) {
+            throw ValidationException::withMessages(['officer' => 'Cet officier est désactivé.']);
+        }
+
         DB::transaction(function () use ($user, $planet, $code): void {
             $lockedUser = User::query()->whereKey($user->id)->lockForUpdate()->firstOrFail();
             $lockedPlanet = Planet::query()->whereKey($planet->id)->where('user_id', $user->id)
@@ -453,6 +469,9 @@ class UnitProductionService
             $column = $this->officerColumn($code);
 
             foreach ($officer['requirements'] as $requiredCode => $requiredLevel) {
+                if (! $this->requirementEnabled($requiredCode)) {
+                    continue;
+                }
                 if ((int) $lockedUser->{self::OFFICER_COLUMNS[$requiredCode]} < $requiredLevel) {
                     throw ValidationException::withMessages(['officer' => 'Les prérequis de cet officier ne sont pas remplis.']);
                 }
@@ -510,6 +529,11 @@ class UnitProductionService
         }
 
         throw ValidationException::withMessages(['unit' => 'Configuration de prérequis invalide.']);
+    }
+
+    private function requirementEnabled(int $code): bool
+    {
+        return ! isset(self::OFFICER_COLUMNS[$code]) || app(GameModules::class)->officerEnabled($code);
     }
 
     /**
@@ -570,7 +594,17 @@ class UnitProductionService
         $user = User::query()->whereKey($planet->user_id)->lockForUpdate()->firstOrFail();
         $column = self::OFFICER_COLUMNS[$entry->unit_code];
 
+        if (! app(GameModules::class)->officerEnabled((int) $entry->unit_code)) {
+            $user->officer_points++;
+            $user->save();
+
+            return;
+        }
+
         foreach ($officer['requirements'] as $requiredCode => $requiredLevel) {
+            if (! $this->requirementEnabled($requiredCode)) {
+                continue;
+            }
             if ((int) $user->{self::OFFICER_COLUMNS[$requiredCode]} < $requiredLevel) {
                 $user->officer_points++;
                 $user->save();
@@ -581,10 +615,14 @@ class UnitProductionService
 
         if ((int) $user->{$column} < $officer['max']) {
             $user->{$column}++;
-            if ($entry->unit_code === 610) {
-                $user->spy_technology_level += 5;
-            } elseif ($entry->unit_code === 611) {
-                $user->computer_technology_level += 3;
+            if ((int) $entry->unit_code === 610) {
+                $user->spy_technology_level = $user->rawResearchLevel('spy_technology_level') + 5;
+                $user->officer_spy_research_bonus += 5;
+                $user->researchQueues()->where('technology_key', 'spy')->increment('target_level', 5);
+            } elseif ((int) $entry->unit_code === 611) {
+                $user->computer_technology_level = $user->rawResearchLevel('computer_technology_level') + 3;
+                $user->officer_commander_research_bonus += 3;
+                $user->researchQueues()->where('technology_key', 'computer')->increment('target_level', 3);
             }
             $user->save();
         } else {
@@ -651,7 +689,9 @@ class UnitProductionService
     {
         $productionLevel = $type === 'ships' ? (int) $planet->hangar_level : (int) $planet->defence_center_level;
         $baseSeconds = (int) floor((($unitCost[0] + $unitCost[1]) / 2500) / (($productionLevel + 1) * (2 ** (int) $planet->nano_factory_level) * ((int) $planet->robot_factory_level + 1)) * 3600);
-        $officerDiscount = $type === 'ships' ? (int) $user->officer_technocrat_level * 5 : (int) $user->officer_defender_level * 37.5;
+        $officerDiscount = $type === 'ships'
+            ? (app(GameModules::class)->officerEnabled(604) ? (int) $user->officer_technocrat_level * 5 : 0)
+            : (app(GameModules::class)->officerEnabled(608) ? (int) $user->officer_defender_level * 37.5 : 0);
 
         return max(1, (int) floor($baseSeconds * max(0.1, 1 - ($officerDiscount / 100))));
     }

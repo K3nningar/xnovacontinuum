@@ -15,7 +15,7 @@ import ElementInfoButton from '../../Components/ElementInfoButton.vue';
 import RarityBadge from '../../Components/RarityBadge.vue';
 import CatalogGrid from '../../Components/CatalogGrid.vue';
 import { catalogCategories, matchesCatalogCategory, officerFilters } from '../../catalogFilters.js';
-const props=defineProps({user:Object,officers:Array,points:Number,queue:Array});
+const props=defineProps({user:Object,officers:Array,points:Number,queue:Array,officersEnabled:Boolean});
 const selectedCategory = ref('all');
 const categories = computed(() => catalogCategories(props.officers, officerFilters));
 const visibleCount = computed(() => props.officers.filter((officer) => matchesCatalogCategory(officer, selectedCategory.value, categories.value)).length);
@@ -38,6 +38,8 @@ function recruit(officer){router.post(route('officers.store'),{code:officer.code
 </script>
 <template>
 <Head :title="t('production.officerTitle')"/><GameLayout><main class="command-layout"><section class="command-content">
+<div v-if="!officersEnabled" class="rounded border border-amber-500 bg-amber-950 p-4 text-amber-200" role="alert">{{ t('officers.moduleDisabled') }}</div>
+<template v-else>
 <div v-if="page.props.flash?.success" class="flash-message" role="status">{{ t('production.officerRecruitSuccess') }}</div><div v-if="Object.keys(page.props.errors||{}).length" class="form-alert" role="alert">{{Object.values(page.props.errors)[0]}}</div>
 <div class="command-heading"><div><p class="eyebrow"><span class="eyebrow-line"></span>{{ t('officers.eyebrow') }}</p><h1>{{ t('officers.heading') }}</h1><p class="command-subtitle">{{ t('officers.subtitle') }}</p></div><div class="officer-points"><span>{{ t('officers.points') }}</span><strong>✦ {{points}}</strong></div></div>
 <section class="data-panel"><div class="panel-heading"><div><span class="panel-kicker">{{ t('officers.staff') }}</span><h2>{{ t('officers.title') }}</h2></div><span class="panel-count">{{ visibleCount }} / {{ officers.length }}</span></div>
@@ -62,5 +64,6 @@ function recruit(officer){router.post(route('officers.store'),{code:officer.code
     </article>
 </CatalogGrid></section>
 <section class="data-panel production-queue"><div class="panel-heading"><div><span class="panel-kicker">{{ t('officers.orders') }}</span><h2>{{ t('officers.waiting') }}</h2></div><span class="panel-count">{{queue.length}}</span></div><article v-for="entry in queue" :key="entry.id" class="unit-queue-row"><span class="queue-position">{{entry.position}}</span><div><strong>{{ officerName(entry.code) }}</strong><small>{{ t('units.endsAt', { date: formatDate(entry.completesAt) }) }}</small></div><strong class="unit-queue-time">{{entry.remainingSeconds}} s</strong></article><p v-if="!queue.length" class="queue-empty">{{ t('officers.noRecruitments') }}</p></section>
+</template>
 </section></main></GameLayout>
 </template>

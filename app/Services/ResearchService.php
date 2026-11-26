@@ -88,7 +88,7 @@ class ResearchService
 
         return ['researches' => $researches, 'activeResearch' => $queue ? [
             'id' => $queue->id, 'technologyKey' => $queue->technology_key, 'technologyCode' => $queue->technology_code,
-            'targetLevel' => $queue->target_level, 'planetName' => $queue->planet->name,
+            'targetLevel' => $this->effectiveQueueTarget($user, $queue), 'planetName' => $queue->planet->name,
             'completesAt' => $queue->completes_at->toIso8601String(), 'remainingSeconds' => $queue->remaining_seconds,
         ] : null];
     }
@@ -146,7 +146,7 @@ class ResearchService
                 'planet_id' => $lockedPlanet->id,
                 'technology_key' => $technologyKey,
                 'technology_code' => $technology['code'],
-                'target_level' => $currentLevel + 1,
+                'target_level' => $lockedUser->rawResearchLevel($technology['column']) + 1,
                 'cost_metal' => $cost['metal'],
                 'cost_crystal' => $cost['crystal'],
                 'cost_deuterium' => $cost['deuterium'],
@@ -214,10 +214,17 @@ class ResearchService
             $column = $queue->technology_key === 'sensors'
                 ? 'sensor_technology_level'
                 : self::TECHNOLOGIES[$queue->technology_key]['column'];
-            $lockedUser->{$column} = max((int) $lockedUser->{$column}, (int) $queue->target_level);
+            $lockedUser->{$column} = max($lockedUser->rawResearchLevel($column), (int) $queue->target_level);
             $lockedUser->save();
             $queue->delete();
         }, 3);
+    }
+
+    public function effectiveQueueTarget(User $user, ResearchQueue $queue): int
+    {
+        $column = self::TECHNOLOGIES[$queue->technology_key]['column'] ?? 'sensor_technology_level';
+
+        return $user->effectiveResearchLevel($column, (int) $queue->target_level);
     }
 
     /**

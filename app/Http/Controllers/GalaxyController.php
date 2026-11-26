@@ -10,6 +10,7 @@
 namespace App\Http\Controllers;
 
 use App\Services\GalaxyMap;
+use App\Services\GameModules;
 use App\Services\ResearchService;
 use App\Services\UnitProductionService;
 use Illuminate\Http\RedirectResponse;
@@ -76,8 +77,8 @@ class GalaxyController extends Controller
                 'missions' => ['transport', 'attack', 'station', 'spy', 'colonize', 'recycle', 'destroy_moon', 'destroy_planet', 'expedition'],
                 'targetTypes' => ['planet', 'moon', 'asteroid', 'debris', 'depot'],
                 'experimentalPlanetaryDestroyerEnabled' => (bool) config('combat.experimental_planetary_destroyer', false),
-                'planetaryDestroyerAvailable' => (bool) config('combat.experimental_planetary_destroyer', false) && (int) $user->officer_emperor_level > 0 && (int) $planet->unit_217 > 0,
-                'hasAlliance' => $user->alliance_id !== null || $user->faction_key !== '0',
+                'planetaryDestroyerAvailable' => (bool) config('combat.experimental_planetary_destroyer', false) && app(GameModules::class)->officerRequirementMet(615, (int) $user->officer_emperor_level) && (int) $planet->unit_217 > 0,
+                'hasAlliance' => $user->alliance_id !== null || (app(GameModules::class)->enabled('factions') && $user->faction_key !== '0'),
             ],
             'systemVisible' => $systemVisible,
             ...($systemVisible

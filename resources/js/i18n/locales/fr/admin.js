@@ -6,6 +6,7 @@
  */
 
 export default {
+  "adminModules": { "title": "Modules", "enableFactions": "Activer les factions", "factionsHelp": "Désactiver les factions suspend leurs bonus, restrictions et relations diplomatiques sans effacer leur configuration.", "global": "Ces réglages s’appliquent à tous les univers.", "enableOfficers": "Activer les officiers", "individual": "Officiers disponibles", "help": "Un officier désactivé ne peut plus être recruté et ses prérequis sont ignorés. Les recrutements en attente sont remboursés à leur échéance. Les choix individuels sont conservés lorsque le module est désactivé.", "warning": "Les bonus de recherche de l’Espion et du Commandant sont suspendus lorsque ces officiers sont désactivés.", "save": "Enregistrer", "saved": "Configuration des modules enregistrée." },
   "changelogManual": {
     "title": "Journal manuel des changements",
     "hint": "Ce texte est identique dans toutes les langues et est immédiatement visible lorsque la version est publique.",

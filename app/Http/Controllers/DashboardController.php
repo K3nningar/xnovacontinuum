@@ -15,6 +15,7 @@ use App\Models\Planet;
 use App\Models\Universe;
 use App\Models\User;
 use App\Services\GalaxyMap;
+use App\Services\GameModules;
 use App\Services\MoonEconomy;
 use App\Services\PlanetEconomy;
 use App\Services\ResearchService;
@@ -111,9 +112,10 @@ class DashboardController extends Controller
                 'eventAt' => ($fleet->status === 'returning' ? $fleet->returns_at : $fleet->arrives_at)?->toIso8601String(),
             ])->values() : collect();
 
-        $faction = $universe
+        $faction = $universe && app(GameModules::class)->enabled('factions')
             ? Faction::query()->where('universe_id', $universe->id)->where('key', $user->faction_key ?? '0')->first()
             : null;
+        $researchQueue = $universe ? $user->researchQueues()->first() : null;
 
         return inertia('Dashboard', [
             'user' => $user->only('id', 'name'),
@@ -130,7 +132,7 @@ class DashboardController extends Controller
                 ->get(['id', 'name', 'galaxies', 'systems_per_galaxy'])
                 ->map(fn (Universe $available): array => [
                     ...$available->only('id', 'name', 'galaxies', 'systems_per_galaxy'),
-                    'factions' => $available->factions->where('key', '!=', '0')->prepend(
+                    'factions' => ! app(GameModules::class)->enabled('factions') ? [] : $available->factions->where('key', '!=', '0')->prepend(
                         $available->factions->firstWhere('key', '0') ?? ['key' => '0', 'name' => 'Faction 0', 'description' => null, 'image' => null],
                     )->values(),
                 ])->toArray(),
@@ -171,7 +173,10 @@ class DashboardController extends Controller
                 'planets' => Planet::query()->where('universe_id', $universe->id)->whereNull('destroyed_at')->whereHas('user', fn ($query) => $query->where('faction_key', $faction->key))->count(),
             ] : null,
             'fleetCount' => $universe ? $user->fleets()->where('status', 'outbound')->count() : 0,
-            'researchQueue' => $universe ? $user->researchQueues()->first()?->only('id', 'technology_key', 'technology_code', 'target_level', 'completes_at') : null,
+            'researchQueue' => $researchQueue ? [
+                ...$researchQueue->only('id', 'technology_key', 'technology_code', 'completes_at'),
+                'target_level' => $research->effectiveQueueTarget($user, $researchQueue),
+            ] : null,
             'activeFleets' => $fleets,
         ]);
     }

@@ -456,6 +456,34 @@ class AdminPanelTest extends TestCase
         $this->assertDatabaseCount('admin_audit_logs', 7);
     }
 
+    public function test_admin_research_grants_preserve_suspended_officer_bonuses(): void
+    {
+        config(['modules.officers.enabled' => false]);
+        $administrator = User::factory()->create(['admin_level' => 3]);
+        $planet = $this->createPlanet();
+        $player = $planet->user;
+        $player->forceFill([
+            'spy_technology_level' => 7, 'computer_technology_level' => 5,
+            'officer_spy_level' => 1, 'officer_commander_level' => 1,
+            'officer_spy_research_bonus' => 5, 'officer_commander_research_bonus' => 3,
+        ])->save();
+
+        foreach (['spy', 'computer'] as $technology) {
+            $this->actingAs($administrator)->post(route('admin.elements.store'), [
+                'player_id' => $player->id, 'planet_id' => $planet->id,
+                'category' => 'research', 'key' => $technology, 'amount' => 1,
+            ])->assertSessionHasNoErrors();
+        }
+
+        $this->assertSame(3, $player->fresh()->spy_technology_level);
+        $this->assertSame(3, $player->fresh()->computer_technology_level);
+        $this->assertDatabaseHas('users', ['id' => $player->id, 'spy_technology_level' => 8, 'computer_technology_level' => 6]);
+
+        config(['modules.officers.enabled' => true]);
+        $this->assertSame(8, $player->fresh()->spy_technology_level);
+        $this->assertSame(6, $player->fresh()->computer_technology_level);
+    }
+
     public function test_self_grants_remain_forbidden_for_administrators_and_other_founders_are_protected(): void
     {
         $planet = $this->createPlanet();

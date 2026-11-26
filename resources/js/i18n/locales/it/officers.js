@@ -11,6 +11,7 @@ export default {
     "eyebrow": "ALTO COMANDO",
     "heading": "Corpo ufficiali.",
     "subtitle": "Recluta specialisti per rafforzare il tuo impero.",
+    "moduleDisabled": "Il modulo degli ufficiali è attualmente disattivato.",
     "points": "PUNTI DISPONIBILI",
     "staff": "STATO MAGGIORE",
     "orders": "ORDINI DI RECLUTAMENTO",

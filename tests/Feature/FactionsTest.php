@@ -2,6 +2,7 @@
 
 namespace Tests\Feature;
 
+use App\Models\Alliance;
 use App\Models\Faction;
 use App\Models\Fleet;
 use App\Models\Planet;
@@ -57,6 +58,119 @@ class FactionsTest extends TestCase
         $this->actingAs($player)->get(route('factions.index'))->assertInertia(fn (Assert $page) => $page
             ->component('Factions/Index')->has('factions', 2)->where('factions.1.name', 'Rouges')
             ->where('factions.1.statistics.attack', 1.5)->where('factions.1.exclusiveElements.0.name', 'Transport rouge'));
+    }
+
+    public function test_disabling_factions_suspends_catalog_diplomacy_and_display_without_deleting_data(): void
+    {
+        $universe = Universe::create(['name' => 'Test', 'slug' => 'test']);
+        $settings = ['statistics' => ['attack' => 1.5], 'buildings' => ['metal' => ['available' => false]], 'ships' => ['202' => ['available' => false, 'name' => 'Rouge']]];
+        $faction = Faction::create(['universe_id' => $universe->id, 'key' => 'red', 'name' => 'Rouges', 'settings' => $settings]);
+        $player = User::factory()->create(['universe_id' => $universe->id, 'faction_key' => 'red']);
+        $player->forceFill(['spy_technology_level' => 1])->save();
+        $ally = User::factory()->create(['universe_id' => $universe->id, 'faction_key' => 'red']);
+        $home = $this->planet($player, 8);
+        $target = $this->planet($ally, 9);
+        $home->forceFill(['unit_202' => 2, 'metal' => 100000, 'crystal' => 100000, 'deuterium' => 100000])->save();
+        $target->forceFill(['alliance_depot_level' => 1])->save();
+        $catalog = app(FactionCatalog::class);
+        $diplomacy = app(FactionDiplomacy::class);
+
+        $this->assertFalse($catalog->available($player, 'ships', 202));
+        $this->assertSame('allied', $diplomacy->relation($player, $ally));
+        $this->actingAs($player)->post(route('planet.buildings.upgrade', $home), ['building' => 'metal'])->assertSessionHasErrors('building');
+        config(['modules.factions.enabled' => false]);
+        $this->assertSame([], $catalog->settings($player));
+        $this->assertTrue($catalog->available($player, 'ships', 202));
+        $this->assertSame('legacy', $diplomacy->relation($player, $ally));
+        $this->assertFalse($diplomacy->canStation($player, $ally));
+        $this->post(route('planet.missions.store', $home), [
+            'mission' => 'station', 'target_type' => 'moon', 'moon_orbit' => 1,
+            'galaxy' => 1, 'system' => 1, 'position' => 9, 'ships' => [202 => 1],
+        ])->assertSessionHasErrors('target');
+        $alliance = Alliance::create(['universe_id' => $universe->id, 'name' => 'Alliance', 'tag' => 'ALLY']);
+        $player->forceFill(['alliance_id' => $alliance->id])->save();
+        $ally->forceFill(['alliance_id' => $alliance->id])->save();
+        $this->assertTrue($diplomacy->canStation($player, $ally));
+        $slot = app(GalaxyMap::class)->system($universe, $player, 1, 1, 8)['slots'][7]['planet'];
+        $this->assertNull($slot['factionName']);
+        $this->assertTrue($slot['hostileAllowed']);
+        $this->post(route('planet.buildings.upgrade', $home), ['building' => 'metal'])->assertSessionHasNoErrors();
+        $this->post(route('planet.missions.store', $home), ['mission' => 'attack', 'galaxy' => 1, 'system' => 1, 'position' => 9, 'ships' => [202 => 1]])->assertSessionHasNoErrors();
+        $this->actingAs($player)->get(route('factions.index'))->assertInertia(fn (Assert $page) => $page
+            ->component('Factions/Index')->where('factionsEnabled', false)->has('factions', 0)
+            ->where('auth.user.faction', null));
+        $this->get(route('dashboard'))->assertInertia(fn (Assert $page) => $page
+            ->where('factionsEnabled', false)->where('faction', null)->where('factionSettings', []));
+        $this->assertSame('red', $player->fresh()->faction_key);
+        $this->assertSame($settings, $faction->fresh()->settings);
+
+        config(['modules.factions.enabled' => true]);
+        $this->assertFalse($catalog->available($player, 'ships', 202));
+        $this->assertSame(1.5, $catalog->settings($player)['statistics']['attack']);
+        $this->assertSame('allied', $diplomacy->relation($player, $ally));
+    }
+
+    public function test_joining_with_factions_disabled_defaults_to_the_legacy_faction(): void
+    {
+        config(['modules.factions.enabled' => false]);
+        $universe = Universe::create(['name' => 'Test', 'slug' => 'test']);
+        Faction::create(['universe_id' => $universe->id, 'key' => 'red', 'name' => 'Rouges']);
+        $account = User::factory()->create();
+        $this->actingAs($account)->get(route('dashboard'))->assertInertia(fn (Assert $page) => $page
+            ->where('factionsEnabled', false)->has('availableUniverses.0.factions', 0));
+        $this->post(route('universe.join'), ['universe_id' => $universe->id, 'name' => 'Home', 'faction_key' => 'red'])
+            ->assertSessionHasErrors('faction_key');
+        $this->post(route('universe.join'), ['universe_id' => $universe->id, 'name' => 'Home'])
+            ->assertSessionHasNoErrors();
+        $this->assertDatabaseHas('users', ['commander_id' => $account->commander_id, 'universe_id' => $universe->id, 'faction_key' => '0']);
+    }
+
+    public function test_module_settings_persistently_suspend_and_restore_faction_effects(): void
+    {
+        $universe = Universe::create(['name' => 'Test', 'slug' => 'test']);
+        Faction::create(['universe_id' => $universe->id, 'key' => 'red', 'name' => 'Rouges', 'settings' => ['statistics' => ['attack' => 2]]]);
+        $player = User::factory()->create(['universe_id' => $universe->id, 'faction_key' => 'red']);
+        $founder = User::factory()->create(['admin_level' => 4]);
+        $payload = ['officers_enabled' => true, 'enabled_officers' => [], 'factions_enabled' => false];
+
+        $this->actingAs($founder)->patch(route('admin.modules.update'), $payload)->assertSessionHasNoErrors();
+        $this->assertSame([], app(FactionCatalog::class)->settings($player));
+        $this->assertSame('red', $player->fresh()->faction_key);
+        $this->patch(route('admin.modules.update'), [...$payload, 'factions_enabled' => true])->assertSessionHasNoErrors();
+        $this->assertSame(2, app(FactionCatalog::class)->settings($player)['statistics']['attack']);
+    }
+
+    public function test_stationing_on_an_allied_moon_keeps_fleet_ownership_when_factions_are_disabled(): void
+    {
+        config(['modules.factions.enabled' => false]);
+        $universe = Universe::create(['name' => 'Test', 'slug' => 'test']);
+        $alliance = Alliance::create(['universe_id' => $universe->id, 'name' => 'Alliance', 'tag' => 'ALLY']);
+        $player = User::factory()->create(['universe_id' => $universe->id, 'alliance_id' => $alliance->id]);
+        $ally = User::factory()->create(['universe_id' => $universe->id, 'alliance_id' => $alliance->id]);
+        $player->forceFill(['spy_technology_level' => 13])->save();
+        $system = null;
+        for ($candidate = 1; $candidate <= 499; $candidate++) {
+            $slot = app(GalaxyMap::class)->system($universe, $player, 1, $candidate, 8)['slots'][7];
+            if (($slot['moons'] ?? 0) > 0) {
+                $system = $candidate;
+                break;
+            }
+        }
+        $this->assertNotNull($system);
+        $home = $this->planet($player, 8);
+        $home->forceFill(['system' => $system, 'unit_202' => 1, 'deuterium' => 100000])->save();
+        $target = $this->planet($ally, 9);
+        $target->forceFill(['system' => $system, 'alliance_depot_level' => 1])->save();
+
+        $this->actingAs($player)->post(route('planet.missions.store', $home), [
+            'mission' => 'station', 'target_type' => 'moon', 'moon_orbit' => 1,
+            'galaxy' => 1, 'system' => $system, 'position' => 9, 'ships' => [202 => 1],
+        ])->assertSessionHasNoErrors();
+        $fleet = Fleet::firstOrFail();
+        $this->travelTo($fleet->arrives_at->addSecond());
+        app(ExplorationMissions::class)->processDue();
+        $this->assertSame('stationed', $fleet->fresh()->status);
+        $this->assertSame(1, $fleet->fresh()->ships[202]);
     }
 
     public function test_founder_can_upload_a_faction_logo(): void

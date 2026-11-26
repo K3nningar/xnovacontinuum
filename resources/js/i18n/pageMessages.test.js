@@ -55,6 +55,7 @@ test('the faction label is available in the shared game navigation in every loca
 
 test('officer information descriptions are localized for every officer', () => {
     for (const [locale, translations] of Object.entries(locales)) {
+        assert.ok(getPageTranslations(translations, 'officers').officers.moduleDisabled, `${locale} is missing the disabled-module message`);
         for (let code = 601; code <= 615; code++) {
             assert.ok(
                 translations.elementDescriptions[`officer_${code}`],
@@ -64,6 +65,15 @@ test('officer information descriptions are localized for every officer', () => {
     }
 
     assert.equal(getPageTranslations(fr, 'officers').elementDescriptions.officer_601, fr.elementDescriptions.officer_601);
+});
+
+test('the administration scope includes module settings and officer names', () => {
+    for (const [locale, translations] of Object.entries(locales)) {
+        const messages = getPageTranslations(translations, 'admin');
+
+        assert.ok(messages.adminModules.title, `${locale} is missing the module title`);
+        assert.deepEqual(messages.officerNames, translations.officerNames);
+    }
 });
 
 test('every locale namespace can be displayed through a page scope', () => {
