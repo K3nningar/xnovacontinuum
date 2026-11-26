@@ -52,7 +52,7 @@ class MoonController extends Controller
             'selectedPlanetId' => $planet->id,
             'planet' => $planet->only('id', 'name', 'coordinates', 'galaxy', 'system', 'position'),
             'moon' => [...$moon,
-                'name' => $stock?->name ?? $moon['generatedName'],
+                'name' => $stock?->name ?? $moon['name'],
                 'generatedName' => $moon['generatedName'],
                 'planetGeneratedName' => $moon['planetGeneratedName'],
                 'metal' => (int) ($stock?->metal ?? 0),
@@ -165,7 +165,7 @@ class MoonController extends Controller
         $names = $celestialNames->forSystem($planet->universe, (int) $planet->galaxy, (int) $planet->system);
         $moon['generatedName'] = $names['moonNames'][$planet->position][$orbit];
         $moon['planetGeneratedName'] = $names['planetNames'][$planet->position];
-        $moon['name'] = $stock->name ?? $moon['generatedName'];
+        $moon['name'] = $stock->name ?? $moon['name'];
         abort_if((int) $stock->phalanx_level < 1, 403);
 
         return inertia('Moon/Phalanx', [

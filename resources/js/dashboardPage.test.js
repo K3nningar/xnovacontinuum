@@ -11,7 +11,7 @@ const capacity = { metal: 1000, crystal: 1000, deuterium: 1000 };
 
 async function renderDashboard({ faction = null, hasUniverse = true, moons = [], factionsEnabled = true } = {}) {
     const planet = {
-        id: 1, name: 'Planète', coordinates: '1:2:3', queue: [], moons,
+        id: 1, name: 'Planète', coordinates: '1:2:3', visualUrl: '/legacy-assets/skins/xnova/planeten/normaltempplanet01.jpg', queue: [], moons,
         shields: { small: true, large: false, planetary: false }, capacity,
         usedFields: 5, fields: 100, max_temperature: 20,
     };
@@ -26,6 +26,7 @@ async function renderDashboard({ faction = null, hasUniverse = true, moons = [],
             empireResources: { metal: 10, crystal: 20, deuterium: 30 }, empireCapacities: capacity,
             shieldTypes: [{ key: 'small', name: 'smallShield' }], isRenaming: false,
             availableUniverses: [{ id: 1, name: 'Univers', factions: [] }], availableFactions: [],
+            selectedFactionsEnabled: factionsEnabled,
             form: { universe_id: 1, name: 'Prime', faction_key: '0', errors: {} },
             t: (key) => key, route: (name) => `/${name}`, formatResource: String,
             resourceLabel: (resource) => resource, resourcePercentage: () => 10,
@@ -60,6 +61,12 @@ test('dashboard keeps planets, moons and alliance visible without a faction', as
     assert.match(html, /overview\.noMoons/);
     assert.match(html, /id="alliance"/);
     assert.doesNotMatch(html, /faction-link-panel/);
+});
+
+test('dashboard displays the selected planet visual', async () => {
+    const html = await renderDashboard();
+
+    assert.match(html, /class="overview-planet-image" src="\/legacy-assets\/skins\/xnova\/planeten\/normaltempplanet01\.jpg"/);
 });
 
 test('onboarding respects the faction module setting', async () => {

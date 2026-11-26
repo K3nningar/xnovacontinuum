@@ -64,6 +64,56 @@ class MoonLogisticsTest extends TestCase
         $this->assertSame('Home', $planet->fresh()->name);
     }
 
+    public function test_default_moon_names_follow_planet_renames_without_changing_custom_names(): void
+    {
+        [$user, $planet] = $this->playerWithMoons();
+        $map = app(GalaxyMap::class);
+        $originalName = $map->ownedMoon($user, $planet, 1)['generatedName'];
+        $this->assertSame('Home-a', $map->ownedMoon($user, $planet, 1)['name']);
+        $this->assertSame('Home-b', $map->ownedMoon($user, $planet, 2)['name']);
+
+        $stock = app(MoonEconomy::class)->stock($planet, ['orbit' => 2]);
+        DB::table('moon_stocks')->where('id', $stock->id)->update(['phalanx_level' => 1]);
+
+        $this->actingAs($user)->patch(route('planet.rename', $planet), ['name' => 'Nouvelle Planete'])
+            ->assertSessionHasNoErrors();
+        $planet->refresh();
+        $this->assertSame('Nouvelle Planete-a', $map->ownedMoon($user, $planet, 1)['name']);
+        $this->assertSame('Nouvelle Planete-b', $map->ownedMoon($user, $planet, 2)['name']);
+        $this->assertSame($originalName, $map->ownedMoon($user, $planet, 1)['generatedName']);
+
+        $this->get(route('dashboard'))->assertInertia(fn (Assert $page) => $page
+            ->where('planets.0.moons.0.name', 'Nouvelle Planete-a')
+            ->where('planets.0.moons.1.name', 'Nouvelle Planete-b'));
+        $this->get(route('galaxy.index'))->assertInertia(fn (Assert $page) => $page
+            ->where('slots.6.naturalMoons.0.name', 'Nouvelle Planete-a')
+            ->where('slots.6.naturalMoons.1.name', 'Nouvelle Planete-b'));
+        $this->get(route('fleet.index'))->assertInertia(fn (Assert $page) => $page
+            ->where('planets.0.moons.0.name', 'Nouvelle Planete-a')
+            ->where('planets.0.moons.1.name', 'Nouvelle Planete-b'));
+        $this->get(route('moon.show', ['planet' => $planet, 'orbit' => 2]))
+            ->assertInertia(fn (Assert $page) => $page->where('moon.name', 'Nouvelle Planete-b'));
+        $this->get(route('moon.buildings', ['planet' => $planet, 'orbit' => 2]))
+            ->assertInertia(fn (Assert $page) => $page->where('moon.name', 'Nouvelle Planete-b'));
+        $this->get(route('moon.phalanx', ['planet' => $planet, 'orbit' => 2]))
+            ->assertInertia(fn (Assert $page) => $page->where('moon.name', 'Nouvelle Planete-b'));
+
+        $this->get(route('moon.buildings', ['planet' => $planet, 'orbit' => 1]))->assertOk();
+        $this->patch(route('moon.rename', ['planet' => $planet, 'orbit' => 1]), ['name' => 'Asteria'])
+            ->assertSessionHasNoErrors();
+        $this->patch(route('planet.rename', $planet), ['name' => 'Autre Planete'])->assertSessionHasNoErrors();
+        $planet->refresh();
+        $this->assertSame('Asteria', $map->ownedMoon($user, $planet, 1)['name']);
+        $this->assertSame('Autre Planete-b', $map->ownedMoon($user, $planet, 2)['name']);
+        $this->assertDatabaseHas('moon_stocks', ['planet_id' => $planet->id, 'orbit' => 1, 'name' => 'Asteria']);
+        $this->assertDatabaseHas('moon_stocks', ['planet_id' => $planet->id, 'orbit' => 2, 'name' => null]);
+
+        $other = User::factory()->create(['universe_id' => $user->universe_id, 'spy_technology_level' => 13]);
+        $slot = $map->system($planet->universe, $other, (int) $planet->galaxy, (int) $planet->system, (int) $planet->position)['slots'][6];
+        $this->assertSame('Asteria', $slot['naturalMoons'][0]['name']);
+        $this->assertSame('Autre Planete-b', $slot['naturalMoons'][1]['name']);
+    }
+
     public function test_moons_reject_invalid_and_foreign_names(): void
     {
         [$user, $planet] = $this->playerWithMoons();

@@ -6,29 +6,29 @@ use Illuminate\Support\Facades\DB;
 
 class GameModules
 {
-    public function enabled(string $module): bool
+    public function enabled(string $module, ?int $universeId = null): bool
     {
         if (! is_bool(config("modules.$module.enabled"))) {
             return false;
         }
 
-        return $this->overrides()["module.$module"] ?? config("modules.$module.enabled");
+        return $this->overrides($universeId)["module.$module"] ?? config("modules.$module.enabled");
     }
 
-    public function officerEnabled(int $code): bool
+    public function officerEnabled(int $code, ?int $universeId = null): bool
     {
-        return $this->enabled('officers') && $this->officerConfigured($code);
+        return $this->enabled('officers', $universeId) && $this->officerConfigured($code, $universeId);
     }
 
-    public function officerConfigured(int $code): bool
+    public function officerConfigured(int $code, ?int $universeId = null): bool
     {
-        return $this->overrides()["officer.$code"]
+        return $this->overrides($universeId)["officer.$code"]
             ?? ! in_array((string) $code, array_map('strval', config('modules.officers.disabled', [])), true);
     }
 
-    public function officerRequirementMet(int $code, int $level, int $required = 1): bool
+    public function officerRequirementMet(int $code, int $level, int $required = 1, ?int $universeId = null): bool
     {
-        return ! $this->officerEnabled($code) || $level >= $required;
+        return ! $this->officerEnabled($code, $universeId) || $level >= $required;
     }
 
     public function forgetOverrides(): void
@@ -36,23 +36,35 @@ class GameModules
         request()->attributes->remove('game_module_overrides');
     }
 
-    private function overrides(): array
+    private function overrides(?int $universeId): array
     {
         if (app()->runningInConsole() && ! app()->runningUnitTests()) {
-            return $this->loadOverrides();
+            return $this->loadOverrides($universeId);
         }
 
         $request = request();
-        if (! $request->attributes->has('game_module_overrides')) {
-            $request->attributes->set('game_module_overrides', $this->loadOverrides());
+        $cache = $request->attributes->get('game_module_overrides', []);
+        $key = $universeId ?? 'global';
+        if (! array_key_exists($key, $cache)) {
+            $cache[$key] = $this->loadOverrides($universeId);
+            $request->attributes->set('game_module_overrides', $cache);
         }
 
-        return $request->attributes->get('game_module_overrides');
+        return $cache[$key];
     }
 
-    private function loadOverrides(): array
+    private function loadOverrides(?int $universeId): array
     {
-        return DB::table('game_module_settings')->pluck('enabled', 'key')
+        $global = DB::table('game_module_settings')->pluck('enabled', 'key')
             ->map(fn ($enabled): bool => (bool) $enabled)->all();
+
+        if ($universeId === null) {
+            return $global;
+        }
+
+        $universe = DB::table('universe_module_settings')->where('universe_id', $universeId)->pluck('enabled', 'key')
+            ->map(fn ($enabled): bool => (bool) $enabled)->all();
+
+        return array_replace($global, $universe);
     }
 }

@@ -112,7 +112,7 @@ class DashboardController extends Controller
                 'eventAt' => ($fleet->status === 'returning' ? $fleet->returns_at : $fleet->arrives_at)?->toIso8601String(),
             ])->values() : collect();
 
-        $faction = $universe && app(GameModules::class)->enabled('factions')
+        $faction = $universe && app(GameModules::class)->enabled('factions', $universe->id)
             ? Faction::query()->where('universe_id', $universe->id)->where('key', $user->faction_key ?? '0')->first()
             : null;
         $researchQueue = $universe ? $user->researchQueues()->first() : null;
@@ -132,7 +132,8 @@ class DashboardController extends Controller
                 ->get(['id', 'name', 'galaxies', 'systems_per_galaxy'])
                 ->map(fn (Universe $available): array => [
                     ...$available->only('id', 'name', 'galaxies', 'systems_per_galaxy'),
-                    'factions' => ! app(GameModules::class)->enabled('factions') ? [] : $available->factions->where('key', '!=', '0')->prepend(
+                    'factionsEnabled' => app(GameModules::class)->enabled('factions', $available->id),
+                    'factions' => ! app(GameModules::class)->enabled('factions', $available->id) ? [] : $available->factions->where('key', '!=', '0')->prepend(
                         $available->factions->firstWhere('key', '0') ?? ['key' => '0', 'name' => 'Faction 0', 'description' => null, 'image' => null],
                     )->values(),
                 ])->toArray(),
@@ -142,6 +143,7 @@ class DashboardController extends Controller
                 : null,
             'planets' => $planets->map(fn ($planet) => [
                 ...$planet->only('id', 'name', 'galaxy', 'system', 'position', 'coordinates', 'fields', 'max_temperature'),
+                'visualUrl' => $planet->visualUrl(),
                 'generatedName' => $generatedPlanetNames[$planet->id] ?? null,
                 'moons' => collect($moonsByPlanet[$planet->id] ?? [])->map(function (array $moon) use ($planet, $moonStocks, $moonEconomy): array {
                     $stock = $moonStocks->get("{$planet->id}:{$moon['orbit']}");

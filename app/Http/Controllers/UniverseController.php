@@ -66,7 +66,7 @@ class UniverseController extends Controller
             }
 
             $factionKey = $attributes['faction_key'] ?? '0';
-            if ($factionKey !== '0' && ! app(GameModules::class)->enabled('factions')) {
+            if ($factionKey !== '0' && ! app(GameModules::class)->enabled('factions', $universe->id)) {
                 throw ValidationException::withMessages(['faction_key' => 'Le module des factions est désactivé.']);
             }
             if ($factionKey !== '0' && ! Faction::query()->where('universe_id', $universe->id)->where('key', $factionKey)->exists()) {

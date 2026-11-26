@@ -2,6 +2,7 @@
 
 namespace Tests\Feature;
 
+use App\Models\Universe;
 use App\Models\User;
 use App\Services\GameModules;
 use App\Services\UnitProductionService;
@@ -12,6 +13,70 @@ use Tests\TestCase;
 class ModuleAdminTest extends TestCase
 {
     use RefreshDatabase;
+
+    public function test_universe_module_settings_are_isolated_and_inherit_global_defaults(): void
+    {
+        $first = Universe::create(['name' => 'Andromède', 'slug' => 'andromeda']);
+        $second = Universe::create(['name' => 'Pégase', 'slug' => 'pegase']);
+        $founder = User::factory()->create(['admin_level' => 4]);
+        $this->actingAs($founder)->patch(route('admin.modules.update'), [
+            'universe_id' => $first->id, 'factions_enabled' => false, 'officers_enabled' => false, 'enabled_officers' => [610],
+        ])->assertRedirect(route('admin.modules', ['universe_id' => $first->id]))->assertSessionHasNoErrors();
+
+        $this->assertDatabaseHas('universe_module_settings', ['universe_id' => $first->id, 'key' => 'module.officers', 'enabled' => false]);
+        $this->assertDatabaseHas('universe_module_settings', ['universe_id' => $first->id, 'key' => 'officer.610', 'enabled' => true]);
+        $this->assertDatabaseMissing('universe_module_settings', ['universe_id' => $second->id]);
+        $this->assertDatabaseCount('game_module_settings', 0);
+        $this->get(route('admin.modules', ['universe_id' => $first->id]))->assertInertia(fn (Assert $page) => $page
+            ->where('selectedUniverseId', $first->id)->where('factionsEnabled', false)->where('officersEnabled', false));
+        $this->get(route('admin.modules', ['universe_id' => $second->id]))->assertInertia(fn (Assert $page) => $page
+            ->where('selectedUniverseId', $second->id)->where('factionsEnabled', true)->where('officersEnabled', true));
+
+        $modules = app(GameModules::class);
+        $this->assertFalse($modules->enabled('factions', $first->id));
+        $this->assertTrue($modules->enabled('factions', $second->id));
+        $this->assertFalse($modules->officerEnabled(610, $first->id));
+        $this->assertTrue($modules->officerEnabled(610, $second->id));
+        $this->assertFalse($modules->enabled('factions', $first->id));
+
+        $firstPlayer = User::factory()->create(['universe_id' => $first->id]);
+        $secondPlayer = User::factory()->create(['universe_id' => $second->id]);
+        foreach ([$firstPlayer, $secondPlayer] as $player) {
+            $player->forceFill(['spy_technology_level' => 7, 'officer_spy_level' => 1, 'officer_spy_research_bonus' => 5])->save();
+        }
+        $this->assertSame(2, $firstPlayer->fresh()->spy_technology_level);
+        $this->assertSame(7, $secondPlayer->fresh()->spy_technology_level);
+        $this->assertSame([], app(UnitProductionService::class)->officerCatalog($firstPlayer)['officers']);
+        $this->assertNotEmpty(app(UnitProductionService::class)->officerCatalog($secondPlayer)['officers']);
+    }
+
+    public function test_onboarding_uses_the_selected_universe_faction_setting(): void
+    {
+        $first = Universe::create(['name' => 'Andromède', 'slug' => 'andromeda']);
+        $second = Universe::create(['name' => 'Pégase', 'slug' => 'pegase']);
+        $founder = User::factory()->create(['admin_level' => 4]);
+        $this->actingAs($founder)->patch(route('admin.modules.update'), [
+            'universe_id' => $first->id, 'factions_enabled' => false, 'officers_enabled' => true, 'enabled_officers' => [],
+        ])->assertSessionHasNoErrors();
+
+        $player = User::factory()->create();
+        $this->actingAs($player)->get(route('dashboard'))->assertInertia(fn (Assert $page) => $page
+            ->where('availableUniverses.0.factionsEnabled', false)
+            ->where('availableUniverses.1.factionsEnabled', true));
+        $this->post('/universe/join', ['universe_id' => $first->id, 'name' => 'Nova Prime', 'faction_key' => 'test'])
+            ->assertSessionHasErrors('faction_key');
+        $this->assertDatabaseMissing('users', ['commander_id' => $player->commander_id, 'universe_id' => $first->id]);
+        $this->assertTrue(app(GameModules::class)->enabled('factions', $second->id));
+    }
+
+    public function test_unknown_universe_cannot_be_configured(): void
+    {
+        $founder = User::factory()->create(['admin_level' => 4]);
+        $this->actingAs($founder)->patch(route('admin.modules.update'), [
+            'universe_id' => 99999, 'factions_enabled' => false, 'officers_enabled' => false, 'enabled_officers' => [],
+        ])->assertSessionHasErrors('universe_id');
+        $this->assertDatabaseCount('universe_module_settings', 0);
+    }
 
     public function test_only_founders_can_view_or_update_module_settings(): void
     {

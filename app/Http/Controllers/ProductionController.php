@@ -95,7 +95,7 @@ class ProductionController extends Controller
                 foreach ($moons as &$moon) {
                     $moon['generatedName'] ??= $moon['name'];
                     $stock = $moonStocks->get("{$planet->id}:{$moon['orbit']}");
-                    $moon['name'] = $stock?->name ?? $moon['generatedName'];
+                    $moon['name'] = $stock?->name ?? $moon['name'];
                 }
                 unset($moon);
 
@@ -109,8 +109,8 @@ class ProductionController extends Controller
                 'missions' => ['transport', 'attack', 'station', 'spy', 'colonize', 'recycle', 'destroy_moon', 'destroy_planet', 'expedition'],
                 'targetTypes' => ['planet', 'moon', 'asteroid', 'debris', 'depot'],
                 'experimentalPlanetaryDestroyerEnabled' => (bool) config('combat.experimental_planetary_destroyer', false),
-                'planetaryDestroyerAvailable' => (bool) config('combat.experimental_planetary_destroyer', false) && app(GameModules::class)->officerRequirementMet(615, (int) $user->officer_emperor_level) && (int) $selectedPlanet->unit_217 > 0,
-                'hasAlliance' => $user->alliance_id !== null || (app(GameModules::class)->enabled('factions') && ($user->faction_key !== '0'
+                'planetaryDestroyerAvailable' => (bool) config('combat.experimental_planetary_destroyer', false) && app(GameModules::class)->officerRequirementMet(615, (int) $user->officer_emperor_level, universeId: $user->universe_id) && (int) $selectedPlanet->unit_217 > 0,
+                'hasAlliance' => $user->alliance_id !== null || (app(GameModules::class)->enabled('factions', $user->universe_id) && ($user->faction_key !== '0'
                     || DB::table('faction_diplomacy')->where('universe_id', $user->universe_id)->where('status', 'allied')
                         ->where(fn ($query) => $query->where('first_faction', '0')->orWhere('second_faction', '0'))->exists())),
                 'stationing' => ['requiresSameAlliance' => true, 'requiresRecipientDepotLevel' => 1, 'retainsFleet' => true],

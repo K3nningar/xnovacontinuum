@@ -1256,9 +1256,9 @@ body { background: transparent; }
     justify-content: flex-end;
     margin-bottom: 16px;
     padding: 16px;
-    background: linear-gradient(180deg, transparent 30%, rgba(4, 12, 22, .9)), url('../../public/vendor/hud/css/images/cover-2.jpg') center / cover;
+    background: #070f1c;
 }
-.overview-world-visual .planet-orb { display: none; }
+.overview-planet-image { display: block; width: min(200px, 100%); aspect-ratio: 1; object-fit: contain; }
 .overview-world-visual small { color: #d3e2e8; }
 
 .overview-page .resource-grid { grid-template-columns: repeat(4, minmax(0, 1fr)); }

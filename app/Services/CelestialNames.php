@@ -134,6 +134,11 @@ class CelestialNames
         ];
     }
 
+    public function moonName(string $planetName, int $orbit): string
+    {
+        return $planetName.'-'.self::MOON_SUFFIXES[$orbit];
+    }
+
     /**
      * @return array{starName: string, planetNames: array<int, string>, moonNames: array<int, array<int, string>>}
      */
@@ -150,8 +155,8 @@ class CelestialNames
             $planetName = $starName.' '.self::ROMAN_NUMERALS[$position];
             $planetNames[$position] = $planetName;
 
-            foreach (self::MOON_SUFFIXES as $orbit => $moonSuffix) {
-                $moonNames[$position][$orbit] = $planetName.'-'.$moonSuffix;
+            foreach (array_keys(self::MOON_SUFFIXES) as $orbit) {
+                $moonNames[$position][$orbit] = $this->moonName($planetName, $orbit);
             }
         }
 

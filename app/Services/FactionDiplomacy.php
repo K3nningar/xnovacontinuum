@@ -13,7 +13,7 @@ class FactionDiplomacy
             return 'neutral';
         }
 
-        if (! app(GameModules::class)->enabled('factions')) {
+        if (! app(GameModules::class)->enabled('factions', $first->universe_id)) {
             return 'legacy';
         }
 

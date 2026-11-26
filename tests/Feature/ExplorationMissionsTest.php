@@ -492,6 +492,13 @@ class ExplorationMissionsTest extends TestCase
         app(ExplorationMissions::class)->processDue();
         $this->assertSame(2, $user->planets()->where('universe_id', $user->universe_id)->count());
         $colonizedPlanet = Planet::where('universe_id', $user->universe_id)->where('galaxy', 1)->where('system', $system)->where('position', $position)->firstOrFail();
+        $this->assertNotNull($colonizedPlanet->visual_index);
+        $visualUrl = $colonizedPlanet->visualUrl();
+        $this->assertFileExists(public_path(ltrim($visualUrl, '/')));
+        $this->assertSame($visualUrl, $colonizedPlanet->fresh()->visualUrl());
+        $this->get(route('dashboard', ['planet' => $colonizedPlanet->id]))->assertInertia(fn (Assert $page) => $page
+            ->where('activePlanetId', $colonizedPlanet->id)
+            ->where('planets', fn ($planets) => collect($planets)->contains(fn ($planet) => $planet['id'] === $colonizedPlanet->id && $planet['visualUrl'] === $visualUrl)));
         $this->assertSame(0, (int) $colonizedPlanet->unit_208);
         $this->assertSame('colonized', $fleet->fresh()->outcome);
         $generatedName = app(GalaxyMap::class)->system($user->universe, $user, 1, $system, $home->position)['slots'][$position - 2]['generatedName'];
@@ -500,6 +507,18 @@ class ExplorationMissionsTest extends TestCase
         $this->assertSame($generatedName, $fleet->fresh()->mission_report['colonizedPlanetName']);
         $this->get(route('galaxy.index', ['planet' => $home->id, 'system' => $system]))->assertInertia(fn (Assert $page) => $page
             ->where('systemVisible', true)->where('slots.'.($position - 2).'.planet.name', $generatedName));
+    }
+
+    public function test_existing_planet_without_visual_index_has_a_stable_visual(): void
+    {
+        [$user, $planet] = $this->player();
+        $planet->forceFill(['visual_index' => null])->save();
+        $visualUrl = $planet->visualUrl();
+
+        $this->assertFileExists(public_path(ltrim($visualUrl, '/')));
+        $this->assertSame($visualUrl, $planet->fresh()->visualUrl());
+        $this->actingAs($user)->get(route('dashboard'))->assertInertia(fn (Assert $page) => $page
+            ->where('planets.0.visualUrl', $visualUrl));
     }
 
     public function test_recycling_debris_is_depleted_once_and_moon_stock_is_removed_when_destroyed(): void

@@ -1,14 +1,15 @@
 <script setup>
-import { Head, Link, useForm, usePage } from '@inertiajs/vue3';
+import { Head, Link, router, useForm, usePage } from '@inertiajs/vue3';
 import { useI18n } from 'vue-i18n';
 import { route as ziggyRoute } from 'ziggy-js';
 import GameLayout from '../../Layouts/GameLayout.vue';
 
-const props = defineProps({ factionsEnabled: Boolean, officersEnabled: Boolean, officers: { type: Array, required: true } });
+const props = defineProps({ factionsEnabled: Boolean, officersEnabled: Boolean, officers: { type: Array, required: true }, universes: { type: Array, default: () => [] }, selectedUniverseId: { type: Number, default: null } });
 const page = usePage();
 const { t } = useI18n();
 const route = (name) => ziggyRoute(name, undefined, true, page.props.ziggy);
 const form = useForm({
+    universe_id: props.selectedUniverseId,
     factions_enabled: props.factionsEnabled,
     officers_enabled: props.officersEnabled,
     enabled_officers: props.officers.filter((officer) => officer.enabled).map((officer) => officer.code),
@@ -16,6 +17,10 @@ const form = useForm({
 
 function save() {
     form.patch(route('admin.modules.update'), { preserveScroll: true });
+}
+
+function selectUniverse(event) {
+    router.get(route('admin.modules'), { universe_id: event.target.value });
 }
 </script>
 
@@ -25,10 +30,14 @@ function save() {
         <main class="command-layout admin-page">
             <section class="command-content flex flex-col gap-6">
                 <div class="command-heading">
-                    <div><h1>{{ t('adminModules.title') }}</h1><p class="command-subtitle">{{ t('adminModules.global') }}</p></div>
+                    <div><h1>{{ t('adminModules.title') }}</h1><p class="command-subtitle">{{ t('adminModules.perUniverse') }}</p></div>
                     <Link class="button button-outline" :href="route('admin.index')">{{ t('admin.title') }}</Link>
                 </div>
-                <form class="data-panel modules-panel" @submit.prevent="save">
+                <label v-if="universes.length" class="module-universe">{{ t('adminModules.universe') }}
+                    <select :value="selectedUniverseId" @change="selectUniverse"><option v-for="universe in universes" :key="universe.id" :value="universe.id">{{ universe.name }}</option></select>
+                </label>
+                <p v-else>{{ t('adminModules.noUniverses') }}</p>
+                <form v-if="selectedUniverseId" class="data-panel modules-panel" @submit.prevent="save">
                     <div v-if="Object.keys(form.errors).length" class="form-alert" role="alert">
                         <p v-for="(error, field) in form.errors" :key="field">{{ error }}</p>
                     </div>
@@ -68,6 +77,7 @@ function save() {
 
 <style scoped>
 .modules-panel { min-height: 0; display: grid; gap: 24px; padding: clamp(20px, 2.5vw, 32px); }
+.module-universe { display: grid; gap: 8px; max-width: 360px; color: #eef9f5; }
 .modules-intro { display: grid; gap: 12px; }
 .module-switch { display: flex; align-items: center; gap: 12px; width: fit-content; color: #eef9f5; font-size: 16px; font-weight: 650; cursor: pointer; }
 .module-switch input, .officer-option input { width: 18px; height: 18px; flex: 0 0 18px; margin: 0; accent-color: #44d9ad; cursor: pointer; }

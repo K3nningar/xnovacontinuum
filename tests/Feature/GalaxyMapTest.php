@@ -260,6 +260,7 @@ class GalaxyMapTest extends TestCase
         }
 
         $this->assertNotNull($systemNumber);
+        $this->assertSame($system['slots'][6]['naturalMoons'][0]['generatedName'], $system['slots'][6]['naturalMoons'][0]['name']);
         $planet = new Planet(['name' => 'My custom world']);
         $planet->forceFill(['universe_id' => $universe->id, 'user_id' => $user->id, 'galaxy' => 1, 'system' => $systemNumber,
             'position' => 8, 'resources_updated_at' => now()])->save();
@@ -269,7 +270,8 @@ class GalaxyMapTest extends TestCase
         $this->assertSame($names['starName'], $system['starName']);
         $this->assertSame($names['planetNames'][8], $system['slots'][6]['generatedName']);
         $this->assertSame('My custom world', $system['slots'][6]['planet']['name']);
-        $this->assertSame($names['moonNames'][8][1], $system['slots'][6]['naturalMoons'][0]['name']);
+        $this->assertSame('My custom world-a', $system['slots'][6]['naturalMoons'][0]['name']);
+        $this->assertSame($names['moonNames'][8][1], $system['slots'][6]['naturalMoons'][0]['generatedName']);
 
         DB::table('moon_stocks')->insert(['planet_id' => $planet->id, 'orbit' => 1, 'name' => 'My named moon']);
         $system = $map->system($universe, $user, 1, $systemNumber, 8);

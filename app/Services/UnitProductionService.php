@@ -177,7 +177,7 @@ class UnitProductionService
             $requirementsMet = true;
 
             foreach ($definition['requirements'] as $requirementCode => $requiredLevel) {
-                if (! $this->requirementEnabled($requirementCode)) {
+                if (! $this->requirementEnabled($requirementCode, $user->universe_id)) {
                     continue;
                 }
                 $currentLevel = $this->requirementLevel($requirementCode, $planet, $user);
@@ -270,7 +270,7 @@ class UnitProductionService
             }
 
             foreach ($definition['requirements'] as $requirementCode => $requiredLevel) {
-                if (! $this->requirementEnabled($requirementCode)) {
+                if (! $this->requirementEnabled($requirementCode, $lockedUser->universe_id)) {
                     continue;
                 }
                 $currentLevel = $this->requirementLevel($requirementCode, $lockedPlanet, $lockedUser);
@@ -415,14 +415,14 @@ class UnitProductionService
     {
         $officers = [];
         foreach (self::OFFICERS as $code => $officer) {
-            if (! app(GameModules::class)->officerEnabled($code)) {
+            if (! app(GameModules::class)->officerEnabled($code, $user->universe_id)) {
                 continue;
             }
             $column = $this->officerColumn($code);
             $requirementsMet = true;
             $requirements = [];
             foreach ($officer['requirements'] as $requiredCode => $requiredLevel) {
-                if (! $this->requirementEnabled($requiredCode)) {
+                if (! $this->requirementEnabled($requiredCode, $user->universe_id)) {
                     continue;
                 }
                 $requiredColumn = self::OFFICER_COLUMNS[$requiredCode];
@@ -455,7 +455,7 @@ class UnitProductionService
             throw ValidationException::withMessages(['officer' => 'Cet officier est inconnu.']);
         }
 
-        if (! app(GameModules::class)->officerEnabled($code)) {
+        if (! app(GameModules::class)->officerEnabled($code, $user->universe_id)) {
             throw ValidationException::withMessages(['officer' => 'Cet officier est désactivé.']);
         }
 
@@ -469,7 +469,7 @@ class UnitProductionService
             $column = $this->officerColumn($code);
 
             foreach ($officer['requirements'] as $requiredCode => $requiredLevel) {
-                if (! $this->requirementEnabled($requiredCode)) {
+                if (! $this->requirementEnabled($requiredCode, $lockedUser->universe_id)) {
                     continue;
                 }
                 if ((int) $lockedUser->{self::OFFICER_COLUMNS[$requiredCode]} < $requiredLevel) {
@@ -531,9 +531,9 @@ class UnitProductionService
         throw ValidationException::withMessages(['unit' => 'Configuration de prérequis invalide.']);
     }
 
-    private function requirementEnabled(int $code): bool
+    private function requirementEnabled(int $code, ?int $universeId): bool
     {
-        return ! isset(self::OFFICER_COLUMNS[$code]) || app(GameModules::class)->officerEnabled($code);
+        return ! isset(self::OFFICER_COLUMNS[$code]) || app(GameModules::class)->officerEnabled($code, $universeId);
     }
 
     /**
@@ -594,7 +594,7 @@ class UnitProductionService
         $user = User::query()->whereKey($planet->user_id)->lockForUpdate()->firstOrFail();
         $column = self::OFFICER_COLUMNS[$entry->unit_code];
 
-        if (! app(GameModules::class)->officerEnabled((int) $entry->unit_code)) {
+        if (! app(GameModules::class)->officerEnabled((int) $entry->unit_code, $planet->universe_id)) {
             $user->officer_points++;
             $user->save();
 
@@ -602,7 +602,7 @@ class UnitProductionService
         }
 
         foreach ($officer['requirements'] as $requiredCode => $requiredLevel) {
-            if (! $this->requirementEnabled($requiredCode)) {
+            if (! $this->requirementEnabled($requiredCode, $planet->universe_id)) {
                 continue;
             }
             if ((int) $user->{self::OFFICER_COLUMNS[$requiredCode]} < $requiredLevel) {
@@ -690,8 +690,8 @@ class UnitProductionService
         $productionLevel = $type === 'ships' ? (int) $planet->hangar_level : (int) $planet->defence_center_level;
         $baseSeconds = (int) floor((($unitCost[0] + $unitCost[1]) / 2500) / (($productionLevel + 1) * (2 ** (int) $planet->nano_factory_level) * ((int) $planet->robot_factory_level + 1)) * 3600);
         $officerDiscount = $type === 'ships'
-            ? (app(GameModules::class)->officerEnabled(604) ? (int) $user->officer_technocrat_level * 5 : 0)
-            : (app(GameModules::class)->officerEnabled(608) ? (int) $user->officer_defender_level * 37.5 : 0);
+            ? (app(GameModules::class)->officerEnabled(604, $planet->universe_id) ? (int) $user->officer_technocrat_level * 5 : 0)
+            : (app(GameModules::class)->officerEnabled(608, $planet->universe_id) ? (int) $user->officer_defender_level * 37.5 : 0);
 
         return max(1, (int) floor($baseSeconds * max(0.1, 1 - ($officerDiscount / 100))));
     }

@@ -18,7 +18,7 @@ class FactionController extends Controller
         abort_if($user->universe_id === null, 404);
 
         $universe = $user->universe;
-        if (! app(GameModules::class)->enabled('factions')) {
+        if (! app(GameModules::class)->enabled('factions', $user->universe_id)) {
             return inertia('Factions/Index', [
                 'universe' => $universe->only('id', 'name'),
                 'factionsEnabled' => false,

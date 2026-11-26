@@ -80,7 +80,7 @@ class HandleInertiaRequests extends Middleware
             ? $authenticatedUser->account
             : $authenticatedUser;
         $faction = match (true) {
-            $authenticatedUser?->universe_id === null || ! app(GameModules::class)->enabled('factions') => null,
+            $authenticatedUser?->universe_id === null || ! app(GameModules::class)->enabled('factions', $authenticatedUser->universe_id) => null,
             default => Faction::query()->where('universe_id', $authenticatedUser->universe_id)
                 ->where('key', $authenticatedUser->faction_key ?? '0')->first(['key', 'name'])?->only('key', 'name')
                 ?? (($authenticatedUser->faction_key ?? '0') === '0' ? ['key' => '0', 'name' => 'Faction 0'] : null),
@@ -100,7 +100,7 @@ class HandleInertiaRequests extends Middleware
                 ] : null,
             ],
             'locale' => app()->getLocale(),
-            'factionsEnabled' => fn () => app(GameModules::class)->enabled('factions'),
+            'factionsEnabled' => fn () => app(GameModules::class)->enabled('factions', $request->user()?->universe_id),
             'factionSettings' => fn () => $request->user() ? app(FactionCatalog::class)->settings($request->user()) : [],
             'gameVersion' => fn () => $request->user() ? $this->changelog->currentVersion() : null,
             'flash' => [

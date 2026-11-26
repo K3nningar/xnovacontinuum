@@ -121,7 +121,7 @@ class GalaxyMap
                     'diameter' => 900 + $this->roll($universe, $galaxy, $system, $position, 'moon-diameter-'.$orbit, 5101),
                     'generatedName' => $generatedMoonName,
                     'planetGeneratedName' => $systemNames['planetNames'][$position],
-                    'name' => $moonStock?->name ?? $generatedMoonName,
+                    'name' => $moonStock?->name ?? ($planet ? $this->names->moonName($planet->name, $orbit) : $generatedMoonName),
                 ];
             }
             $moonCount = count($moons);
@@ -141,7 +141,7 @@ class GalaxyMap
                 'planet' => $planet ? [
                     'name' => $planet->name,
                     'owner' => $planet->user->name,
-                    'factionName' => app(GameModules::class)->enabled('factions') ? ($factionNames[$planet->user->faction_key] ?? null) : null,
+                    'factionName' => app(GameModules::class)->enabled('factions', $universe->id) ? ($factionNames[$planet->user->faction_key] ?? null) : null,
                     'owned' => (int) $planet->user_id === (int) $viewer->id,
                     'hostileAllowed' => app(FactionDiplomacy::class)->relation($viewer, $planet->user) !== 'allied',
                     'alliedDepot' => (int) $planet->user_id !== (int) $viewer->id && (int) $planet->alliance_depot_level > 0 && app(FactionDiplomacy::class)->canStation($viewer, $planet->user),

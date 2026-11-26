@@ -33,7 +33,7 @@ class OfficerController extends Controller
         return inertia('Officers/Index', [
             'user' => $user->only('id', 'name'),
             'queue' => $queue,
-            'officersEnabled' => $modules->enabled('officers'),
+            'officersEnabled' => $modules->enabled('officers', $user->universe_id),
             ...$production->officerCatalog($user),
         ]);
     }

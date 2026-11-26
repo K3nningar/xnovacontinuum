@@ -14,9 +14,10 @@ async function renderModulesPage(officersEnabled) {
         setup: () => ({
             form: { factions_enabled: true, officers_enabled: officersEnabled, enabled_officers: [601], errors: {}, processing: false },
             officers: [{ code: 601, key: 'geologist' }, { code: 602, key: 'admiral' }],
+            universes: [{ id: 1, name: 'Andromède' }, { id: 2, name: 'Pégase' }], selectedUniverseId: 1,
             t: (key) => key,
             route: () => '/admin',
-            save: () => {},
+            save: () => {}, selectUniverse: () => {},
         }),
     });
     app.component('Head', { render: () => null });
@@ -35,6 +36,7 @@ test('module settings keep the legend outside the officer grid and do not duplic
     assert.match(html, /officerNames\.geologist/);
     assert.match(html, /officerNames\.admiral/);
     assert.match(html, /adminModules\.enableFactions/);
+    assert.match(html, /Pégase/);
 });
 
 test('individual choices remain editable when the officer module is disabled', async () => {

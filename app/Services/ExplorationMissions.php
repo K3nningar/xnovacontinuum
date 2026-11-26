@@ -226,7 +226,7 @@ class ExplorationMissions
         if ($mission === 'destroy_planet' && (($ships[217] ?? 0) !== 1 || array_sum($ships) !== 1)) {
             throw ValidationException::withMessages(['ships' => 'Cette mission nécessite uniquement un destructeur planétaire.']);
         }
-        if ($mission === 'destroy_planet' && ! app(GameModules::class)->officerRequirementMet(615, (int) $user->officer_emperor_level)) {
+        if ($mission === 'destroy_planet' && ! app(GameModules::class)->officerRequirementMet(615, (int) $user->officer_emperor_level, universeId: $user->universe_id)) {
             throw ValidationException::withMessages(['mission' => 'Cette mission nécessite l’officier empereur.']);
         }
         if ($mission === 'spy' && (array_sum($ships) !== (int) ($ships[210] ?? 0))) {
@@ -314,7 +314,7 @@ class ExplorationMissions
         }
         if ($mission === 'station' && $targetType === 'moon' && $target
             && (int) $target->user_id !== (int) $user->id
-            && (! app(GameModules::class)->enabled('factions')
+            && (! app(GameModules::class)->enabled('factions', $user->universe_id)
                 || ($user->faction_key ?? '0') !== '0' || ($target->user->faction_key ?? '0') !== '0')
             && (! app(FactionDiplomacy::class)->canStation($user, $target->user) || (int) $target->alliance_depot_level < 1)) {
             throw ValidationException::withMessages(['target' => 'Le stationnement exige un dépôt actif sur une planète alliée.']);
@@ -589,7 +589,7 @@ class ExplorationMissions
         } elseif ($fleet->mission === 'station') {
             if ($fleet->target_type === 'moon' && $fleet->target_planet_id && $fleet->target_orbit
                 && ((int) $fleet->targetPlanet->user_id === (int) $fleet->user_id
-                    || (app(GameModules::class)->enabled('factions')
+                    || (app(GameModules::class)->enabled('factions', $fleet->universe_id)
                         && ($fleet->user->faction_key ?? '0') === '0' && ($fleet->targetPlanet->user->faction_key ?? '0') === '0'))) {
                 $this->moonEconomy()->addShips($fleet->targetPlanet, (int) $fleet->target_orbit, $fleet->ships);
                 $fleet->ships = [];

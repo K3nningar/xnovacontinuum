@@ -76,6 +76,16 @@ test('the administration scope includes module settings and officer names', () =
     }
 });
 
+test('faction image controls have translations in the administration scope for every locale', () => {
+    for (const [locale, translations] of Object.entries(locales)) {
+        const editor = getPageTranslations(translations, 'admin').factionEditor;
+
+        for (const key of ['imageUpload', 'imageChoose', 'imageNone']) {
+            assert.ok(editor[key], `${locale} is missing factionEditor.${key}`);
+        }
+    }
+});
+
 test('every locale namespace can be displayed through a page scope', () => {
     const assignedNamespaces = new Set(Object.values(pageTranslationPaths).flat().map((path) => path.split('.')[0]));
 

@@ -25,6 +25,7 @@ use Illuminate\Support\Carbon;
  * @property int $galaxy
  * @property int $system
  * @property int $position
+ * @property int|null $visual_index
  * @property string $coordinates
  * @property int $metal
  * @property int $crystal
@@ -97,6 +98,33 @@ use Illuminate\Support\Carbon;
 #[Fillable(['name', 'metal_mine_level', 'crystal_mine_level', 'deuterium_synthesizer_level', 'solar_plant_level', 'fusion_plant_level', 'laboratory_level', 'laboratory_activity', 'hangar_level', 'defence_center_level', 'robot_factory_level', 'nano_factory_level', 'missile_silo_level', 'terraformer_level', 'unit_202', 'unit_203', 'unit_204', 'unit_205', 'unit_206', 'unit_207', 'unit_208', 'unit_209', 'unit_210', 'unit_211', 'unit_212', 'unit_213', 'unit_214', 'unit_215', 'unit_216', 'unit_217', 'unit_401', 'unit_402', 'unit_403', 'unit_404', 'unit_405', 'unit_406', 'unit_407', 'unit_408', 'unit_409', 'unit_502', 'unit_503', 'metal_storage_level', 'crystal_storage_level', 'deuterium_storage_level', 'metal_mine_activity', 'crystal_mine_activity', 'deuterium_synthesizer_activity', 'solar_plant_activity', 'fusion_plant_activity', 'metal', 'crystal', 'deuterium', 'metal_production_remainder', 'crystal_production_remainder', 'deuterium_production_remainder', 'resources_updated_at', 'alliance_depot_level'])]
 class Planet extends Model
 {
+    protected static function booted(): void
+    {
+        static::creating(function (Planet $planet): void {
+            $planet->visual_index ??= random_int(0, count(self::visuals()) - 1);
+        });
+    }
+
+    public function visualUrl(): string
+    {
+        $visuals = self::visuals();
+        $index = $this->visual_index ?? (int) (sprintf('%u', crc32((string) $this->id)) % count($visuals));
+
+        return '/legacy-assets/skins/xnova/planeten/'.$visuals[$index % count($visuals)];
+    }
+
+    private static function visuals(): array
+    {
+        $visuals = [];
+        foreach (['dschjungelplanet' => 10, 'eisplanet' => 10, 'gasplanet' => 8, 'normaltempplanet' => 8, 'trockenplanet' => 10, 'wasserplanet' => 9, 'wuestenplanet' => 4] as $type => $count) {
+            for ($number = 1; $number <= $count; $number++) {
+                $visuals[] = sprintf('%s%02d.jpg', $type, $number);
+            }
+        }
+
+        return $visuals;
+    }
+
     /**
      * Casts the resource checkpoint to immutable time so accrued intervals cannot be mutated accidentally.
      *

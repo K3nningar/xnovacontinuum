@@ -502,7 +502,7 @@ class PlanetEconomy
 
     private function hasAlliance(Planet $planet): bool
     {
-        if (! app(GameModules::class)->enabled('factions')) {
+        if (! app(GameModules::class)->enabled('factions', $planet->universe_id)) {
             return $planet->user()->whereNotNull('alliance_id')
                 ->whereHas('alliance', fn ($alliance) => $alliance->where('universe_id', $planet->universe_id))->exists();
         }

@@ -100,7 +100,7 @@ class User extends Authenticatable
             default => null,
         };
 
-        if ($bonus === null || (int) ($this->getAttributes()[$bonus[0]] ?? 0) === 0 || app(GameModules::class)->officerEnabled($bonus[1])) {
+        if ($bonus === null || (int) ($this->getAttributes()[$bonus[0]] ?? 0) === 0 || app(GameModules::class)->officerEnabled($bonus[1], $this->universe_id)) {
             return $level;
         }
 
