@@ -46,7 +46,7 @@ class ProductionController extends Controller
     public function fleet(Request $request, PlanetEconomy $economy, UnitProductionService $production, GalaxyMap $map, MoonEconomy $moonEconomy): Response|RedirectResponse
     {
         $user = $request->user();
-        $planets = $user->planets()->where('universe_id', $user->universe_id)
+        $planets = $user->planets()->where('universe_id', $user->universe_id)->whereNull('destroyed_at')
             ->orderBy('galaxy')->orderBy('system')->orderBy('position')->get()
             ->map(function (Planet $planet) use ($economy, $production): Planet {
                 $planet = $economy->materialize($planet);
@@ -60,6 +60,12 @@ class ProductionController extends Controller
         if (! $selectedPlanet) {
             return to_route('dashboard');
         }
+
+        $visibleSystems = $planets->filter(fn (Planet $planet): bool => $planet->destroyed_at === null)
+            ->mapWithKeys(fn (Planet $planet): array => ["{$planet->galaxy}:{$planet->system}" => true]);
+        $targetSystemVisible = fn ($fleet): bool => $visibleSystems->has("{$fleet->target_galaxy}:{$fleet->target_system}");
+        $hideTargetReport = fn ($fleet): bool => ! $targetSystemVisible($fleet)
+            && in_array($fleet->mission, ['attack', 'spy', 'station', 'colonize', 'destroy_moon', 'destroy_planet'], true);
 
         $shipColumns = [202 => 'unit_202', 203 => 'unit_203', 204 => 'unit_204', 205 => 'unit_205', 206 => 'unit_206', 207 => 'unit_207', 208 => 'unit_208', 209 => 'unit_209', 210 => 'unit_210', 211 => 'unit_211', 212 => 'unit_212', 213 => 'unit_213', 214 => 'unit_214', 215 => 'unit_215', 216 => 'unit_216', 217 => 'unit_217'];
         $ships = [];
@@ -115,15 +121,15 @@ class ProductionController extends Controller
                 ->orderBy('arrives_at')->get()->map(fn ($fleet) => [
                     'id' => $fleet->id, 'mission' => $fleet->mission, 'ships' => $fleet->ships, 'status' => $fleet->status,
                     'originOrbit' => $fleet->origin_orbit, 'targetOrbit' => $fleet->target_orbit,
-                    'outcome' => $fleet->outcome, 'report' => $fleet->mission_report, 'moonOrbit' => $fleet->moon_orbit,
+                    'outcome' => $fleet->outcome, 'report' => $hideTargetReport($fleet) ? null : $fleet->mission_report, 'moonOrbit' => $fleet->moon_orbit,
                     'stationed' => $fleet->status === 'stationed',
                     'arrivesAt' => $fleet->arrives_at->toIso8601String(), 'returnsAt' => $fleet->returns_at?->toIso8601String(),
                     'origin' => $fleet->originPlanet?->coordinates, 'originName' => $fleet->originPlanet?->name,
-                    'target' => $fleet->target_position ? "{$fleet->target_galaxy}:{$fleet->target_system}:{$fleet->target_position}" : $fleet->targetPlanet?->coordinates, 'targetName' => $fleet->targetPlanet?->name,
+                    'target' => $fleet->target_position ? "{$fleet->target_galaxy}:{$fleet->target_system}:{$fleet->target_position}" : $fleet->targetPlanet?->coordinates, 'targetName' => $targetSystemVisible($fleet) ? $fleet->targetPlanet?->name : null,
                 ])->values(),
             'reports' => $user->fleets()->where('universe_id', $user->universe_id)->where('status', 'completed')
                 ->whereNotNull('target_position')->latest('updated_at')->limit(20)->get()
-                ->map(fn ($fleet) => ['id' => $fleet->id, 'outcome' => $fleet->outcome, 'cargo' => $fleet->cargo, 'ships' => $fleet->ships, 'combat' => $fleet->combat_report, 'report' => $fleet->mission_report, 'moonOrder' => $fleet->moon_order, 'moonOrbit' => $fleet->moon_orbit, 'targetOrbit' => $fleet->target_orbit, 'originOrbit' => $fleet->origin_orbit])->values(),
+                ->map(fn ($fleet) => ['id' => $fleet->id, 'outcome' => $fleet->outcome, 'cargo' => $fleet->cargo, 'ships' => $fleet->ships, 'combat' => $hideTargetReport($fleet) ? null : $fleet->combat_report, 'report' => $hideTargetReport($fleet) ? null : $fleet->mission_report, 'reportHidden' => $hideTargetReport($fleet), 'moonOrder' => $fleet->moon_order, 'moonOrbit' => $fleet->moon_orbit, 'targetOrbit' => $fleet->target_orbit, 'originOrbit' => $fleet->origin_orbit])->values(),
         ]);
     }
 

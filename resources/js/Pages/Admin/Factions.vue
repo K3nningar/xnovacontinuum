@@ -10,13 +10,13 @@ const props = defineProps({ universe: Object, factions: Array, relations: Array,
 const page = usePage();
 const { t } = useI18n();
 const route = (name, params) => ziggyRoute(name, params, true, page.props.ziggy);
-const faction = useForm({ key: '', name: '', description: '', image: '' });
+const faction = useForm({ key: '', name: '', description: '', image: '', image_file: null });
 const diplomacy = useForm({ first: '0', second: '', status: 'neutral' });
-const editing = useForm({ name: '', description: '', image: '', settings: '{}' });
+const editing = useForm({ name: '', description: '', image: '', image_file: null, settings: '{}' });
 const editId = ref(null);
 const editKey = ref(null);
 const editor = ref(null);
-const saveFaction = () => faction.post(route('admin.factions.store', { universe: props.universe.id }), { preserveScroll: true, onSuccess: () => faction.reset() });
+const saveFaction = () => faction.post(route('admin.factions.store', { universe: props.universe.id }), { forceFormData: true, preserveScroll: true, onSuccess: () => faction.reset() });
 const saveDiplomacy = () => diplomacy.post(route('admin.factions.diplomacy', { universe: props.universe.id }), { preserveScroll: true });
 function editFaction(item) {
     editId.value = item.id;
@@ -24,15 +24,17 @@ function editFaction(item) {
     editing.name = item.name;
     editing.description = item.description ?? '';
     editing.image = item.image ?? '';
+    editing.image_file = null;
     editor.value = createFactionEditor(item.settings, props.catalog);
     editing.clearErrors();
 }
 function saveSettings() {
     editing.settings = serializeFactionEditor(editor.value, props.catalog);
-    editing.patch(editKey.value === '0'
+    editing.transform((data) => ({ ...data, settings: editing.settings })).patch(editKey.value === '0'
         ? route('admin.factions.template.update', { universe: props.universe.id })
-        : route('admin.factions.update', { universe: props.universe.id, faction: editId.value }), { preserveScroll: true });
+        : route('admin.factions.update', { universe: props.universe.id, faction: editId.value }), { forceFormData: true, preserveScroll: true });
 }
+function setImageFile(form, event) { form.image_file = event.target.files?.[0] ?? null; }
 function elementName(category, item) {
     return category === 'buildings' ? t(`buildingCatalog.${item.translationKey}.name`) : t(`unitNames.${item.translationKey}`);
 }
@@ -48,7 +50,8 @@ function elementName(category, item) {
                     <label>{{ t('factions.key') }} <input v-model="faction.key" required maxlength="40" /></label><span class="field-error">{{ faction.errors.key }}</span>
                     <label>{{ t('factions.name') }} <input v-model="faction.name" required maxlength="80" /></label><span class="field-error">{{ faction.errors.name }}</span>
                     <label>{{ t('factions.description') }} <textarea v-model="faction.description" maxlength="2000" /></label>
-                    <label>{{ t('factions.image') }} <input v-model="faction.image" placeholder="/images/factions/example.webp" /></label><span class="field-error">{{ faction.errors.image }}</span>
+                    <label>{{ t('factions.image') }} <input v-model="faction.image" placeholder="/images/factions/example.webp" /></label>
+                    <div class="faction-file-upload"><input id="new-faction-image-file" class="faction-file-input" type="file" accept="image/jpeg,image/png,image/webp,image/gif" @change="setImageFile(faction, $event)" /><label class="button button-outline faction-file-button" for="new-faction-image-file">{{ t('factionImageChoose') }}</label><span class="faction-file-name">{{ faction.image_file?.name || t('factionImageNone') }}</span></div><span class="field-error">{{ faction.errors.image || faction.errors.image_file }}</span>
                     <button class="button button-primary" :disabled="faction.processing">{{ t('factions.create') }}</button>
                 </form>
             </section>
@@ -64,6 +67,7 @@ function elementName(category, item) {
             <section class="data-panel"><h2>{{ t('factions.roster') }}</h2><p v-for="item in factions" :key="item.key" class="faction-roster-row"><span>{{ item.name }} : {{ item.members }}</span><button class="button button-outline" type="button" @click="editFaction(item)">{{ t('factions.configure') }}</button></p>
                 <form v-if="editKey !== null" class="auth-form" @submit.prevent="saveSettings">
                     <label>{{ t('factions.name') }} <input v-model="editing.name" required maxlength="80" /></label><label>{{ t('factions.description') }} <textarea v-model="editing.description" maxlength="2000" /></label><label>{{ t('factions.image') }} <input v-model="editing.image" /></label>
+                    <div class="faction-file-upload"><input id="edit-faction-image-file" class="faction-file-input" type="file" accept="image/jpeg,image/png,image/webp,image/gif" @change="setImageFile(editing, $event)" /><label class="button button-outline faction-file-button" for="edit-faction-image-file">{{ t('factionImageChoose') }}</label><span class="faction-file-name">{{ editing.image_file?.name || t('factionImageNone') }}</span></div><span class="field-error">{{ editing.errors.image || editing.errors.image_file }}</span>
                     <fieldset class="faction-editor-statistics">
                         <legend>{{ t('factionEditor.statistics') }}</legend>
                         <label v-for="statistic in factionStatistics" :key="statistic">{{ t(`factionEditor.${statistic}`) }}

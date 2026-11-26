@@ -9,6 +9,7 @@
 
 namespace Tests\Feature;
 
+use App\Models\Fleet;
 use App\Models\Planet;
 use App\Models\ResearchQueue;
 use App\Models\Universe;
@@ -66,13 +67,13 @@ class GalaxyMapTest extends TestCase
     #[TestWith([8, 2, [6, 7, 8, 9, 10]])]
     #[TestWith([2, 2, [2, 3, 4]])]
     #[TestWith([15, 2, [13, 14, 15]])]
-    public function test_spy_range_is_centered_on_the_selected_planet(int $origin, int $level, array $visiblePositions): void
+    public function test_spy_range_is_centered_on_an_owned_planet_in_the_viewed_system(int $origin, int $level, array $visiblePositions): void
     {
         $universe = Universe::create(['name' => 'Test', 'slug' => 'test']);
         $user = User::factory()->create(['universe_id' => $universe->id, 'spy_technology_level' => $level]);
         $planet = $this->planet($user, $origin, 'Home');
 
-        $response = $this->actingAs($user)->get(route('galaxy.index', ['planet' => $planet->id, 'system' => 2]));
+        $response = $this->actingAs($user)->get(route('galaxy.index', ['planet' => $planet->id, 'system' => 1]));
 
         $response->assertOk();
         $slots = $response->inertiaProps('slots');
@@ -91,10 +92,98 @@ class GalaxyMapTest extends TestCase
 
         $this->actingAs($user)->get(route('galaxy.index', ['planet' => $origin->id]))->assertInertia(fn (Assert $page) => $page
             ->where('slots.12.planet.name', 'Colony')->where('slots.12.planet.owned', true)
-            ->where('slots.11.visible', false)->where('slots.11.requiredSpyLevel', 5));
+            ->where('slots.11.visible', false)->where('slots.11.requiredSpyLevel', 1));
         $this->get(route('galaxy.index', ['planet' => $colony->id]))->assertInertia(fn (Assert $page) => $page
             ->where('slots.6.planet.name', 'Home')->where('slots.11.visible', false)
             ->where('slots.11.requiredSpyLevel', 1));
+    }
+
+    public function test_uncolonized_system_hides_its_star_and_planets_even_at_maximum_spy_level(): void
+    {
+        $universe = Universe::create(['name' => 'Test', 'slug' => 'test', 'galaxies' => 2]);
+        $user = User::factory()->create(['universe_id' => $universe->id, 'spy_technology_level' => 100]);
+        $enemy = User::factory()->create(['universe_id' => $universe->id, 'name' => 'Hidden commander']);
+        $origin = $this->planet($user, 8, 'Home');
+        $enemyPlanet = $this->planet($enemy, 9, 'Hidden planet');
+        $enemyPlanet->forceFill(['system' => 2])->save();
+        $destroyed = $this->planet($user, 10, 'Destroyed colony');
+        $destroyed->forceFill(['system' => 2, 'destroyed_at' => now()])->save();
+
+        $response = $this->actingAs($user)->get(route('galaxy.index', ['planet' => $origin->id, 'galaxy' => 1, 'system' => 2]));
+        $response->assertInertia(fn (Assert $page) => $page
+            ->where('systemVisible', false)->where('star', null)->where('starName', null)->where('slots', []));
+        $serialized = json_encode($response->inertiaProps(), JSON_THROW_ON_ERROR);
+        $this->assertStringNotContainsString('Hidden planet', $serialized);
+        $this->assertStringNotContainsString('Hidden commander', $serialized);
+
+        $colony = $this->planet($user, 11, 'Colony');
+        $colony->forceFill(['system' => 2])->save();
+        $this->get(route('galaxy.index', ['planet' => $origin->id, 'system' => 2]))->assertInertia(fn (Assert $page) => $page
+            ->where('systemVisible', true)->where('slots.7.planet.name', 'Hidden planet')
+            ->where('slots.9.planet.name', 'Colony'));
+        $this->get(route('galaxy.index', ['planet' => $origin->id, 'galaxy' => 2, 'system' => 2]))->assertInertia(fn (Assert $page) => $page
+            ->where('systemVisible', false)->where('star', null)->where('slots', []));
+
+        $colony->forceFill(['destroyed_at' => now()])->save();
+        $this->get(route('galaxy.index', ['planet' => $origin->id, 'system' => 2]))->assertInertia(fn (Assert $page) => $page
+            ->where('systemVisible', false)->where('starName', null)->where('slots', []));
+    }
+
+    public function test_each_colony_extends_visibility_in_its_own_system(): void
+    {
+        $universe = Universe::create(['name' => 'Test', 'slug' => 'test']);
+        $user = User::factory()->create(['universe_id' => $universe->id, 'spy_technology_level' => 1]);
+        $origin = $this->planet($user, 8, 'Home');
+        $first = $this->planet($user, 3, 'First');
+        $first->forceFill(['system' => 2])->save();
+        $second = $this->planet($user, 12, 'Second');
+        $second->forceFill(['system' => 2])->save();
+
+        $response = $this->actingAs($user)->get(route('galaxy.index', ['planet' => $origin->id, 'system' => 2]));
+        $response->assertInertia(fn (Assert $page) => $page
+            ->where('systemVisible', true)->where('slots.4.visible', false)->where('slots.4.requiredSpyLevel', 3));
+        $slots = $response->inertiaProps('slots');
+        $this->assertSame([2, 3, 4, 11, 12, 13], array_column(array_filter($slots, fn (array $slot): bool => $slot['visible']), 'position'));
+    }
+
+    public function test_fleet_names_and_reports_do_not_reveal_an_uncolonized_system(): void
+    {
+        $universe = Universe::create(['name' => 'Test', 'slug' => 'test']);
+        $user = User::factory()->create(['universe_id' => $universe->id, 'spy_technology_level' => 100]);
+        $enemy = User::factory()->create(['universe_id' => $universe->id]);
+        $origin = $this->planet($user, 8, 'Home');
+        $target = $this->planet($enemy, 9, 'Secret destination');
+        $target->forceFill(['system' => 2])->save();
+        $data = ['universe_id' => $universe->id, 'user_id' => $user->id, 'origin_planet_id' => $origin->id,
+            'target_planet_id' => $target->id, 'target_galaxy' => 1, 'target_system' => 2, 'target_position' => 9,
+            'mission' => 'spy', 'ships' => [], 'cargo' => ['metal' => 0, 'crystal' => 0, 'deuterium' => 0],
+            'arrives_at' => now()->addHour(), 'returns_at' => now()->addHours(2),
+            'mission_report' => ['espionage' => ['intelligence' => ['name' => 'Secret intelligence']]]];
+        $active = new Fleet;
+        $active->forceFill([...$data, 'status' => 'outbound'])->save();
+        $completed = new Fleet;
+        $completed->forceFill([...$data, 'status' => 'completed', 'outcome' => 'spy_success',
+            'combat_report' => ['secret' => 'Secret combat']])->save();
+
+        $response = $this->actingAs($user)->get(route('fleet.index'));
+        $response->assertInertia(fn (Assert $page) => $page
+            ->where('fleets.0.targetName', null)->where('fleets.0.report', null)
+            ->where('reports.0.reportHidden', true)->where('reports.0.report', null)->where('reports.0.combat', null));
+        $serialized = json_encode($response->inertiaProps(), JSON_THROW_ON_ERROR);
+        $this->assertStringNotContainsString('Secret destination', $serialized);
+        $this->assertStringNotContainsString('Secret intelligence', $serialized);
+        $this->assertStringNotContainsString('Secret combat', $serialized);
+
+        $colony = new Planet(['name' => 'Colony']);
+        $colony->forceFill(['universe_id' => $universe->id, 'user_id' => $user->id, 'galaxy' => 1, 'system' => 2,
+            'position' => 8, 'resources_updated_at' => now()])->save();
+        $this->get(route('fleet.index'))->assertInertia(fn (Assert $page) => $page
+            ->where('fleets.0.targetName', 'Secret destination')->where('reports.0.reportHidden', false)
+            ->where('reports.0.report.espionage.intelligence.name', 'Secret intelligence'));
+
+        $colony->forceFill(['destroyed_at' => now()])->save();
+        $this->get(route('fleet.index'))->assertInertia(fn (Assert $page) => $page
+            ->where('fleets.0.targetName', null)->where('reports.0.reportHidden', true));
     }
 
     public function test_system_generation_is_stable_and_contains_diverse_bodies_and_moons(): void

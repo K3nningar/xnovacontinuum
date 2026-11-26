@@ -223,6 +223,11 @@ h1, h2, h3, p { margin-top: 0; }
 .command-layout { min-height: calc(100vh - 182px); display: grid; grid-template-columns: 210px minmax(0, 1fr); gap: 34px; padding: 38px 0 55px; }.game-nav { display: flex; flex-direction: column; gap: 5px; padding: 12px 0; border-right: 1px solid var(--line); }.nav-caption { margin: 0 15px 9px; color: #718092; font-size: 8px; font-weight: 650; letter-spacing: .14em; text-transform: uppercase; }.game-nav-link { min-height: 41px; display: flex; align-items: center; gap: 11px; margin-right: 16px; padding: 0 12px; color: #a1adbb; font-size: 10px; }.game-nav-link > span { width: 17px; color: #8294a7; font-size: 14px; text-align: center; }.game-nav-link.active { border-left: 2px solid var(--accent); color: var(--accent); background: linear-gradient(90deg, rgba(86, 214, 194, .09), transparent); }.game-nav-link.active > span { color: var(--accent); }.game-nav-link.disabled { color: #8290a0; }.game-nav-link.disabled small { margin-left: auto; color: #78889a; }.nav-universe { display: grid; gap: 8px; margin: 24px 14px 0 0; padding: 17px 13px; border: 1px solid var(--line); background: rgba(12, 18, 28, .6); }.nav-universe .nav-caption { margin: 0; }.nav-universe strong { font-size: 10px; font-weight: 550; }.nav-universe small { color: #8190a0; font-size: 9px; }
 .command-content { min-width: 0; }.command-heading { display: flex; align-items: end; justify-content: space-between; gap: 20px; margin: 3px 0 26px; }.command-heading .eyebrow { margin-bottom: 11px; }.command-heading h1 { margin-bottom: 8px; font-size: clamp(29px, 3vw, 40px); font-weight: 500; letter-spacing: -.05em; }.command-subtitle { margin-bottom: 0; color: #8998a9; font-size: 11px; }.online-pill { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; color: #96a6b6; font-size: 8px; letter-spacing: .11em; }.online-pill i { width: 6px; height: 6px; }
 .resource-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 11px; }.resource-card { min-height: 132px; position: relative; display: flex; flex-direction: column; align-items: flex-start; padding: 16px; border: 1px solid var(--line); background: linear-gradient(145deg, #0e1721, #0a1119); }.resource-symbol { position: absolute; top: 13px; right: 14px; font-size: 17px; }.metal-symbol { color: #b2bdca; }.crystal-symbol { color: #76b4f4; }.deut-symbol { color: #7bd4bd; }.fleet-symbol { color: #cfb5f5; }.resource-label { color: #8493a4; font-size: 8px; letter-spacing: .11em; }.resource-card strong { margin-top: 17px; font-size: 23px; font-weight: 500; letter-spacing: -.04em; }.resource-card small { margin-top: 6px; color: #7c8c9e; font-size: 8px; }
+.empire-storage { width: 100%; margin-top: auto; padding-top: 10px; }
+.empire-storage-meta { display: flex; justify-content: space-between; gap: 8px; color: #7c8c9e; font-size: 8px; font-variant-numeric: tabular-nums; }
+.empire-storage-meta strong { margin: 0; color: #b8c7d2; font-size: 10px; }
+.empire-storage-bar { height: 4px; margin-top: 5px; overflow: hidden; background: rgba(151, 177, 207, .12); }
+.empire-storage-bar > span { display: block; height: 100%; transition: width .3s ease; }
 .command-panels { display: grid; grid-template-columns: minmax(0, 1.45fr) minmax(250px, .85fr); gap: 12px; margin-top: 15px; }.data-panel { min-height: 265px; border: 1px solid var(--line); background: linear-gradient(145deg, rgba(13, 20, 30, .95), rgba(9, 15, 23, .95)); }.panel-heading { min-height: 66px; display: flex; align-items: center; justify-content: space-between; padding: 12px 17px; border-bottom: 1px solid var(--line); }.panel-heading > div { display: grid; gap: 5px; }.panel-heading h2 { margin: 0; font-size: 15px; font-weight: 550; }.panel-count { display: grid; min-width: 25px; min-height: 25px; place-items: center; border: 1px solid var(--line); color: #9aa8b8; font-size: 9px; }.planet-row { min-height: 55px; display: flex; align-items: center; gap: 11px; padding: 9px 17px; border-bottom: 1px solid rgba(151, 177, 207, .07); }.planet-orb { width: 27px; height: 27px; border: 1px solid rgba(126, 194, 214, .55); border-radius: 50%; background: radial-gradient(circle at 35% 35%, #9dd5df, #285b73 45%, #101c34 77%); box-shadow: 0 0 12px rgba(74, 159, 184, .18); }.planet-details { display: grid; gap: 4px; }.planet-details strong { font-size: 10px; font-weight: 550; }.planet-details small, .planet-stock small { color: #8291a2; font-size: 8px; }.planet-stock { display: grid; gap: 4px; margin-left: auto; text-align: right; }.planet-stock strong { font-size: 10px; font-weight: 500; }.empty-state { min-height: 190px; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 20px 25px; text-align: center; }.empty-orb { color: rgba(86, 214, 194, .76); font-size: 21px; }.empty-state strong { margin-top: 10px; font-size: 11px; font-weight: 550; }.empty-state p { max-width: 300px; margin: 8px 0 0; color: #8594a4; font-size: 9px; line-height: 1.7; }.empty-state.compact { min-height: 190px; }.alliance-state { min-height: 190px; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 20px; }.alliance-emblem { width: 42px; height: 42px; display: grid; place-items: center; border: 1px solid rgba(86, 214, 194, .35); color: var(--accent); font-size: 11px; }.alliance-state strong { margin: 11px 0 0; font-size: 11px; }.alliance-state p { margin: 6px 0 0; color: #8796a6; font-size: 9px; text-align: center; }.notice-bar { min-height: 46px; display: flex; align-items: center; gap: 11px; margin-top: 14px; padding: 10px 14px; border: 1px solid rgba(86, 214, 194, .16); background: rgba(21, 55, 55, .13); }.notice-bar > span { color: var(--accent); }.notice-bar p { margin: 0; color: #9caab8; font-size: 9px; }.notice-status { margin-left: auto; color: #789a91; font-size: 7px; letter-spacing: .1em; white-space: nowrap; }
 
 @media (max-width: 900px) {
@@ -910,6 +915,11 @@ body { background: transparent; }
 .profile-file-input { position: relative; display: inline-flex; min-height: 39px; align-items: center; gap: 9px; overflow: hidden; padding: 0 13px; border: 1px solid rgba(128, 200, 190, .32); color: #c8d9d6; background: rgba(3, 16, 19, .7); font-size: 11px; cursor: pointer; }
 .profile-file-input input { position: absolute; inset: 0; width: 100%; height: 100%; opacity: 0; cursor: pointer; }
 .profile-file-input i { color: var(--accent); }
+
+.admin-factions .faction-file-upload { display: flex; align-items: center; flex-wrap: wrap; gap: 10px; }
+.admin-factions .faction-file-input { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); clip-path: inset(50%); white-space: nowrap; }
+.admin-factions .faction-file-button { min-height: 39px; cursor: pointer; }
+.admin-factions .faction-file-name { max-width: 100%; color: #8291a2; font-size: 11px; overflow-wrap: anywhere; }
 .profile-file-hint { flex: 1 1 180px; color: #829a9b; font-size: 10px; }
 .profile-avatar-form .button, .profile-form .button { min-height: 38px; padding: 0 14px; font-size: 11px; }
 .profile-remove-avatar { justify-self: start; color: #e3aaaa; font-size: 11px; }
@@ -1081,6 +1091,14 @@ body { background: transparent; }
 .overview-planet-resources { display: flex; flex-wrap: wrap; gap: 5px 10px; color: #9caebc; font-size: 10px; }
 .overview-planet-resources small { display: flex; gap: 4px; align-items: center; }
 .overview-planet-resources strong { font-size: 11px; font-variant-numeric: tabular-nums; }
+.overview-storage-grid { display: grid; grid-template-columns: repeat(3, minmax(105px, 1fr)); gap: 8px; flex: 1 1 330px; min-width: 300px; }
+.overview-storage-resource { display: grid; gap: 3px; min-width: 0; }
+.overview-storage-label { display: flex; justify-content: space-between; gap: 6px; font-size: 9px; font-weight: 600; }
+.overview-storage-label strong, .overview-storage-values { font-variant-numeric: tabular-nums; }
+.overview-storage-values { overflow: hidden; color: #8291a2; font-size: 9px; text-overflow: ellipsis; white-space: nowrap; }
+.overview-storage-bar { height: 5px; overflow: hidden; border: 1px solid rgba(151, 177, 207, .16); background: rgba(151, 177, 207, .1); }
+.overview-storage-bar > span { display: block; height: 100%; transition: width .3s ease; }
+.storage-metal { background: #b2bdca; }.storage-crystal { background: #76b4f4; }.storage-deuterium { background: #7bd4bd; }
 .overview-page .planet-links .button, .overview-page .button { font-size: 13px; }
 .overview-page .planet-links .button { min-height: 36px; }
 .overview-page .planet-moons { display: flex; flex-wrap: wrap; align-items: center; gap: 5px 9px; }
@@ -1092,11 +1110,17 @@ body { background: transparent; }
 .overview-moon-resources { display: flex; flex-wrap: wrap; gap: 6px 14px; color: #9caebc; font-size: 11px; }
 .overview-moon-resources small { display: flex; gap: 5px; align-items: center; }
 .overview-moon-resources strong { font-variant-numeric: tabular-nums; }
+.overview-moon-storage { flex-basis: 390px; }
+.faction-link-body { display: grid; gap: 12px; padding: 18px; color: inherit; text-decoration: none; }
+.faction-link-body img { display: block; width: auto; max-width: min(100%, 280px); height: auto; max-height: 80px; margin: 0 auto; object-fit: contain; border: 1px solid var(--line); }
+.faction-link-body p { margin: 0; color: #9caab8; font-size: 13px; line-height: 1.6; }
+.faction-link-body .button { justify-self: start; }
 .overview-page .empty-state strong, .overview-page .alliance-state strong { font-size: 14px; }
 .overview-page .empty-state p, .overview-page .alliance-state p, .overview-page .notice-bar p, .overview-page .intel-discover { font-size: 13px; }
 @media (max-width: 700px) {
     .overview-page .panel-heading { flex-wrap: wrap; gap: 12px; }
     .overview-page .planet-row { flex-wrap: wrap; }
+    .overview-page .overview-storage-grid { flex-basis: 100%; min-width: 0; }
     .overview-page .planet-links { flex-wrap: wrap; margin-left: 0; }
 }
 

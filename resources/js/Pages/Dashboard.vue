@@ -53,6 +53,11 @@ const empireResources = computed(() => livePlanets.value.reduce((sum, planet) =>
     crystal: sum.crystal + planet.crystal,
     deuterium: sum.deuterium + planet.deuterium,
 }), { metal: 0, crystal: 0, deuterium: 0 }));
+const empireCapacities = computed(() => props.planets.reduce((sum, planet) => ({
+    metal: sum.metal + Number(planet.capacity?.metal ?? 0),
+    crystal: sum.crystal + Number(planet.capacity?.crystal ?? 0),
+    deuterium: sum.deuterium + Number(planet.capacity?.deuterium ?? 0),
+}), { metal: 0, crystal: 0, deuterium: 0 }));
 const shieldTypes = [
     { key: 'small', name: 'unitNames.small_shield_dome' },
     { key: 'large', name: 'unitNames.large_shield_dome' },
@@ -110,6 +115,27 @@ function joinUniverse() {
 
 function formatResource(value) {
     return n(Number(value), 'game');
+}
+
+function resourceAmount(location, resource) {
+    if (location.planet) return planetResource(location.planet, resource);
+    return Number(location[resource] ?? 0);
+}
+
+function resourcePercentage(location, resource) {
+    const capacity = Number(location.capacity?.[resource] ?? 0);
+    if (capacity <= 0) return 0;
+    return Math.min(100, Math.max(0, Math.round((resourceAmount(location, resource) / capacity) * 100)));
+}
+
+function resourceLabel(resource) {
+    return t(`dashboard.${resource}`);
+}
+
+function empireResourcePercentage(resource) {
+    const capacity = empireCapacities.value[resource];
+    if (capacity <= 0) return 0;
+    return Math.min(100, Math.max(0, Math.round((empireResources.value[resource] / capacity) * 100)));
 }
 
 function selectPlanet(id) {
@@ -182,7 +208,7 @@ function researchName(key) {
                         </div>
                     </section>
                     <p class="overview-resource-heading"><i class="bi bi-bar-chart" aria-hidden="true"></i> {{ t('dashboard.yourEmpire') }} · {{ t('common.resources') }}</p>
-                    <div class="resource-grid"><article class="resource-card"><span class="resource-symbol metal-symbol">▰</span><span class="resource-label">{{ t('dashboard.metal') }}</span><strong>{{ formatResource(empireResources.metal) }}</strong><small>{{ t('dashboard.primaryResource') }}</small></article><article class="resource-card"><span class="resource-symbol crystal-symbol">◇</span><span class="resource-label">{{ t('dashboard.crystal') }}</span><strong>{{ formatResource(empireResources.crystal) }}</strong><small>{{ t('dashboard.researchTechnology') }}</small></article><article class="resource-card"><span class="resource-symbol deut-symbol">⬡</span><span class="resource-label">{{ t('dashboard.deuterium') }}</span><strong>{{ formatResource(empireResources.deuterium) }}</strong><small>{{ t('dashboard.fleetFuel') }}</small></article><article class="resource-card"><span class="resource-symbol fleet-symbol">➤</span><span class="resource-label">{{ t('dashboard.fleetInFlight') }}</span><strong>{{ fleetCount }}</strong><small>{{ t('dashboard.activeMissions') }}</small></article></div>
+                    <div class="resource-grid"><article v-for="resourceCard in [{ key: 'metal', icon: '▰', detail: 'dashboard.primaryResource' }, { key: 'crystal', icon: '◇', detail: 'dashboard.researchTechnology' }, { key: 'deuterium', icon: '⬡', detail: 'dashboard.fleetFuel' }]" :key="resourceCard.key" class="resource-card"><span class="resource-symbol" :class="`${resourceCard.key}-symbol`">{{ resourceCard.icon }}</span><span class="resource-label">{{ resourceLabel(resourceCard.key) }}</span><strong>{{ formatResource(empireResources[resourceCard.key]) }}</strong><small>{{ t(resourceCard.detail) }}</small><div class="empire-storage"><div class="empire-storage-meta"><span>{{ formatResource(empireCapacities[resourceCard.key]) }} {{ t('buildings.storage').toLowerCase() }}</span><strong>{{ empireResourcePercentage(resourceCard.key) }}%</strong></div><div class="empire-storage-bar" role="progressbar" :aria-label="`${resourceLabel(resourceCard.key)} ${t('buildings.storage')}`" :aria-valuenow="empireResourcePercentage(resourceCard.key)" aria-valuemin="0" aria-valuemax="100"><span :class="`storage-${resourceCard.key}`" :style="{ width: `${empireResourcePercentage(resourceCard.key)}%` }"></span></div></div></article><article class="resource-card"><span class="resource-symbol fleet-symbol">➤</span><span class="resource-label">{{ t('dashboard.fleetInFlight') }}</span><strong>{{ fleetCount }}</strong><small>{{ t('dashboard.activeMissions') }}</small></article></div>
                     <section v-if="activePlanet" class="overview-defences">
                         <div class="overview-defences-heading">
                             <div><span class="panel-kicker">{{ t('overviewDefences.subtitle') }} · {{ activePlanet.name }}</span><h2>{{ t('overviewDefences.title') }}</h2></div>
@@ -265,7 +291,7 @@ function researchName(key) {
                         </section>
                     </div>
                     <div class="command-panels">
-                        <section v-if="faction" class="data-panel"><div class="panel-heading"><div><span class="panel-kicker">{{ t('factions.faction') }}</span><h2>{{ faction.name }}</h2></div></div><img v-if="faction.image" :src="faction.image" :alt="faction.name"><p>{{ faction.description }}</p><p>{{ t('factions.membersPlanets', { members: faction.members, planets: faction.planets }) }}</p></section>
+                        <section v-if="faction" class="data-panel faction-link-panel"><div class="panel-heading"><div><span class="panel-kicker">{{ t('factions.faction') }}</span><h2>{{ faction.name }}</h2></div></div><Link class="faction-link-body" :href="route('factions.index')"><img v-if="faction.image" :src="faction.image" :alt="faction.name"><p>{{ faction.description || t('factions.directoryDescription') }}</p><span class="button button-outline">{{ t('factions.viewDirectory') }} →</span></Link></section>
                         <section id="planetes" class="data-panel">
                             <div class="panel-heading"><div><span class="panel-kicker">{{ t('dashboard.yourEmpire') }}</span><h2>{{ t('dashboard.planets') }}</h2></div><span class="panel-count">{{ planets.length }}</span></div>
                             <article v-for="planet in planets" :key="planet.id" class="planet-row">
@@ -275,7 +301,13 @@ function researchName(key) {
                                     <small v-if="planet.queue.length">{{ buildingName(planet.queue[0].building_key) }} · {{ t('common.level') }} {{ planet.queue[0].target_level }} · {{ remaining(planet.queue[0].completes_at) }}</small>
                                     <small v-else>{{ t('overview.noConstruction') }}</small>
                                 </span>
-                                <span class="overview-planet-resources"><small>{{ t('dashboard.metal') }} <strong class="metal-symbol">{{ formatResource(planetResource(planet, 'metal')) }}</strong></small><small>{{ t('dashboard.crystal') }} <strong class="crystal-symbol">{{ formatResource(planetResource(planet, 'crystal')) }}</strong></small><small>{{ t('dashboard.deuterium') }} <strong class="deut-symbol">{{ formatResource(planetResource(planet, 'deuterium')) }}</strong></small></span>
+                                <div class="overview-storage-grid">
+                                    <div v-for="resource in ['metal', 'crystal', 'deuterium']" :key="resource" class="overview-storage-resource">
+                                        <div class="overview-storage-label"><span :class="`${resource}-symbol`">{{ resourceLabel(resource) }}</span><strong>{{ resourcePercentage(planet, resource) }}%</strong></div>
+                                        <div class="overview-storage-values">{{ formatResource(resourceAmount(planet, resource)) }} / {{ formatResource(planet.capacity[resource]) }}</div>
+                                        <div class="overview-storage-bar" role="progressbar" :aria-label="`${resourceLabel(resource)} ${planet.name}`" :aria-valuenow="resourcePercentage(planet, resource)" aria-valuemin="0" aria-valuemax="100"><span :class="`storage-${resource}`" :style="{ width: `${resourcePercentage(planet, resource)}%` }"></span></div>
+                                    </div>
+                                </div>
                                 <span class="planet-stock"><small>{{ t('dashboard.fields') }}</small><strong>{{ planet.usedFields }} / {{ planet.fields }}</strong></span>
                                 <div class="planet-links">
                                     <Link class="button button-quiet" :href="route('dashboard', { planet: planet.id })" :aria-current="planet.id === activePlanetId ? 'page' : undefined">{{ t('overviewView') }}</Link>
@@ -291,7 +323,13 @@ function researchName(key) {
                         <article v-for="moon in ownedMoons" :key="`${moon.planet.id}:${moon.orbit}`" class="planet-row overview-moon-row">
                             <span class="planet-orb moon-orb"></span>
                             <span class="planet-details"><strong>{{ moon.name }}</strong><small v-if="moon.name !== moon.generatedName">{{ moon.generatedName }}</small><small>{{ moon.planet.generatedName ?? moon.planet.name }} · {{ moon.planet.coordinates }}</small></span>
-                            <span class="overview-moon-resources"><small>{{ t('dashboard.metal') }} <strong class="metal-symbol">{{ formatResource(moon.metal) }}</strong></small><small>{{ t('dashboard.crystal') }} <strong class="crystal-symbol">{{ formatResource(moon.crystal) }}</strong></small><small>{{ t('dashboard.deuterium') }} <strong class="deut-symbol">{{ formatResource(moon.deuterium) }}</strong></small></span>
+                            <div class="overview-storage-grid overview-moon-storage">
+                                <div v-for="resource in ['metal', 'crystal', 'deuterium']" :key="resource" class="overview-storage-resource">
+                                    <div class="overview-storage-label"><span :class="`${resource}-symbol`">{{ resourceLabel(resource) }}</span><strong>{{ resourcePercentage(moon, resource) }}%</strong></div>
+                                    <div class="overview-storage-values">{{ formatResource(resourceAmount(moon, resource)) }} / {{ formatResource(moon.capacity[resource]) }}</div>
+                                    <div class="overview-storage-bar" role="progressbar" :aria-label="`${resourceLabel(resource)} ${moon.name}`" :aria-valuenow="resourcePercentage(moon, resource)" aria-valuemin="0" aria-valuemax="100"><span :class="`storage-${resource}`" :style="{ width: `${resourcePercentage(moon, resource)}%` }"></span></div>
+                                </div>
+                            </div>
                             <div class="planet-links"><Link class="button button-quiet" :href="route('moon.show', { planet: moon.planet.id, orbit: moon.orbit })">{{ t('overviewView') }}</Link><Link class="button button-outline" :href="route('moon.buildings', { planet: moon.planet.id, orbit: moon.orbit })">{{ t('nav.moonBuildings') }}</Link></div>
                         </article>
                         <div v-if="!ownedMoons.length" class="overview-panel-body text-sm text-slate-400">{{ t('overview.noMoons') }}</div>

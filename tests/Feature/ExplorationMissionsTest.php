@@ -109,6 +109,38 @@ class ExplorationMissionsTest extends TestCase
         $this->assertDatabaseCount('fleets', 0);
     }
 
+    public function test_recycling_uses_sensors_from_a_colony_in_the_target_system(): void
+    {
+        [$user, $origin] = $this->player();
+        $user->forceFill(['spy_technology_level' => 13])->save();
+        $system = null;
+        $position = null;
+        for ($candidateSystem = 2; $candidateSystem <= 100; $candidateSystem++) {
+            $slots = app(GalaxyMap::class)->system($user->universe, $user, 1, $candidateSystem, 8)['slots'];
+            foreach ([2, 3, 4] as $candidatePosition) {
+                if ($slots[$candidatePosition - 2]['kind'] === 'asteroid') {
+                    $system = $candidateSystem;
+                    $position = $candidatePosition;
+                    break 2;
+                }
+            }
+        }
+        $this->assertNotNull($system);
+        $payload = ['mission' => 'recycle', 'galaxy' => 1, 'system' => $system, 'position' => $position, 'ships' => [209 => 1]];
+        $this->actingAs($user)->from(route('galaxy.index'))->post(route('planet.missions.store', $origin), $payload)->assertSessionHasErrors('target');
+
+        $colony = new Planet(['name' => 'Sensor colony']);
+        $colony->forceFill(['universe_id' => $user->universe_id, 'user_id' => $user->id, 'galaxy' => 1, 'system' => $system,
+            'position' => $position + 1, 'resources_updated_at' => now()])->save();
+        $user->forceFill(['spy_technology_level' => 1])->save();
+        $this->post(route('planet.missions.store', $origin), $payload)->assertRedirect()->assertSessionHasNoErrors();
+        $fleet = Fleet::firstOrFail();
+        $this->assertSame('asteroid', $fleet->target_type);
+        $this->travelTo($fleet->arrives_at->addSecond());
+        app(ExplorationMissions::class)->processDue();
+        $this->assertSame('recycled', $fleet->fresh()->outcome);
+    }
+
     #[TestWith([7])]
     #[TestWith([9])]
     public function test_recycling_reaches_both_sides_of_the_origin_with_level_one_sensors(int $position): void
@@ -451,6 +483,8 @@ class ExplorationMissionsTest extends TestCase
         $home->forceFill(['unit_208' => 2])->save();
         [$system, $position] = $this->emptyPlanetPosition($user);
         $payload = ['mission' => 'colonize', 'galaxy' => 1, 'system' => $system, 'position' => $position, 'ships' => [208 => 1], 'moon_orbit' => null];
+        $this->actingAs($user)->get(route('galaxy.index', ['planet' => $home->id, 'system' => $system]))->assertInertia(fn (Assert $page) => $page
+            ->where('systemVisible', false)->where('starName', null)->where('slots', []));
         $this->actingAs($user)->post(route('planet.missions.store', $home), $payload)->assertRedirect();
         $this->assertDatabaseHas('fleets', ['mission' => 'colonize', 'origin_planet_id' => $home->id]);
         $fleet = Fleet::firstOrFail();
@@ -464,6 +498,8 @@ class ExplorationMissionsTest extends TestCase
         $this->assertSame($generatedName, $user->planets()->where('universe_id', $user->universe_id)
             ->where('galaxy', 1)->where('system', $system)->where('position', $position)->value('name'));
         $this->assertSame($generatedName, $fleet->fresh()->mission_report['colonizedPlanetName']);
+        $this->get(route('galaxy.index', ['planet' => $home->id, 'system' => $system]))->assertInertia(fn (Assert $page) => $page
+            ->where('systemVisible', true)->where('slots.'.($position - 2).'.planet.name', $generatedName));
     }
 
     public function test_recycling_debris_is_depleted_once_and_moon_stock_is_removed_when_destroyed(): void
@@ -560,8 +596,8 @@ class ExplorationMissionsTest extends TestCase
     {
         for ($system = 2; $system <= 100; $system++) {
             for ($position = 2; $position <= 15; $position++) {
-                $slot = app(GalaxyMap::class)->system($user->universe, $user, 1, $system, 8)['slots'][$position - 2];
-                if (($slot['kind'] ?? null) === 'planet' && $slot['planet'] === null) {
+                $slot = app(GalaxyMap::class)->system($user->universe, $user, 1, $system, $position)['slots'][$position - 2];
+                if ($position !== 8 && ($slot['kind'] ?? null) === 'planet' && $slot['planet'] === null) {
                     return [$system, $position];
                 }
             }
@@ -585,6 +621,8 @@ class ExplorationMissionsTest extends TestCase
         for ($system = 1; $system <= 100; $system++) {
             $slot = app(GalaxyMap::class)->system($user->universe, $user, 1, $system, 8)['slots'][$position - 2];
             if ($slot['kind'] === 'asteroid') {
+                $this->establishSensorColony($user, $system);
+
                 return $system;
             }
         }
@@ -598,10 +636,23 @@ class ExplorationMissionsTest extends TestCase
             $slot = collect(app(GalaxyMap::class)->system($user->universe, $user, 1, $system, 8)['slots'])
                 ->first(fn (array $candidate): bool => $candidate['kind'] === 'asteroid' && $candidate['position'] > 2);
             if ($slot) {
+                $this->establishSensorColony($user, $system);
+
                 return [$system, $slot];
             }
         }
 
         $this->fail('Aucun champ d’astéroïdes trouvé.');
+    }
+
+    private function establishSensorColony(User $user, int $system): void
+    {
+        if ($system === 1) {
+            return;
+        }
+
+        $colony = new Planet(['name' => 'Sensor colony']);
+        $colony->forceFill(['universe_id' => $user->universe_id, 'user_id' => $user->id, 'galaxy' => 1, 'system' => $system,
+            'position' => 8, 'resources_updated_at' => now()])->save();
     }
 }

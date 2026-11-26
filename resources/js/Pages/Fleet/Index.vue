@@ -159,6 +159,7 @@ function timeLeft(mission) {
                 <div class="panel-heading"><h2>{{ t('galaxyMissions.reports') }}</h2></div>
                 <article v-for="report in reports" :key="report.id" class="border-b border-slate-700 p-4 text-sm">
                     <strong>{{ outcomeName(report.outcome) }}</strong>
+                    <p v-if="report.reportHidden" class="mt-2 text-slate-400">{{ t('galaxy.hiddenReport') }}</p>
                     <p v-if="report.moonOrder">{{ t('moonLogistics.moonTarget', { orbit: report.moonOrbit }) }} · {{ t(`common.${report.moonOrder.resource}`) }} : {{ format(report.moonOrder.amount) }}</p>
                     <p>{{ t('common.metal') }} {{ format(report.cargo.metal) }} · {{ t('common.crystal') }} {{ format(report.cargo.crystal) }} · {{ t('common.deuterium') }} {{ format(report.cargo.deuterium) }}</p>
                     <p><span v-for="(count, code) in report.ships" :key="code">{{ translateUnitName(code, t) }} : {{ format(count) }} · </span></p>

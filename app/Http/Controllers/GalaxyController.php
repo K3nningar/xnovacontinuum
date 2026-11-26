@@ -32,7 +32,7 @@ class GalaxyController extends Controller
             return to_route('dashboard')->with('error', 'Fondez une planète pour accéder à la galaxie.');
         }
 
-        $planets = $user->planets()->where('universe_id', $universe->id)
+        $planets = $user->planets()->where('universe_id', $universe->id)->whereNull('destroyed_at')
             ->orderBy('galaxy')->orderBy('system')->orderBy('position')->get();
         if ($planets->isEmpty()) {
             return to_route('dashboard')->with('error', 'Fondez une planète pour accéder à la galaxie.');
@@ -54,6 +54,9 @@ class GalaxyController extends Controller
         $user->refresh();
         $production->complete($planet);
         $planet->refresh();
+        $sensorPositions = $planets->filter(fn ($ownedPlanet): bool => (int) $ownedPlanet->galaxy === $galaxy && (int) $ownedPlanet->system === $system)
+            ->map(fn ($ownedPlanet): int => (int) $ownedPlanet->position)->all();
+        $systemVisible = $sensorPositions !== [];
 
         return inertia('Galaxy/Index', [
             'user' => $user->only('id', 'name'),
@@ -76,7 +79,10 @@ class GalaxyController extends Controller
                 'planetaryDestroyerAvailable' => (bool) config('combat.experimental_planetary_destroyer', false) && (int) $user->officer_emperor_level > 0 && (int) $planet->unit_217 > 0,
                 'hasAlliance' => $user->alliance_id !== null || $user->faction_key !== '0',
             ],
-            ...$map->system($universe, $user, $galaxy, $system, $planet->position),
+            'systemVisible' => $systemVisible,
+            ...($systemVisible
+                ? $map->system($universe, $user, $galaxy, $system, (int) $planet->position, $sensorPositions)
+                : ['star' => null, 'starName' => null, 'slots' => []]),
         ]);
     }
 }

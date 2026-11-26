@@ -22,8 +22,9 @@ const props = defineProps({
     galaxyLimit: { type: Number, required: true },
     systemLimit: { type: Number, required: true },
     spyLevel: { type: Number, required: true },
-    star: { type: String, required: true },
-    starName: { type: String, required: true },
+    systemVisible: { type: Boolean, required: true },
+    star: { type: String, default: null },
+    starName: { type: String, default: null },
     slots: { type: Array, required: true },
     availableShips: { type: Array, required: true },
     fleetSpeed: { type: Number, required: true },
@@ -224,7 +225,12 @@ function navigate(galaxy = targetGalaxy.value, system = targetSystem.value) {
                     </div>
                 </form>
 
-                <div class="galaxy-overview">
+                <section v-if="!systemVisible" class="data-panel p-4" role="status">
+                    <h2 class="text-lg font-semibold">{{ t('galaxy.unknownSystem') }}</h2>
+                    <p class="mt-2 text-sm text-slate-400">{{ t('galaxy.unknownSystemDesc') }}</p>
+                    <Link class="button button-outline mt-3" :href="route('fleet.index', { planet: selectedPlanetId })">{{ t('galaxy.openFleet') }}</Link>
+                </section>
+                <div v-else class="galaxy-overview">
                 <section class="data-panel system-map-panel mb-4" aria-labelledby="system-map-title">
                     <div class="panel-heading">
                         <div>

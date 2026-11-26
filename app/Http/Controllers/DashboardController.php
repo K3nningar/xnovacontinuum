@@ -15,6 +15,7 @@ use App\Models\Planet;
 use App\Models\Universe;
 use App\Models\User;
 use App\Services\GalaxyMap;
+use App\Services\MoonEconomy;
 use App\Services\PlanetEconomy;
 use App\Services\ResearchService;
 use App\Services\UnitProductionService;
@@ -32,7 +33,7 @@ class DashboardController extends Controller
      * and outbound fleets targeting owned planets, while only active universes are offered to unjoined users.
      * Natural moons are resolved once per owned star system and included with each planet's dashboard data.
      */
-    public function __invoke(Request $request, PlanetEconomy $economy, ResearchService $research, UnitProductionService $production, GalaxyMap $map): Response
+    public function __invoke(Request $request, PlanetEconomy $economy, MoonEconomy $moonEconomy, ResearchService $research, UnitProductionService $production, GalaxyMap $map): Response
     {
         $user = $request->user();
         $research->complete($user);
@@ -140,7 +141,7 @@ class DashboardController extends Controller
             'planets' => $planets->map(fn ($planet) => [
                 ...$planet->only('id', 'name', 'galaxy', 'system', 'position', 'coordinates', 'fields', 'max_temperature'),
                 'generatedName' => $generatedPlanetNames[$planet->id] ?? null,
-                'moons' => collect($moonsByPlanet[$planet->id] ?? [])->map(function (array $moon) use ($planet, $moonStocks): array {
+                'moons' => collect($moonsByPlanet[$planet->id] ?? [])->map(function (array $moon) use ($planet, $moonStocks, $moonEconomy): array {
                     $stock = $moonStocks->get("{$planet->id}:{$moon['orbit']}");
 
                     return [...$moon,
@@ -149,6 +150,7 @@ class DashboardController extends Controller
                         'metal' => (int) ($stock?->metal ?? 0),
                         'crystal' => (int) ($stock?->crystal ?? 0),
                         'deuterium' => (int) ($stock?->deuterium ?? 0),
+                        'capacity' => $moonEconomy->storageCapacities(),
                     ];
                 })->values(),
                 'shields' => [
@@ -158,6 +160,7 @@ class DashboardController extends Controller
                 ],
                 'usedFields' => collect($economy->administrativeBuildings())
                     ->sum(fn (array $building): int => (int) $planet->{$building['level']}),
+                'capacity' => $economy->storageCapacities($planet),
                 ...$economy->snapshot($planet, (int) $user->energy_technology_level, (int) $user->computer_technology_level),
                 'liveResources' => $economy->liveResourceSnapshot($planet),
             ])->values(),

@@ -84,8 +84,8 @@ class ExplorationMissions
                 throw ValidationException::withMessages(['mission' => 'Toutes vos places d’expédition sont occupées.']);
             }
             $target = $this->validateDestination($user, $planet, $universe, $galaxy, $system, $position, $mission, $ships, $options);
-            if ($mission === 'recycle' && ($options['target_type'] ?? $this->inferRecycleType($universe, $user, $galaxy, $system, $position, $planet->position)) === 'asteroid') {
-                $slot = $this->map->system($universe, $user, $galaxy, $system, $planet->position)['slots'][$position - 2];
+            if ($mission === 'recycle' && ($options['target_type'] ?? $this->inferRecycleType($universe, $user, $galaxy, $system, $position)) === 'asteroid') {
+                $slot = $this->map->system($universe, $user, $galaxy, $system, $position)['slots'][$position - 2];
                 $coordinates = ['universe_id' => $universe->id, 'galaxy' => $galaxy, 'system' => $system, 'position' => $position];
                 if (($slot['kind'] ?? null) === 'asteroid') {
                     DB::table('asteroid_fields')->insertOrIgnore([...$coordinates, ...($slot['remaining'] ?? ['metal' => 0, 'crystal' => 0, 'deuterium' => 0]), 'created_at' => now(), 'updated_at' => now()]);
@@ -164,7 +164,7 @@ class ExplorationMissions
                 'mission' => $mission, 'ships' => $selected, 'status' => 'outbound',
                 'target_planet_id' => $target?->id, 'target_galaxy' => $galaxy, 'target_system' => $system, 'target_position' => $position,
                 'target_type' => $options['target_type'] ?? match ($mission) {
-                    'destroy_moon' => 'moon', 'recycle' => $this->inferRecycleType($universe, $user, $galaxy, $system, $position, $planet->position), default => 'planet'
+                    'destroy_moon' => 'moon', 'recycle' => $this->inferRecycleType($universe, $user, $galaxy, $system, $position), default => 'planet'
                 },
                 'moon_orbit' => $mission === 'destroy_moon' ? ($options['moon_orbit'] ?? null) : null,
                 'target_orbit' => ($options['target_type'] ?? 'planet') === 'moon' ? ($options['moon_orbit'] ?? null) : null,
@@ -172,8 +172,8 @@ class ExplorationMissions
                 'cargo' => $mission === 'transport' ? $cargo : ['metal' => 0, 'crystal' => 0, 'deuterium' => 0],
                 'arrives_at' => now()->addSeconds($flightSeconds),
                 'returns_at' => now()->addSeconds(2 * $flightSeconds + ($mission === 'expedition' ? 3600 : 0)),
-                'mission_report' => ['target' => ['galaxy' => $galaxy, 'system' => $system, 'position' => $position, 'orbit' => ($options['target_type'] ?? 'planet') === 'moon' ? (int) ($options['moon_orbit'] ?? 0) : null, 'diameter' => ($options['target_type'] ?? 'planet') === 'moon' ? collect($this->map->system($universe, $user, $galaxy, $system, $planet->position)['slots'][$position - 2]['naturalMoons'] ?? [])->firstWhere('orbit', (int) ($options['moon_orbit'] ?? 0))['diameter'] ?? null : null, 'type' => $options['target_type'] ?? match ($mission) {
-                    'destroy_moon' => 'moon', 'recycle' => $this->inferRecycleType($universe, $user, $galaxy, $system, $position, $planet->position), default => 'planet'
+                'mission_report' => ['target' => ['galaxy' => $galaxy, 'system' => $system, 'position' => $position, 'orbit' => ($options['target_type'] ?? 'planet') === 'moon' ? (int) ($options['moon_orbit'] ?? 0) : null, 'diameter' => ($options['target_type'] ?? 'planet') === 'moon' ? collect($this->map->system($universe, $user, $galaxy, $system, $position)['slots'][$position - 2]['naturalMoons'] ?? [])->firstWhere('orbit', (int) ($options['moon_orbit'] ?? 0))['diameter'] ?? null : null, 'type' => $options['target_type'] ?? match ($mission) {
+                    'destroy_moon' => 'moon', 'recycle' => $this->inferRecycleType($universe, $user, $galaxy, $system, $position), default => 'planet'
                 }]],
             ])->save();
 
@@ -184,9 +184,9 @@ class ExplorationMissions
     /**
      * Determines whether a coordinate resolves to an asteroid or an orbital-debris field.
      */
-    private function inferRecycleType(Universe $universe, User $user, int $galaxy, int $system, int $position, int $originPosition): string
+    private function inferRecycleType(Universe $universe, User $user, int $galaxy, int $system, int $position): string
     {
-        $slot = $this->map->system($universe, $user, $galaxy, $system, $originPosition)['slots'][$position - 2];
+        $slot = $this->map->system($universe, $user, $galaxy, $system, $position)['slots'][$position - 2];
 
         return ($slot['kind'] ?? null) === 'asteroid' ? 'asteroid' : 'debris';
     }
@@ -241,8 +241,14 @@ class ExplorationMissions
         if ($mission === 'expedition' && ($position !== 16 || (int) $user->expedition_technology_level < 1)) {
             throw ValidationException::withMessages(['target' => 'La technologie expédition est nécessaire pour explorer la zone obscure.']);
         }
-        if ($mission === 'recycle' && $targetType === 'asteroid' && $position >= 2 && $position <= 15 && abs($position - (int) $origin->position) > (int) $user->spy_technology_level) {
-            throw ValidationException::withMessages(['target' => 'Ce champ est hors de portée de la technologie espionnage.']);
+        if ($mission === 'recycle' && $targetType === 'asteroid' && $position >= 2 && $position <= 15) {
+            $range = (int) $user->spy_technology_level;
+            $visible = $user->planets()->where('universe_id', $universe->id)->whereNull('destroyed_at')
+                ->where('galaxy', $galaxy)->where('system', $system)
+                ->whereBetween('position', [max(2, $position - $range), min(15, $position + $range)])->exists();
+            if (! $visible) {
+                throw ValidationException::withMessages(['target' => 'Ce champ est hors de portée de la technologie espionnage.']);
+            }
         }
 
         $coordinates = ['universe_id' => $universe->id, 'galaxy' => $galaxy, 'system' => $system, 'position' => $position];
@@ -286,9 +292,12 @@ class ExplorationMissions
             && app(FactionDiplomacy::class)->relation($user, $target->user) === 'allied') {
             throw ValidationException::withMessages(['target' => 'Une mission hostile ne peut pas viser une faction alliée.']);
         }
-        if (in_array($mission, ['attack', 'spy', 'destroy_moon', 'destroy_planet'], true) && $targetType === 'moon'
-            && ! collect($this->map->system($universe, $user, $galaxy, $system, $origin->position)['slots'][$position - 2]['naturalMoons'] ?? [])->contains(fn (array $moon): bool => (int) $moon['orbit'] === (int) ($options['moon_orbit'] ?? 0))) {
-            throw ValidationException::withMessages(['moon_orbit' => 'Cette orbite ne possède pas de lune ciblable.']);
+        if (in_array($mission, ['attack', 'spy', 'destroy_moon', 'destroy_planet'], true) && $targetType === 'moon') {
+            $sensorPositions = $user->planets()->where('universe_id', $universe->id)->whereNull('destroyed_at')
+                ->where('galaxy', $galaxy)->where('system', $system)->pluck('position')->map(fn ($value): int => (int) $value)->all();
+            if (! collect($this->map->system($universe, $user, $galaxy, $system, $origin->position, $sensorPositions)['slots'][$position - 2]['naturalMoons'] ?? [])->contains(fn (array $moon): bool => (int) $moon['orbit'] === (int) ($options['moon_orbit'] ?? 0))) {
+                throw ValidationException::withMessages(['moon_orbit' => 'Cette orbite ne possède pas de lune ciblable.']);
+            }
         }
         if ($mission === 'destroy_moon' && ! in_array($targetType, ['moon', 'planet'], true)) {
             throw ValidationException::withMessages(['target_type' => 'La destruction lunaire doit viser une lune ou une planète hôte.']);
@@ -511,7 +520,7 @@ class ExplorationMissions
             }
             $moonStock = null;
             if ($fleet->target_type === 'moon' && (int) $fleet->target_orbit > 0) {
-                $moon = collect($this->map->system($fleet->universe, $fleet->user, $fleet->target_galaxy, $fleet->target_system, $fleet->originPlanet->position)['slots'][$fleet->target_position - 2]['naturalMoons'] ?? [])
+                $moon = collect($this->map->system($fleet->universe, $fleet->user, $fleet->target_galaxy, $fleet->target_system, $fleet->target_position)['slots'][$fleet->target_position - 2]['naturalMoons'] ?? [])
                     ->firstWhere('orbit', (int) $fleet->target_orbit);
                 if (! $moon) {
                     throw ValidationException::withMessages(['target' => 'Cette lune a été détruite ou n’existe plus.']);
@@ -555,7 +564,7 @@ class ExplorationMissions
                 if (! $field) {
                     $universe = $fleet->universe;
                     $viewer = $fleet->user;
-                    $slot = $this->map->system($universe, $viewer, $fleet->target_galaxy, $fleet->target_system, $fleet->originPlanet->position)['slots'][$fleet->target_position - 2];
+                    $slot = $this->map->system($universe, $viewer, $fleet->target_galaxy, $fleet->target_system, $fleet->target_position)['slots'][$fleet->target_position - 2];
                     if (($slot['kind'] ?? null) === 'asteroid') {
                         DB::table('asteroid_fields')->insertOrIgnore([...$coordinates, ...($slot['remaining'] ?? ['metal' => 0, 'crystal' => 0, 'deuterium' => 0]), 'created_at' => now(), 'updated_at' => now()]);
                         $field = DB::table('asteroid_fields')->where($coordinates)->lockForUpdate()->first();
@@ -657,7 +666,7 @@ class ExplorationMissions
         $moonTarget = $targetOrbit !== null && $targetOrbit > 0;
         $moonEconomy = $this->moonEconomy();
         if ($targetOrbit) {
-            $moon = collect($this->map->system($fleet->universe, $fleet->user, $fleet->target_galaxy, $fleet->target_system, $fleet->originPlanet->position)['slots'][$fleet->target_position - 2]['naturalMoons'] ?? [])
+            $moon = collect($this->map->system($fleet->universe, $fleet->user, $fleet->target_galaxy, $fleet->target_system, $fleet->target_position)['slots'][$fleet->target_position - 2]['naturalMoons'] ?? [])
                 ->firstWhere('orbit', $targetOrbit);
             if (! $moon) {
                 throw ValidationException::withMessages(['target' => 'Cette lune a été détruite ou n’existe plus.']);
@@ -803,7 +812,7 @@ class ExplorationMissions
             $fleet->mission_report['originOrbit'] = (int) $fleet->origin_orbit;
         }
         if ($fleet->target_type === 'moon' && (int) $fleet->target_orbit > 0) {
-            $moon = collect($this->map->system($fleet->universe, $fleet->user, $fleet->target_galaxy, $fleet->target_system, $fleet->originPlanet->position)['slots'][$fleet->target_position - 2]['naturalMoons'] ?? [])
+            $moon = collect($this->map->system($fleet->universe, $fleet->user, $fleet->target_galaxy, $fleet->target_system, $fleet->target_position)['slots'][$fleet->target_position - 2]['naturalMoons'] ?? [])
                 ->firstWhere('orbit', (int) $fleet->target_orbit);
             if (! $moon) {
                 throw ValidationException::withMessages(['target' => 'Cette lune n’existe plus.']);
@@ -814,7 +823,7 @@ class ExplorationMissions
 
     private function resolveColonization(Fleet $fleet): void
     {
-        $slot = $this->map->system($fleet->universe, $fleet->user, $fleet->target_galaxy, $fleet->target_system, $fleet->originPlanet->position)['slots'][$fleet->target_position - 2];
+        $slot = $this->map->system($fleet->universe, $fleet->user, $fleet->target_galaxy, $fleet->target_system, $fleet->target_position)['slots'][$fleet->target_position - 2];
         abort_if($slot['kind'] !== 'planet' || Planet::query()->where('universe_id', $fleet->universe_id)->where('galaxy', $fleet->target_galaxy)->where('system', $fleet->target_system)->where('position', $fleet->target_position)->exists(), 409);
         $user = User::query()->whereKey($fleet->user_id)->lockForUpdate()->firstOrFail();
         abort_if($user->planets()->where('universe_id', $fleet->universe_id)->count() >= 21, 409);
@@ -841,7 +850,7 @@ class ExplorationMissions
     {
         $this->resolveTargetBattle($fleet);
         $result = $fleet->combat_report;
-        $moonSlot = $this->map->system($fleet->universe, $fleet->user, $fleet->target_galaxy, $fleet->target_system, $fleet->originPlanet->position)['slots'][$fleet->target_position - 2];
+        $moonSlot = $this->map->system($fleet->universe, $fleet->user, $fleet->target_galaxy, $fleet->target_system, $fleet->target_position)['slots'][$fleet->target_position - 2];
         $moonOrbit = (int) $fleet->moon_orbit;
         $moon = collect($moonSlot['naturalMoons'] ?? [])->firstWhere('orbit', $moonOrbit);
         $deathStars = (int) ($fleet->ships[214] ?? 0);
@@ -890,7 +899,7 @@ class ExplorationMissions
         $moonTarget = $fleet->target_type === 'moon' && (int) $fleet->target_orbit > 0;
         $moonEconomy = $this->moonEconomy;
         if ($moonTarget) {
-            $moon = collect($this->map->system($fleet->universe, $fleet->user, $fleet->target_galaxy, $fleet->target_system, $fleet->originPlanet->position)['slots'][$fleet->target_position - 2]['naturalMoons'] ?? [])
+            $moon = collect($this->map->system($fleet->universe, $fleet->user, $fleet->target_galaxy, $fleet->target_system, $fleet->target_position)['slots'][$fleet->target_position - 2]['naturalMoons'] ?? [])
                 ->firstWhere('orbit', (int) $fleet->target_orbit);
             if (! $moon) {
                 throw ValidationException::withMessages(['target' => 'Cette lune a été détruite ou n’existe plus.']);

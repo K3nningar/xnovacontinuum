@@ -12,6 +12,8 @@ use Illuminate\Validation\ValidationException;
 
 class MoonEconomy
 {
+    private const BASE_STORAGE_CAPACITY = 1_000_000;
+
     private const BUILDINGS = [
         'moon_base' => ['code' => 41, 'label' => 'Base lunaire', 'cost' => [20000, 40000, 20000], 'factor' => 2, 'requirements' => []],
         'phalanx' => ['code' => 42, 'label' => 'Phalange sensorielle', 'cost' => [20000, 40000, 20000], 'factor' => 2, 'requirements' => [41 => 1]],
@@ -62,8 +64,24 @@ class MoonEconomy
                 'remainingSeconds' => max(0, (int) now()->diffInSeconds($entry->completes_at, false)),
             ])->values(),
             'fields' => ['used' => (int) $stock->used_fields, 'max' => (int) $stock->max_fields],
+            'capacity' => $this->storageCapacities(),
             'unitStock' => $stock->unit_stock ? $this->decodeShips($stock->unit_stock) : [],
             'jumpGateReadyAt' => $stock->jump_gate_used_at ? Carbon::parse($stock->jump_gate_used_at)->addSeconds(max(1, intdiv(3600, max(1, (int) $stock->jump_gate_level))))->toIso8601String() : null,
+        ];
+    }
+
+    /**
+     * Returns the default storage capacity for each lunar resource.
+     * Moons currently have no silo buildings, so they use the level-zero capacity.
+     *
+     * @return array{metal: int, crystal: int, deuterium: int}
+     */
+    public function storageCapacities(): array
+    {
+        return [
+            'metal' => self::BASE_STORAGE_CAPACITY,
+            'crystal' => self::BASE_STORAGE_CAPACITY,
+            'deuterium' => self::BASE_STORAGE_CAPACITY,
         ];
     }
 

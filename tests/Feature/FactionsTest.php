@@ -15,7 +15,9 @@ use App\Services\GalaxyMap;
 use App\Services\PlanetEconomy;
 use App\Services\UnitProductionService;
 use Illuminate\Foundation\Testing\LazilyRefreshDatabase;
+use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Storage;
 use Inertia\Testing\AssertableInertia as Assert;
 use Tests\TestCase;
 
@@ -41,6 +43,48 @@ class FactionsTest extends TestCase
         $this->assertDatabaseCount('faction_diplomacy', 1);
         $this->assertSame('war', app(FactionDiplomacy::class)->relation($red, $blue));
         $this->post(route('admin.factions.diplomacy', $universe), ['first' => 'red', 'second' => 'unknown', 'status' => 'war'])->assertSessionHasErrors('first');
+    }
+
+    public function test_players_can_open_the_dynamic_faction_directory(): void
+    {
+        $universe = Universe::create(['name' => 'Test', 'slug' => 'test']);
+        Faction::create(['universe_id' => $universe->id, 'key' => 'red', 'name' => 'Rouges', 'description' => 'Faction offensive.', 'settings' => [
+            'statistics' => ['attack' => 1.5],
+            'ships' => ['202' => ['name' => 'Transport rouge', 'image' => '/images/factions/red.webp']],
+        ]]);
+        $player = User::factory()->create(['universe_id' => $universe->id, 'faction_key' => 'red']);
+
+        $this->actingAs($player)->get(route('factions.index'))->assertInertia(fn (Assert $page) => $page
+            ->component('Factions/Index')->has('factions', 2)->where('factions.1.name', 'Rouges')
+            ->where('factions.1.statistics.attack', 1.5)->where('factions.1.exclusiveElements.0.name', 'Transport rouge'));
+    }
+
+    public function test_founder_can_upload_a_faction_logo(): void
+    {
+        Storage::fake('public');
+        $universe = Universe::create(['name' => 'Test', 'slug' => 'test']);
+        $founder = User::factory()->create(['admin_level' => 4]);
+
+        $this->actingAs($founder)->post(route('admin.factions.store', $universe), [
+            'key' => 'red', 'name' => 'Rouges', 'image_file' => UploadedFile::fake()->image('banner.png'),
+        ])->assertSessionHasNoErrors();
+
+        $faction = Faction::query()->where('universe_id', $universe->id)->where('key', 'red')->firstOrFail();
+        $this->assertStringStartsWith('/storage/factions/'.$universe->id.'/red-', $faction->image);
+        $this->assertStringEndsWith('.webp', $faction->image);
+        Storage::disk('public')->assertExists(str_replace('/storage/', '', parse_url($faction->image, PHP_URL_PATH)));
+    }
+
+    public function test_existing_absolute_faction_image_url_can_be_saved(): void
+    {
+        $universe = Universe::create(['name' => 'Test', 'slug' => 'test']);
+        $faction = Faction::create(['universe_id' => $universe->id, 'key' => 'red', 'name' => 'Rouges', 'image' => 'http://localhost:8000/storage/factions/1/red.webp']);
+        $founder = User::factory()->create(['admin_level' => 4]);
+
+        $this->actingAs($founder)->patch(route('admin.factions.update', [$universe, $faction]), [
+            'name' => 'Rouges', 'description' => '', 'image' => $faction->image,
+            'settings' => json_encode(['statistics' => ['attack' => 1, 'shield' => 1, 'hull' => 1]]),
+        ])->assertSessionHasNoErrors();
     }
 
     public function test_faction_administration_exposes_the_complete_game_catalog(): void

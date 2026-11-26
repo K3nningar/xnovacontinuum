@@ -20,6 +20,7 @@ use App\Http\Controllers\CombatSimulatorController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\ExplorationMissionController;
 use App\Http\Controllers\FactionAdminController;
+use App\Http\Controllers\FactionController;
 use App\Http\Controllers\GalaxyController;
 use App\Http\Controllers\MoonController;
 use App\Http\Controllers\MultiAccountDeclarationController;
@@ -82,6 +83,7 @@ Route::middleware(['auth', EnsureAccountIsActive::class, ProcessExplorationMissi
     Route::post('/multi-account-declarations', [MultiAccountDeclarationController::class, 'store'])
         ->middleware('throttle:multi-account-declaration')->name('multi-accounts.store');
     Route::get('/commandcenter', DashboardController::class)->name('dashboard');
+    Route::get('/factions', [FactionController::class, 'index'])->name('factions.index');
     Route::get('/galaxy', GalaxyController::class)->name('galaxy.index');
     Route::get('/moon-buildings', [MoonController::class, 'buildings'])->name('moon.buildings');
     Route::get('/planets/{planet}/moons/{orbit}', [MoonController::class, 'show'])->whereNumber('orbit')->name('moon.show');

@@ -36,7 +36,7 @@ class GalaxyMap
      *
      * @return array{star: string, starName: string, slots: array<int, array<string, mixed>>}
      */
-    public function system(Universe $universe, User $viewer, int $galaxy, int $system, int $originPosition): array
+    public function system(Universe $universe, User $viewer, int $galaxy, int $system, int $originPosition, array $sensorPositions = []): array
     {
         $planets = Planet::query()
             ->whereNull('destroyed_at')
@@ -77,7 +77,7 @@ class GalaxyMap
         $slots = [];
         for ($position = 2; $position <= 15; $position++) {
             $planet = $planets->get($position);
-            $requiredSpyLevel = abs($position - $originPosition);
+            $requiredSpyLevel = min(array_map(fn (int $sensorPosition): int => abs($position - $sensorPosition), $sensorPositions ?: [$originPosition]));
             if ((int) $viewer->spy_technology_level < $requiredSpyLevel && (! $planet || (int) $planet->user_id !== (int) $viewer->id)) {
                 $slots[] = ['position' => $position, 'visible' => false, 'requiredSpyLevel' => $requiredSpyLevel];
 
