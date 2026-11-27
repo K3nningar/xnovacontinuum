@@ -34,7 +34,7 @@ class AppServiceProvider extends ServiceProvider
                 : 'login:'.strtolower((string) $request->input('email')))
             .'|'.$request->ip(),
         ));
-        RateLimiter::for('register', fn ($request) => Limit::perHour(5)->by($request->ip()));
+        RateLimiter::for('registration', fn ($request) => Limit::perMinute(20)->by($request->ip()));
         RateLimiter::for('account-universe-select', fn ($request) => Limit::perMinute(30)->by(
             ($request->user()?->commander_id ?? (string) $request->user()?->getAuthIdentifier()).'|'.$request->ip(),
         ));

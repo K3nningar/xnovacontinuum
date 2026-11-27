@@ -42,6 +42,27 @@ class LicenseKeyTest extends TestCase
         $this->assertDatabaseMissing('users', ['email' => 'nova@example.test']);
     }
 
+    public function test_several_invalid_license_keys_do_not_lock_out_registration(): void
+    {
+        $registration = [
+            'license_key' => self::LICENSE_KEY,
+            'name' => 'Nova Pilot',
+            'email' => 'nova@example.test',
+            'password' => 'secure-password-123',
+            'password_confirmation' => 'secure-password-123',
+        ];
+
+        for ($attempt = 0; $attempt < 8; $attempt++) {
+            $this->withServerVariables(['REMOTE_ADDR' => '203.0.113.42'])
+                ->from(route('register'))
+                ->post(route('register'), $registration)
+                ->assertRedirect(route('register'))
+                ->assertSessionHasErrors('license_key');
+        }
+
+        $this->assertDatabaseMissing('users', ['email' => 'nova@example.test']);
+    }
+
     public function test_registration_consumes_a_license_key_only_once(): void
     {
         $licenseKey = LicenseKey::query()->create([

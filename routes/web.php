@@ -49,7 +49,7 @@ Route::middleware('guest')->group(function () {
     Route::get('/login', [AuthenticatedSessionController::class, 'create'])->name('login');
     Route::post('/login', [AuthenticatedSessionController::class, 'store'])->middleware('throttle:login');
     Route::get('/register', [RegisteredUserController::class, 'create'])->name('register');
-    Route::post('/register', [RegisteredUserController::class, 'store'])->middleware('throttle:register');
+    Route::post('/register', [RegisteredUserController::class, 'store'])->middleware('throttle:registration');
 });
 
 Route::middleware(['auth', EnsureAccountIsActive::class, ProcessExplorationMissions::class])->group(function () {
