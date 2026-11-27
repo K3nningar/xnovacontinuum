@@ -53,6 +53,12 @@ test('the faction label is available in the shared game navigation in every loca
     }
 });
 
+test('the license key navigation label is available in every locale', () => {
+    for (const [locale, translations] of Object.entries(locales)) {
+        assert.ok(getPageTranslations(translations, 'shared').nav.licenseKeys, `${locale} is missing the license key navigation label`);
+    }
+});
+
 test('officer information descriptions are localized for every officer', () => {
     for (const [locale, translations] of Object.entries(locales)) {
         assert.ok(getPageTranslations(translations, 'officers').officers.moduleDisabled, `${locale} is missing the disabled-module message`);

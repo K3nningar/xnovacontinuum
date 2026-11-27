@@ -66,6 +66,7 @@ export default {
     "defences": "Centro de defensa",
     "officers": "Estado mayor",
     "multiAccounts": "Declaración de multicuentas",
+    "licenseKeys": "Claves de licencia",
     "online": "UNIVERSO EN LÍNEA",
     "commander": "COMANDANTE",
     "faction": "Facción",

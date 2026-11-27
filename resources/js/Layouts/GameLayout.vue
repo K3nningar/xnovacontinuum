@@ -35,6 +35,9 @@ const navigation = computed(() => [
     ...(Number(page.props.auth?.user?.admin_level ?? 0) >= 1
         ? [{ route: 'admin.index', component: 'Admin/Index', label: 'admin.title', icon: 'bi-shield-lock' }]
         : []),
+    ...(Number(page.props.auth?.user?.admin_level ?? 0) === 4
+        ? [{ route: 'admin.license-keys', component: 'Admin/LicenseKeys', label: 'nav.licenseKeys', icon: 'bi-key' }]
+        : []),
 ]);
 // Show the selected world's stock when scoped to a planet; admin and empire views aggregate all planets.
 const resources = computed(() => {

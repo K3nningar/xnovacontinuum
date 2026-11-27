@@ -66,6 +66,7 @@ export default {
     "defences": "Verteidigungszentrum",
     "officers": "Oberkommando",
     "multiAccounts": "Mehrkonto-Erklärung",
+    "licenseKeys": "Lizenzschlüssel",
     "online": "UNIVERSUM ONLINE",
     "commander": "KOMMANDANT",
     "faction": "Fraktion",

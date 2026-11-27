@@ -66,6 +66,7 @@ export default {
     "defences": "Defense center",
     "officers": "High command",
     "multiAccounts": "Multi-account declaration",
+    "licenseKeys": "License keys",
     "online": "UNIVERSE ONLINE",
     "commander": "COMMANDER",
     "faction": "Faction",
