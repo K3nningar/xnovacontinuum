@@ -16,6 +16,8 @@ use App\Models\User;
 use Illuminate\Database\QueryException;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Notification;
+use Illuminate\Support\Facades\URL;
 use Inertia\Testing\AssertableInertia as Assert;
 use Tests\TestCase;
 
@@ -115,6 +117,7 @@ class ExampleTest extends TestCase
 
     public function test_a_user_can_register_and_reaches_the_command_center(): void
     {
+        Notification::fake();
         $universe = Universe::create(['name' => 'Andromède', 'slug' => 'andromeda']);
         $licenseKey = 'XNOVA-11111111-22222222-33333333-44444444';
         LicenseKey::query()->create(['key_hash' => LicenseKey::digest($licenseKey)]);
@@ -125,10 +128,16 @@ class ExampleTest extends TestCase
             'email' => 'nova@example.test',
             'password' => 'secure-password-123',
             'password_confirmation' => 'secure-password-123',
-        ])->assertRedirect(route('account.universes'));
+        ])->assertRedirect(route('verification.notice'));
 
         $this->assertAuthenticated();
         $this->assertDatabaseHas('users', ['email' => 'nova@example.test']);
+        $account = User::query()->where('email', 'nova@example.test')->firstOrFail();
+        $verificationUrl = URL::temporarySignedRoute('verification.verify', now()->addHour(), [
+            'id' => $account->id,
+            'hash' => sha1($account->getEmailForVerification()),
+        ]);
+        $this->get($verificationUrl)->assertRedirect(route('account.universes'));
         $this->get(route('account.universes'))->assertOk()->assertInertia(fn (Assert $page) => $page
             ->component('Auth/Universes')
             ->where('universes.0.hasEmpire', false));

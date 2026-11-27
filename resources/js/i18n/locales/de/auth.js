@@ -37,7 +37,16 @@ export default {
     "createMyAccount": "Konto erstellen",
     "alreadyCommander": "Schon Kommandant?",
     "loginLink": "Anmelden",
-    "authFooter": "XNova Continuum · EIN NEUES UNIVERSUM ZUM ERKUNDEN"
+    "authFooter": "XNova Continuum · EIN NEUES UNIVERSUM ZUM ERKUNDEN",
+    "emailVerificationTitle": "E-Mail-Adresse bestätigen",
+    "emailVerificationEyebrow": "NUR NOCH EIN SCHRITT",
+    "emailVerificationHeading": "Prüfe deinen Posteingang.",
+    "emailVerificationIntro": "Wir haben einen Bestätigungslink an {email} gesendet.",
+    "emailVerificationInstructions": "Aktiviere dein Konto über den Link in der E-Mail, um das Spiel zu betreten. Prüfe auch deinen Spam-Ordner.",
+    "emailVerificationSent": "Ein neuer Bestätigungslink wurde gesendet.",
+    "resendVerificationEmail": "Bestätigungslink erneut senden",
+    "sendingVerificationEmail": "Wird gesendet…",
+    "returnHome": "Zur Startseite"
   },
   "accountUniverses": {
     "title": "Wähle dein Universum",

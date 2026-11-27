@@ -42,7 +42,7 @@ class AdminPanelTest extends TestCase
             'password' => 'a-strong-password',
             'password_confirmation' => 'a-strong-password',
             'admin_level' => 4,
-        ])->assertRedirect(route('account.universes'));
+        ])->assertRedirect(route('verification.notice'));
 
         $this->assertSame(0, User::query()->where('email', 'commander@example.test')->firstOrFail()->admin_level);
     }
