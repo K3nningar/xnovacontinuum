@@ -11,6 +11,7 @@ declare(strict_types=1);
 
 use App\Http\Controllers\AccountUniverseController;
 use App\Http\Controllers\AdminController;
+use App\Http\Controllers\AdminLicenseKeyController;
 use App\Http\Controllers\AnnouncementController;
 use App\Http\Controllers\Auth\AuthenticatedSessionController;
 use App\Http\Controllers\Auth\RegisteredUserController;
@@ -62,6 +63,9 @@ Route::middleware(['auth', EnsureAccountIsActive::class, ProcessExplorationMissi
         Route::get('/resources', [AdminController::class, 'resources'])->middleware('admin:2')->name('resources');
         Route::post('/resources', [AdminController::class, 'storeResources'])->middleware(['admin:2', 'throttle:game-action'])->name('resources.store');
         Route::get('/universes', [AdminController::class, 'universes'])->middleware('admin:4')->name('universes');
+        Route::get('/license-keys', [AdminLicenseKeyController::class, 'index'])->middleware('admin:4')->name('license-keys');
+        Route::post('/license-keys', [AdminLicenseKeyController::class, 'store'])
+            ->middleware(['admin:4', 'throttle:game-action'])->name('license-keys.store');
         Route::get('/modules', [ModuleAdminController::class, 'index'])->middleware('admin:4')->name('modules');
         Route::patch('/modules', [ModuleAdminController::class, 'update'])->middleware(['admin:4', 'throttle:game-action'])->name('modules.update');
         Route::get('/universes/{universe}/factions', [FactionAdminController::class, 'index'])->whereNumber('universe')->middleware('admin:4')->name('factions.index');

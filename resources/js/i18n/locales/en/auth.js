@@ -27,6 +27,8 @@ export default {
     "galaxyToConquer": "A galaxy",
     "conquerAccent": "to conquer.",
     "createIntro": "Create your commander account.",
+    "licenseKey": "License key",
+    "licenseKeyHelp": "One-time code provided by the team.",
     "checkFields": "Check the fields highlighted below.",
     "commanderName": "Commander name",
     "passwordMin": "At least 12 characters",

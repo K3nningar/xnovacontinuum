@@ -19,23 +19,27 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('planet_building_queues', function (Blueprint $table) {
-            $table->id();
-            $table->foreignId('universe_id')->constrained()->cascadeOnDelete();
-            $table->foreignId('planet_id')->constrained()->cascadeOnDelete();
-            $table->string('building_key', 24);
-            $table->unsignedSmallInteger('building_code');
-            $table->unsignedSmallInteger('target_level');
-            $table->unsignedTinyInteger('position');
-            $table->unsignedBigInteger('cost_metal');
-            $table->unsignedBigInteger('cost_crystal');
-            $table->unsignedBigInteger('cost_deuterium');
-            $table->timestamp('starts_at');
-            $table->timestamp('completes_at')->index();
-            $table->timestamps();
+			$table->id();
+			$table->foreignId('universe_id')->constrained()->cascadeOnDelete();
+			$table->foreignId('planet_id')->constrained()->cascadeOnDelete();
+			$table->string('building_key', 24);
+			$table->unsignedSmallInteger('building_code');
+			$table->unsignedSmallInteger('target_level');
+			$table->unsignedTinyInteger('position');
+			$table->unsignedBigInteger('cost_metal');
+			$table->unsignedBigInteger('cost_crystal');
+			$table->unsignedBigInteger('cost_deuterium');
 
-            $table->index(['planet_id', 'position'], 'pbq_planet_position_idx');
-            $table->unique(['planet_id', 'building_key', 'target_level'], 'pbq_planet_building_level_unique');
-        });
+			// dateTime au lieu de timestamp : pas de défaut implicite
+			$table->dateTime('starts_at');
+			$table->dateTime('completes_at');
+
+			$table->timestamps();
+
+			// Index utile pour le traitement différé des files
+			$table->index(['completes_at']);
+			$table->unique(['planet_id', 'position']);
+		});
     }
 
     /**

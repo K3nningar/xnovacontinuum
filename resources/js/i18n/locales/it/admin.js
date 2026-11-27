@@ -7,6 +7,7 @@
 
 export default {
   "adminModules": { "title": "Moduli", "perUniverse": "Queste impostazioni si applicano solo a questo universo.", "universe": "Universo", "noUniverses": "Nessun universo disponibile.", "enableFactions": "Attiva fazioni", "factionsHelp": "Disattivare le fazioni sospende bonus, restrizioni e relazioni diplomatiche senza eliminare la configurazione.", "global": "Queste impostazioni si applicano a tutti gli universi.", "enableOfficers": "Attiva ufficiali", "individual": "Ufficiali disponibili", "help": "Gli ufficiali disattivati non possono essere reclutati e i loro requisiti vengono ignorati. I reclutamenti in attesa sono rimborsati alla scadenza. Le scelte individuali vengono conservate.", "warning": "I bonus di ricerca di Spia e Comandante sono sospesi quando questi ufficiali sono disattivati.", "save": "Salva", "saved": "Impostazioni dei moduli salvate." },
+  "licenseKeys": { "title": "Generatore di chiavi di licenza", "hint": "Crea chiavi di accesso uniche e monouso per le nuove registrazioni.", "quantity": "Numero di chiavi (da 1 a 50)", "generate": "Genera chiavi", "generated": "Chiavi generate", "oneTime": "Copiale ora: non verranno mostrate di nuovo dopo aver lasciato questa pagina.", "history": "Cronologia chiavi", "empty": "Nessuna chiave generata.", "createdAt": "Creata il", "status": "Stato", "usedBy": "Account registrato", "redeemedAt": "Usata il", "available": "Disponibile", "used": "Usata", "pagination": "Pagine delle chiavi" },
   "changelogManual": {
     "title": "Registro manuale delle modifiche",
     "hint": "Questo testo è identico in tutte le lingue ed è immediatamente visibile quando la versione è pubblica.",
@@ -93,6 +94,7 @@ export default {
     "resources": "Risorse",
     "roles": "Ruoli",
     "universes": "Universi",
+    "licenseKeys": "Chiavi di licenza",
     "players": "Giocatori",
     "search": "Cerca un giocatore",
     "searchButton": "Cerca",

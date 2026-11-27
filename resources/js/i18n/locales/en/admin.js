@@ -7,6 +7,7 @@
 
 export default {
   "adminModules": { "title": "Modules", "perUniverse": "These settings apply to the selected universe.", "universe": "Universe", "noUniverses": "No universes available.", "enableFactions": "Enable factions", "factionsHelp": "Disabling factions suspends their bonuses, restrictions and diplomatic relations without deleting their settings.", "global": "These settings apply to all universes.", "enableOfficers": "Enable officers", "individual": "Available officers", "help": "Disabled officers cannot be recruited and their prerequisites are ignored. Pending recruitments are refunded when due. Individual selections are retained when the module is disabled.", "warning": "Spy and Commander research bonuses are suspended when these officers are disabled.", "save": "Save", "saved": "Module settings saved." },
+  "licenseKeys": { "title": "License key generator", "hint": "Create unique, single-use access keys for new registrations.", "quantity": "Number of keys (1 to 50)", "generate": "Generate keys", "generated": "Keys generated", "oneTime": "Copy them now: they will not be shown again after you leave this page.", "history": "Key history", "empty": "No keys generated.", "createdAt": "Created at", "status": "Status", "usedBy": "Registered account", "redeemedAt": "Used at", "available": "Available", "used": "Used", "pagination": "Key pages" },
   "changelogManual": {
     "title": "Manual changelog",
     "hint": "This text is identical in all languages and is immediately visible when the version is public.",
@@ -93,6 +94,7 @@ export default {
     "resources": "Resources",
     "roles": "Roles",
     "universes": "Universes",
+    "licenseKeys": "License keys",
     "players": "Players",
     "search": "Search for a player",
     "searchButton": "Search",

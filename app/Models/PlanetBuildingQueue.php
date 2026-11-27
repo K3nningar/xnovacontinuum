@@ -39,13 +39,13 @@ class PlanetBuildingQueue extends Model
      *
      * @return array<string, string>
      */
-    protected function casts(): array
-    {
-        return [
-            'starts_at' => 'immutable_datetime',
-            'completes_at' => 'immutable_datetime',
-        ];
-    }
+	protected function casts(): array
+	{
+		return [
+			'starts_at'    => 'datetime',
+			'completes_at' => 'datetime',
+		];
+	}
 
     /**
      * The planet whose serialized construction queue contains this entry.

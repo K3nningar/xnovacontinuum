@@ -27,6 +27,8 @@ export default {
     "galaxyToConquer": "Une galaxie",
     "conquerAccent": "à conquérir.",
     "createIntro": "Créez votre compte commandant.",
+    "licenseKey": "Clé de licence",
+    "licenseKeyHelp": "Code à usage unique fourni par l’équipe.",
     "checkFields": "Vérifiez les champs signalés ci-dessous.",
     "commanderName": "Nom de commandant",
     "passwordMin": "12 caractères minimum",

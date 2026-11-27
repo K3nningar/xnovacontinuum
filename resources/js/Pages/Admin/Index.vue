@@ -39,6 +39,7 @@ const sections = computed(() => [
     { mode: 'resources', route: 'admin.resources', allowed: adminLevel.value >= 2 },
     { mode: 'roles', route: 'admin.roles', allowed: page.props.auth?.user?.admin_global === true },
     { mode: 'universes', route: 'admin.universes', allowed: adminLevel.value === 4 },
+    { mode: 'license-keys', route: 'admin.license-keys', allowed: adminLevel.value === 4 },
 ].filter((section) => section.allowed));
 const currentRoute = computed(() => ({
     overview: 'admin.index',
@@ -174,7 +175,7 @@ function categoryLabel(category) {
 
                 <nav class="flex flex-wrap gap-2" :aria-label="t('admin.title')">
                     <Link v-for="section in sections" :key="section.mode" class="button button-outline" :class="{ 'button-primary': mode === section.mode }" :href="route(section.route, query)" :aria-current="mode === section.mode ? 'page' : undefined">
-                        {{ t(section.mode === 'declarations' ? 'multiAccounts.title' : `admin.${section.mode}`) }}
+                        {{ t(section.mode === 'declarations' ? 'multiAccounts.title' : (section.mode === 'license-keys' ? 'admin.licenseKeys' : `admin.${section.mode}`)) }}
                     </Link>
                     <Link v-if="page.props.auth?.user?.admin_global" class="button button-outline" :href="route('admin.changelog')">{{ t('changelog.title') }}</Link>
                     <Link v-if="adminLevel === 4 && page.props.auth?.user?.admin_global" class="button button-outline" :href="route('admin.modules')">{{ t('adminModules.title') }}</Link>

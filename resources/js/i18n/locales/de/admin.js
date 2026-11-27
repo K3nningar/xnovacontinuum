@@ -7,6 +7,7 @@
 
 export default {
   "adminModules": { "title": "Module", "perUniverse": "Diese Einstellungen gelten für das ausgewählte Universum.", "universe": "Universum", "noUniverses": "Keine Universen verfügbar.", "enableFactions": "Fraktionen aktivieren", "factionsHelp": "Deaktivierte Fraktionen verlieren vorübergehend ihre Boni, Einschränkungen und diplomatischen Beziehungen. Ihre Einstellungen bleiben erhalten.", "global": "Diese Einstellungen gelten für alle Universen.", "enableOfficers": "Offiziere aktivieren", "individual": "Verfügbare Offiziere", "help": "Deaktivierte Offiziere können nicht rekrutiert werden; ihre Voraussetzungen entfallen. Ausstehende Rekrutierungen werden bei Fälligkeit erstattet. Die Einzelauswahl bleibt erhalten.", "warning": "Forschungsboni von Spion und Kommandant werden bei Deaktivierung dieser Offiziere ausgesetzt.", "save": "Speichern", "saved": "Moduleinstellungen gespeichert." },
+  "licenseKeys": { "title": "Lizenzschlüsselgenerator", "hint": "Erstelle einmalig verwendbare Zugangsschlüssel für neue Registrierungen.", "quantity": "Anzahl der Schlüssel (1 bis 50)", "generate": "Schlüssel erstellen", "generated": "Schlüssel erstellt", "oneTime": "Kopiere sie jetzt: Nach dem Verlassen dieser Seite werden sie nicht erneut angezeigt.", "history": "Schlüsselverlauf", "empty": "Es wurden noch keine Schlüssel erstellt.", "createdAt": "Erstellt am", "status": "Status", "usedBy": "Registriertes Konto", "redeemedAt": "Verwendet am", "available": "Verfügbar", "used": "Verwendet", "pagination": "Schlüsselseiten" },
   "changelogManual": {
     "title": "Manuelles Änderungsprotokoll",
     "hint": "Dieser Text ist in allen Sprachen identisch und sofort sichtbar, wenn die Version öffentlich ist.",
@@ -93,6 +94,7 @@ export default {
     "resources": "Ressourcen",
     "roles": "Rollen",
     "universes": "Universen",
+    "licenseKeys": "Lizenzschlüssel",
     "players": "Spieler",
     "search": "Spieler suchen",
     "searchButton": "Suchen",

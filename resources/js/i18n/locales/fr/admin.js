@@ -7,6 +7,7 @@
 
 export default {
   "adminModules": { "title": "Modules", "perUniverse": "Ces réglages concernent uniquement cet univers.", "universe": "Univers", "noUniverses": "Aucun univers disponible.", "enableFactions": "Activer les factions", "factionsHelp": "Désactiver les factions suspend leurs bonus, restrictions et relations diplomatiques sans effacer leur configuration.", "global": "Ces réglages s’appliquent à tous les univers.", "enableOfficers": "Activer les officiers", "individual": "Officiers disponibles", "help": "Un officier désactivé ne peut plus être recruté et ses prérequis sont ignorés. Les recrutements en attente sont remboursés à leur échéance. Les choix individuels sont conservés lorsque le module est désactivé.", "warning": "Les bonus de recherche de l’Espion et du Commandant sont suspendus lorsque ces officiers sont désactivés.", "save": "Enregistrer", "saved": "Configuration des modules enregistrée." },
+  "licenseKeys": { "title": "Générateur de clés de licence", "hint": "Créez des clés d’accès uniques et à usage unique pour les nouvelles inscriptions.", "quantity": "Nombre de clés (1 à 50)", "generate": "Générer les clés", "generated": "Clés générées", "oneTime": "Copiez-les maintenant : elles ne seront plus affichées après avoir quitté cette page.", "history": "Historique des clés", "empty": "Aucune clé générée.", "createdAt": "Créée le", "status": "Statut", "usedBy": "Compte utilisé", "redeemedAt": "Utilisée le", "available": "Disponible", "used": "Utilisée", "pagination": "Pages des clés" },
   "changelogManual": {
     "title": "Journal manuel des changements",
     "hint": "Ce texte est identique dans toutes les langues et est immédiatement visible lorsque la version est publique.",
@@ -93,6 +94,7 @@ export default {
     "resources": "Ressources",
     "roles": "Rôles",
     "universes": "Univers",
+    "licenseKeys": "Clés de licence",
     "players": "Joueurs",
     "search": "Rechercher un joueur",
     "searchButton": "Rechercher",

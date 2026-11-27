@@ -9,6 +9,7 @@
 
 namespace Tests\Feature;
 
+use App\Models\LicenseKey;
 use App\Models\Planet;
 use App\Models\Universe;
 use App\Models\User;
@@ -115,8 +116,11 @@ class ExampleTest extends TestCase
     public function test_a_user_can_register_and_reaches_the_command_center(): void
     {
         $universe = Universe::create(['name' => 'Andromède', 'slug' => 'andromeda']);
+        $licenseKey = 'XNOVA-11111111-22222222-33333333-44444444';
+        LicenseKey::query()->create(['key_hash' => LicenseKey::digest($licenseKey)]);
 
         $this->post('/register', [
+            'license_key' => $licenseKey,
             'name' => 'Nova Pilot',
             'email' => 'nova@example.test',
             'password' => 'secure-password-123',
@@ -268,8 +272,11 @@ class ExampleTest extends TestCase
     public function test_registration_rejects_short_passwords(): void
     {
         Universe::create(['name' => 'Andromède', 'slug' => 'andromeda']);
+        $licenseKey = 'XNOVA-11111111-22222222-33333333-44444444';
+        LicenseKey::query()->create(['key_hash' => LicenseKey::digest($licenseKey)]);
 
         $this->from('/register')->post('/register', [
+            'license_key' => $licenseKey,
             'name' => 'Nova Pilot',
             'email' => 'nova@example.test',
             'password' => 'short',

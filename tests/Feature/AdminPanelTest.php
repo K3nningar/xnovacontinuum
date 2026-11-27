@@ -9,6 +9,7 @@
 
 namespace Tests\Feature;
 
+use App\Models\LicenseKey;
 use App\Models\Planet;
 use App\Models\Universe;
 use App\Models\User;
@@ -31,7 +32,11 @@ class AdminPanelTest extends TestCase
 
     public function test_registration_cannot_set_an_administrative_level(): void
     {
+        $licenseKey = 'XNOVA-11111111-22222222-33333333-44444444';
+        LicenseKey::query()->create(['key_hash' => LicenseKey::digest($licenseKey)]);
+
         $this->post(route('register'), [
+            'license_key' => $licenseKey,
             'name' => 'Commander',
             'email' => 'commander@example.test',
             'password' => 'a-strong-password',

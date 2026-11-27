@@ -10,13 +10,16 @@
 namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
+use App\Models\LicenseKey;
 use App\Models\User;
 use Illuminate\Auth\Events\Registered;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
+use Illuminate\Validation\ValidationException;
 
 class RegisteredUserController extends Controller
 {
@@ -36,13 +39,47 @@ class RegisteredUserController extends Controller
     public function store(Request $request): RedirectResponse
     {
         $attributes = $request->validate([
+            'license_key' => ['required', 'string', 'max:64', 'regex:/\AXNOVA(?:-[A-F0-9]{8}){4}\z/i'],
             'name' => ['required', 'string', 'max:80'],
             'email' => ['required', 'string', 'lowercase', 'email', 'max:255', Rule::unique('users', 'email')->whereNull('universe_id')],
             'password' => ['required', 'string', 'confirmed', 'min:12', 'max:255'],
         ]);
 
+        $licenseKey = Str::upper(trim($attributes['license_key']));
+        unset($attributes['license_key']);
+
         $accountId = (string) Str::uuid();
-        $user = User::create([...$attributes, 'commander_id' => $accountId]);
+        $user = DB::transaction(function () use ($attributes, $licenseKey, $accountId): User {
+            $key = LicenseKey::query()
+                ->where('key_hash', LicenseKey::digest($licenseKey))
+                ->lockForUpdate()
+                ->first();
+
+            if ($key === null || $key->redeemed_at !== null) {
+                throw ValidationException::withMessages([
+                    'license_key' => 'La clé de licence est invalide ou a déjà été utilisée.',
+                ]);
+            }
+
+            $user = User::create([...$attributes, 'commander_id' => $accountId]);
+            $redeemedAt = now();
+            $redeemed = LicenseKey::query()
+                ->whereKey($key->id)
+                ->whereNull('redeemed_at')
+                ->update([
+                    'redeemed_by_user_id' => $user->id,
+                    'redeemed_at' => $redeemedAt,
+                    'updated_at' => $redeemedAt,
+                ]);
+
+            if ($redeemed !== 1) {
+                throw ValidationException::withMessages([
+                    'license_key' => 'La clé de licence est invalide ou a déjà été utilisée.',
+                ]);
+            }
+
+            return $user;
+        }, 3);
 
         event(new Registered($user));
         Auth::login($user);

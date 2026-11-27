@@ -7,6 +7,7 @@
 
 export default {
   "adminModules": { "title": "Módulos", "perUniverse": "Estos ajustes se aplican al universo seleccionado.", "universe": "Universo", "noUniverses": "No hay universos disponibles.", "enableFactions": "Activar facciones", "factionsHelp": "Desactivar las facciones suspende sus bonificaciones, restricciones y relaciones diplomáticas sin borrar su configuración.", "global": "Estos ajustes se aplican a todos los universos.", "enableOfficers": "Activar oficiales", "individual": "Oficiales disponibles", "help": "Los oficiales desactivados no se pueden reclutar y sus requisitos se ignoran. Los reclutamientos pendientes se reembolsan al vencer. Las selecciones individuales se conservan al desactivar el módulo.", "warning": "Las bonificaciones de investigación del Espía y el Comandante se suspenden al desactivar estos oficiales.", "save": "Guardar", "saved": "Configuración de módulos guardada." },
+  "licenseKeys": { "title": "Generador de claves de licencia", "hint": "Crea claves de acceso únicas y de un solo uso para nuevos registros.", "quantity": "Número de claves (1 a 50)", "generate": "Generar claves", "generated": "Claves generadas", "oneTime": "Cópialas ahora: no volverán a mostrarse al salir de esta página.", "history": "Historial de claves", "empty": "No se han generado claves.", "createdAt": "Creada el", "status": "Estado", "usedBy": "Cuenta registrada", "redeemedAt": "Usada el", "available": "Disponible", "used": "Usada", "pagination": "Páginas de claves" },
   "changelogManual": {
     "title": "Registro manual de cambios",
     "hint": "Este texto es idéntico en todos los idiomas y se muestra inmediatamente cuando la versión es pública.",
@@ -93,6 +94,7 @@ export default {
     "resources": "Recursos",
     "roles": "Roles",
     "universes": "Universos",
+    "licenseKeys": "Claves de licencia",
     "players": "Jugadores",
     "search": "Buscar jugador",
     "searchButton": "Buscar",

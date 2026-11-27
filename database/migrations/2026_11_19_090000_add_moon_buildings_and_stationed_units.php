@@ -25,23 +25,26 @@ return new class extends Migration
 
         });
 
-        Schema::create('moon_building_queues', function (Blueprint $table): void {
-            $table->id();
-            $table->foreignId('planet_id')->constrained()->cascadeOnDelete();
-            $table->unsignedSmallInteger('orbit');
-            $table->string('building_key', 32);
-            $table->unsignedSmallInteger('building_code');
-            $table->unsignedSmallInteger('target_level');
-            $table->unsignedTinyInteger('position');
-            $table->unsignedBigInteger('cost_metal')->default(0);
-            $table->unsignedBigInteger('cost_crystal')->default(0);
-            $table->unsignedBigInteger('cost_deuterium')->default(0);
-            $table->timestamp('starts_at');
-            $table->timestamp('completes_at');
-            $table->timestamps();
-            $table->unique(['planet_id', 'orbit', 'position']);
-            $table->index(['planet_id', 'orbit', 'completes_at']);
-        });
+        Schema::create('moon_building_queues', function (Blueprint $table) {
+			$table->id();
+			$table->foreignId('planet_id')->constrained()->cascadeOnDelete();
+			$table->unsignedSmallInteger('orbit');
+			$table->string('building_key', 32);
+			$table->unsignedSmallInteger('building_code');
+			$table->unsignedSmallInteger('target_level');
+			$table->unsignedTinyInteger('position');
+			$table->unsignedBigInteger('cost_metal')->default(0);
+			$table->unsignedBigInteger('cost_crystal')->default(0);
+			$table->unsignedBigInteger('cost_deuterium')->default(0);
+
+			// dateTime : aucun défaut implicite
+			$table->dateTime('starts_at');
+			$table->dateTime('completes_at');
+
+			$table->timestamps();
+
+			$table->index('completes_at');
+		});
     }
 
     public function down(): void
