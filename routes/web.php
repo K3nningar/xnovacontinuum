@@ -14,6 +14,7 @@ use App\Http\Controllers\AdminController;
 use App\Http\Controllers\AdminLicenseKeyController;
 use App\Http\Controllers\AnnouncementController;
 use App\Http\Controllers\Auth\AuthenticatedSessionController;
+use App\Http\Controllers\Auth\EmailVerificationController;
 use App\Http\Controllers\Auth\RegisteredUserController;
 use App\Http\Controllers\BuildingController;
 use App\Http\Controllers\ChangelogController;
@@ -52,7 +53,16 @@ Route::middleware('guest')->group(function () {
     Route::post('/register', [RegisteredUserController::class, 'store'])->middleware('throttle:registration');
 });
 
-Route::middleware(['auth', EnsureAccountIsActive::class, ProcessExplorationMissions::class])->group(function () {
+Route::middleware('auth')->group(function () {
+    Route::get('/email/verify', [EmailVerificationController::class, 'notice'])->name('verification.notice');
+    Route::get('/email/verify/{id}/{hash}', [EmailVerificationController::class, 'verify'])
+        ->middleware(['signed', 'throttle:6,1'])->name('verification.verify');
+    Route::post('/email/verification-notification', [EmailVerificationController::class, 'send'])
+        ->middleware('throttle:6,1')->name('verification.send');
+    Route::post('/logout', [AuthenticatedSessionController::class, 'destroy'])->name('logout');
+});
+
+Route::middleware(['auth', 'verified', EnsureAccountIsActive::class, ProcessExplorationMissions::class])->group(function () {
     Route::prefix('admin')->name('admin.')->middleware('admin:1')->group(function () {
         Route::get('/', [AdminController::class, 'index'])->name('index');
         Route::get('/changelog', [ChangelogController::class, 'administration'])->middleware('admin:3')->name('changelog');
@@ -139,5 +149,4 @@ Route::middleware(['auth', EnsureAccountIsActive::class, ProcessExplorationMissi
     Route::post('/account/universes', [AccountUniverseController::class, 'select'])->middleware('throttle:account-universe-select')->name('account.universes.select');
     Route::post('/universe/join', [UniverseController::class, 'join'])->middleware('throttle:universe-join')->name('universe.join');
     Route::post('/planets/{planet}/buildings', [PlanetBuildingController::class, 'upgrade'])->middleware('throttle:game-action')->name('planet.buildings.upgrade');
-    Route::post('/logout', [AuthenticatedSessionController::class, 'destroy'])->name('logout');
 });

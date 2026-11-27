@@ -75,7 +75,7 @@ class LicenseKeyTest extends TestCase
             'email' => 'nova@example.test',
             'password' => 'secure-password-123',
             'password_confirmation' => 'secure-password-123',
-        ])->assertRedirect(route('account.universes'));
+        ])->assertRedirect(route('verification.notice'));
 
         $account = User::query()->where('email', 'nova@example.test')->firstOrFail();
         $this->assertAuthenticatedAs($account);

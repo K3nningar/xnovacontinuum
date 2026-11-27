@@ -86,6 +86,6 @@ class RegisteredUserController extends Controller
         $request->session()->regenerate();
         $request->session()->put('activeCommanderUserId', $user->id);
 
-        return redirect()->route('account.universes');
+        return redirect()->route('verification.notice');
     }
 }

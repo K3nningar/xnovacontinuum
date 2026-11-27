@@ -72,7 +72,12 @@ class FactionController extends Controller
                 if (! is_array($override) || (($override['available'] ?? true) === true && empty($override['name']) && empty($override['image']))) {
                     continue;
                 }
-                $elements[] = ['category' => $category, 'name' => $override['name'] ?: $item['name'], 'image' => $override['image'] ?: null, 'available' => ($override['available'] ?? true) !== false];
+                $elements[] = [
+                    'category' => $category,
+                    'name' => ($override['name'] ?? '') ?: $item['name'],
+                    'image' => ($override['image'] ?? '') ?: null,
+                    'available' => ($override['available'] ?? true) !== false,
+                ];
             }
         }
 

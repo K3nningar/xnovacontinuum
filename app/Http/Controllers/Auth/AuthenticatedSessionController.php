@@ -134,7 +134,9 @@ class AuthenticatedSessionController extends Controller
             'onboardingUniverseId', 'onboardingCommanderId', 'onboardingCommanderUserId',
         ]);
 
-        return redirect()->route('account.universes');
+        return $user->hasVerifiedEmail()
+            ? redirect()->intended(route('account.universes'))
+            : redirect()->intended(route('verification.notice'));
     }
 
     /**

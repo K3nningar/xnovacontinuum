@@ -12,7 +12,7 @@ declare(strict_types=1);
 namespace App\Models;
 
 use App\Services\GameModules;
-// use Illuminate\Contracts\Auth\MustVerifyEmail;
+use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Database\Factories\UserFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Attributes\Hidden;
@@ -82,7 +82,7 @@ use Illuminate\Support\Str;
 #[Fillable(['name', 'email', 'password', 'officer_points', 'officer_geologist_level', 'officer_admiral_level', 'officer_engineer_level', 'officer_technocrat_level', 'officer_constructor_level', 'officer_scientist_level', 'officer_stockman_level', 'officer_defender_level', 'officer_bunker_level', 'officer_spy_level', 'officer_commander_level', 'officer_destroyer_level', 'officer_general_level', 'officer_raider_level', 'officer_emperor_level', 'planetary_destroyer_losses'])]
 #[Hidden(['password', 'remember_token'])]
 
-class User extends Authenticatable
+class User extends Authenticatable implements MustVerifyEmail
 {
     /** @use HasFactory<UserFactory> */
     use HasFactory, Notifiable;
@@ -90,6 +90,25 @@ class User extends Authenticatable
     public function rawResearchLevel(string $column): int
     {
         return (int) ($this->getAttributes()[$column] ?? 0);
+    }
+
+    /**
+     * Checks the commander account's verification state for universe-specific player profiles.
+     */
+    public function hasVerifiedEmail(): bool
+    {
+        if ($this->universe_id === null) {
+            return ! is_null($this->email_verified_at);
+        }
+
+        $account = self::query()
+            ->where('commander_id', $this->commander_id)
+            ->whereNull('universe_id')
+            ->first(['email_verified_at']);
+
+        return $account !== null
+            ? ! is_null($account->email_verified_at)
+            : ! is_null($this->email_verified_at);
     }
 
     public function effectiveResearchLevel(string $column, int $level): int
