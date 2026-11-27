@@ -19,6 +19,8 @@ export default {
     "titleSecond": "is waiting",
     "titleAccent": "for you.",
     "description": "Build your empire, discover forgotten worlds, and shape your strategy in a constantly evolving universe.",
+    "events": "Events",
+    "eventsImageAlt": "Apollo event banner",
     "join": "Join the universe",
     "discover": "Discover the game",
     "adventure": "COMMAND CENTER PREVIEW",

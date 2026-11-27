@@ -59,6 +59,13 @@ test('the license key navigation label is available in every locale', () => {
     }
 });
 
+test('the homepage event banner has localized title and alternative text', () => {
+    for (const [locale, translations] of Object.entries(locales)) {
+        assert.ok(getPageTranslations(translations, 'welcome').welcome.events, `${locale} is missing the events title`);
+        assert.ok(getPageTranslations(translations, 'welcome').welcome.eventsImageAlt, `${locale} is missing the events image description`);
+    }
+});
+
 test('officer information descriptions are localized for every officer', () => {
     for (const [locale, translations] of Object.entries(locales)) {
         assert.ok(getPageTranslations(translations, 'officers').officers.moduleDisabled, `${locale} is missing the disabled-module message`);

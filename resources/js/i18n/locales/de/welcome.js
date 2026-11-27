@@ -19,6 +19,8 @@ export default {
     "titleSecond": "wartet",
     "titleAccent": "auf dich.",
     "description": "Baue dein Imperium auf, entdecke vergessene Welten und entwickle deine Strategie in einem sich ständig wandelnden Universum.",
+    "events": "Events",
+    "eventsImageAlt": "Banner zum Apollo-Event",
     "join": "Dem Universum beitreten",
     "discover": "Spiel entdecken",
     "adventure": "VORSCHAU DER KOMMANDOZENTRALE",

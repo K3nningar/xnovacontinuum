@@ -19,6 +19,8 @@ export default {
     "titleSecond": "te está",
     "titleAccent": "esperando.",
     "description": "Construye tu imperio, descubre mundos olvidados y desarrolla tu estrategia en un universo en constante evolución.",
+    "events": "Eventos",
+    "eventsImageAlt": "Banner del evento Apollo",
     "join": "Unirse al universo",
     "discover": "Descubrir el juego",
     "adventure": "VISTA DEL CENTRO DE MANDO",

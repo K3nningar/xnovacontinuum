@@ -19,6 +19,7 @@ defineProps({
 const page = usePage();
 const route = (name, params) => ziggyRoute(name, params, true, page.props.ziggy);
 const { t } = useI18n();
+const eventBanner = '/images/events/apollo.png';
 </script>
 
 <template>
@@ -41,6 +42,10 @@ const { t } = useI18n();
                     <div class="welcome-preview-scan" aria-hidden="true"></div>
                 </div>
                 <div class="hero-index"><span>01</span><span class="index-line"></span><span>03</span></div>
+            </section>
+            <section id="evenements" class="my-6 overflow-hidden rounded border border-slate-700 bg-slate-900/70 p-3 sm:my-8 sm:p-5" aria-labelledby="welcome-events-title">
+                <h2 id="welcome-events-title" class="mb-3 text-lg font-semibold text-white">{{ t('welcome.events') }}</h2>
+                <img class="block h-auto w-full" :src="eventBanner" width="1218" height="314" :alt="t('welcome.eventsImageAlt')" decoding="async">
             </section>
             <section class="intel-bar" :aria-label="t('welcome.universeFeatures')"><div><span class="intel-icon"><i class="bi bi-globe2" aria-hidden="true"></i></span><span><small>{{ t('welcome.universeLink') }}</small><strong>{{ t('welcome.multipleUniverses') }}</strong></span></div><div><span class="intel-icon"><i class="bi bi-cpu" aria-hidden="true"></i></span><span><small>{{ t('welcome.yourStrategy') }}</small><strong>{{ t('welcome.economyScienceFleet') }}</strong></span></div><div><span class="intel-icon"><i class="bi bi-crosshair" aria-hidden="true"></i></span><span><small>{{ t('welcome.yourGalaxy') }}</small><strong>{{ t('welcome.fleetsAndCombat') }}</strong></span></div><a href="#decouvrir" class="intel-discover">{{ t('welcome.exploreSystems') }} <span aria-hidden="true">→</span></a></section>
             <section class="discover-section" id="decouvrir"><div class="section-heading"><p class="eyebrow"><span class="eyebrow-line"></span> {{ t('welcome.yourRules') }}</p><h2>{{ t('welcome.shape') }} <span>{{ t('welcome.shapeAccent') }}</span></h2><p class="welcome-section-intro">{{ t('welcome.currentGameIntro') }}</p></div><div class="feature-grid welcome-feature-grid"><article class="feature-card"><span class="feature-number">{{ t('welcome.economy') }}</span><div class="feature-symbol"><i class="bi bi-buildings" aria-hidden="true"></i></div><h3>{{ t('welcome.buildPower') }}</h3><p>{{ t('welcome.economyText') }}</p><span class="feature-mark">01</span></article><article class="feature-card"><span class="feature-number">{{ t('welcome.universeFeature') }}</span><div class="feature-symbol"><i class="bi bi-globe2" aria-hidden="true"></i></div><h3>{{ t('welcome.playAcrossWorlds') }}</h3><p>{{ t('welcome.multiverseText') }}</p><span class="feature-mark">02</span></article><article class="feature-card"><span class="feature-number">{{ t('welcome.fleetFeature') }}</span><div class="feature-symbol"><i class="bi bi-send" aria-hidden="true"></i></div><h3>{{ t('welcome.commandYourFleet') }}</h3><p>{{ t('welcome.fleetText') }}</p><span class="feature-mark">03</span></article><article class="feature-card"><span class="feature-number">{{ t('welcome.securityFeature') }}</span><div class="feature-symbol"><i class="bi bi-shield-lock" aria-hidden="true"></i></div><h3>{{ t('welcome.protectAccount') }}</h3><p>{{ t('welcome.securityText') }}</p><span class="feature-mark">04</span></article></div></section>

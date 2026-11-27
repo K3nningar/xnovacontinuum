@@ -19,6 +19,8 @@ export default {
     "titleSecond": "n’attend",
     "titleAccent": "que vous.",
     "description": "Bâtissez votre empire, découvrez des mondes oubliés et imposez votre stratégie dans un univers en constante évolution.",
+    "events": "Événements",
+    "eventsImageAlt": "Bannière de l’événement Apollo",
     "join": "Rejoindre l’univers",
     "discover": "Découvrir le jeu",
     "adventure": "APERÇU DU CENTRE DE COMMANDEMENT",
